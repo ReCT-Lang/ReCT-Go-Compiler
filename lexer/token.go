@@ -14,9 +14,11 @@ const (
 	ElseKeyword
 	TrueKeyword
 	FalseKeyword
+	PrintKeyword
 
 	// Tokens
 	EOF
+	IdToken
 	StringToken
 	NumberToken
 	PlusToken
@@ -29,6 +31,10 @@ const (
 	OpenParenthesisToken
 	CloseParenthesisToken
 	AssignToken
+	GreaterThanToken
+	LessThanToken
+
+	BadToken = -1 // Naughty ;)
 
 	Semicolon // Used to separate statements
 )

@@ -34,31 +34,107 @@ func Lex(filename string) []Token {
 		} else if c == '"' {
 			scanner.getString()
 		} else {
-
-			if !scanner.GetOperator() {
-				// It's whitespace
-				scanner.Index++
-			}
+			scanner.getOperator()
+			scanner.Index++
 		}
 	}
 	return scanner.Tokens
 }
 
 func (lxr lexer) getNumber() {
+	var buffer string
+	buffer = string(lxr.Code[lxr.Index])
+	lxr.Index++
 
+	for lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(lxr.Code[lxr.Index])) {
+		buffer += string(lxr.Code[lxr.Index])
+		lxr.Index++
+	}
+
+	lxr.Tokens = append(lxr.Tokens, Token{buffer, NumberToken, lxr.Line, lxr.Column})
 }
 
 func (lxr lexer) getString() {
+	var buffer string
+	lxr.Index++
 
+	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '"' {
+		buffer += string(lxr.Code[lxr.Index])
+		lxr.Index++
+	}
+
+	lxr.Tokens = append(lxr.Tokens, Token{buffer, StringToken, lxr.Line, lxr.Column})
 }
 
 func (lxr lexer) getId() {
+	var buffer string
+	buffer = string(lxr.Code[lxr.Index])
+	lxr.Index++
 
+	IsLetterOrDigitOrWhatever := func(c rune) bool {
+		return unicode.IsLetter(c) || unicode.IsDigit(c) || string(c) == "_"
+	}
+	for lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(lxr.Code[lxr.Index])) {
+		buffer += string(lxr.Code[lxr.Index])
+		lxr.Index++
+	}
+
+	lxr.Tokens = append(lxr.Tokens, Token{buffer, IdToken, lxr.Line, lxr.Column})
 }
 
-func (lxr lexer) GetOperator() bool { // Returns true if it is an operator
-
-	return false
+func (lxr lexer) getOperator() {
+	var _token TokenKind = -1
+	peek := func(offset int) byte {
+		if lxr.Index+offset < len(lxr.Code) {
+			return lxr.Code[lxr.Index+offset]
+		}
+		return '\000'
+	}
+	switch lxr.Code[lxr.Index] {
+	case '+':
+		_token = PlusToken
+	case '-':
+		_token = MinusToken
+	case '/':
+		_token = SlashToken
+	case '*':
+		_token = StarToken
+	case '=':
+		_token = EqualsToken
+	case '(':
+		_token = OpenParenthesisToken
+	case ')':
+		_token = CloseParenthesisToken
+	case '{':
+		_token = OpenBraceToken
+	case '}':
+		_token = CloseBraceToken
+	case ';':
+		_token = Semicolon
+	case '<':
+		if peek(1) == '-' {
+			lxr.Index++
+			_token = AssignToken
+		} else {
+			_token = LessThanToken
+		}
+	case '>':
+		_token = GreaterThanToken
+	default:
+		fmt.Println("ERROR: Unexpected character somewhere idk where though")
+		_token = BadToken
+	}
+	if _token == AssignToken {
+		lxr.Tokens = append(lxr.Tokens, CreateToken(
+			string(lxr.Code[lxr.Index]+peek(-1)),
+			_token,
+			0,
+			0,
+		),
+		)
+	} else {
+		lxr.Tokens = append(lxr.Tokens, CreateToken(string(lxr.Code[lxr.Index]), _token, 0, 0))
+	}
 }
 
 func handleFileOpen(filename string) []byte {
