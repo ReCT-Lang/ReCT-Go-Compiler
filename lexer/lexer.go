@@ -17,7 +17,7 @@ type lexer struct {
 }
 
 func Lex(filename string) []Token {
-	scanner := lexer{
+	scanner := &lexer{
 		handleFileOpen(filename),
 		0,
 		0,
@@ -33,15 +33,16 @@ func Lex(filename string) []Token {
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
+		} else if c == ' ' || c == '\n' || c == '\t' || c == '\v' {
+			scanner.Index++
 		} else {
 			scanner.getOperator()
-			scanner.Index++
 		}
 	}
 	return scanner.Tokens
 }
 
-func (lxr lexer) getNumber() {
+func (lxr *lexer) getNumber() {
 	var buffer string
 	buffer = string(lxr.Code[lxr.Index])
 	lxr.Index++
@@ -54,7 +55,7 @@ func (lxr lexer) getNumber() {
 	lxr.Tokens = append(lxr.Tokens, Token{buffer, NumberToken, lxr.Line, lxr.Column})
 }
 
-func (lxr lexer) getString() {
+func (lxr *lexer) getString() {
 	var buffer string
 	lxr.Index++
 
@@ -62,11 +63,11 @@ func (lxr lexer) getString() {
 		buffer += string(lxr.Code[lxr.Index])
 		lxr.Index++
 	}
-
+	lxr.Index++ // Can't believe I forgot this aaaaaaa
 	lxr.Tokens = append(lxr.Tokens, Token{buffer, StringToken, lxr.Line, lxr.Column})
 }
 
-func (lxr lexer) getId() {
+func (lxr *lexer) getId() {
 	var buffer string
 	buffer = string(lxr.Code[lxr.Index])
 	lxr.Index++
@@ -82,11 +83,9 @@ func (lxr lexer) getId() {
 	lxr.Tokens = append(lxr.Tokens, Token{buffer, IdToken, lxr.Line, lxr.Column})
 }
 
-func (lxr lexer) getOperator() {
-	var _token TokenKind = -1
+func (lxr *lexer) getOperator() {
+	var _token TokenKind
 	peek := func(offset int) byte {
-		fmt.Println(lxr.Tokens[0].String())
-		fmt.Printf("%d", lxr.Index)
 		if lxr.Index+offset < len(lxr.Code) {
 			return lxr.Code[lxr.Index+offset]
 		}
@@ -128,7 +127,7 @@ func (lxr lexer) getOperator() {
 	}
 	if _token == AssignToken {
 		lxr.Tokens = append(lxr.Tokens, CreateToken(
-			string(lxr.Code[lxr.Index]+peek(-1)),
+			string(peek(-1))+string(lxr.Code[lxr.Index]),
 			_token,
 			0,
 			0,
@@ -137,6 +136,7 @@ func (lxr lexer) getOperator() {
 	} else {
 		lxr.Tokens = append(lxr.Tokens, CreateToken(string(lxr.Code[lxr.Index]), _token, 0, 0))
 	}
+	lxr.Index++
 }
 
 func handleFileOpen(filename string) []byte {
