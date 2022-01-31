@@ -29,7 +29,7 @@ func Lex(filename string) []Token {
 		c := scanner.Code[scanner.Index]
 		if unicode.IsLetter(rune(c)) {
 			scanner.getId()
-		} else if unicode.IsDigit(rune(c)) {
+		} else if unicode.IsNumber(rune(c)) {
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
@@ -85,6 +85,8 @@ func (lxr lexer) getId() {
 func (lxr lexer) getOperator() {
 	var _token TokenKind = -1
 	peek := func(offset int) byte {
+		fmt.Println(lxr.Tokens[0].String())
+		fmt.Printf("%d", lxr.Index)
 		if lxr.Index+offset < len(lxr.Code) {
 			return lxr.Code[lxr.Index+offset]
 		}
