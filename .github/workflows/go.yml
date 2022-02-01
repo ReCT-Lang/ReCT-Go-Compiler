@@ -19,13 +19,8 @@ jobs:
       with:
         go-version: 1.17
 
-    - name: where we at?
-      run: |
-        pwd
-        ls
-
     - name: Build
-      run: go build -v ./../.
+      run: go build -v .
 
     - name: Test
-      run: go test -v ./../.
+      run: go test -v .
