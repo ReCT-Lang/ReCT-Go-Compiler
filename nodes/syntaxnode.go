@@ -18,11 +18,21 @@ type MemberNode interface {
 	SyntaxNode
 }
 
+// very cool interface for creating expressions
+// (craaaaazy ikr)
+type ExpressionNode interface {
+	SyntaxNode
+}
+
 // cool node type Enum straight up stolen from ReCT v1.0
 type NodeType int
 
 const (
-	// non-commented stuff has been implemented already
+	// commented stuff has yet to be implemented
+	// will implement this when im awake again lol
+	// unless someone else here is brave / bored enough
+	// i am basing these objects off of the rect 1.0 source
+	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Syntax
 
 	// Members
 	// -------
@@ -34,6 +44,10 @@ const (
 	VariableDeclaration
 	IfStatement
 	ElseClause
+
+	// Expressions
+	// -----------
+	LiteralExpression
 
 	/*
 			 * // Members

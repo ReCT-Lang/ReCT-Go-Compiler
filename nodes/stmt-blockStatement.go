@@ -4,7 +4,7 @@ import "ReCT-Go-Compiler/lexer"
 
 // basic global statement member
 type BlockStatementNode struct {
-	MemberNode
+	StatementNode
 
 	OpenBrace  lexer.Token
 	Statments  []StatementNode
@@ -15,6 +15,10 @@ type BlockStatementNode struct {
 func (node *BlockStatementNode) NodeType() NodeType { return BlockStatement }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateBlockStatementNode(stmt StatementNode) BlockStatementNode {
-	return BlockStatementNode{}
+func CreateBlockStatementNode(openBrace lexer.Token, statements []StatementNode, closeBrace lexer.Token) BlockStatementNode {
+	return BlockStatementNode{
+		OpenBrace:  openBrace,
+		Statments:  statements,
+		CloseBrace: closeBrace,
+	}
 }

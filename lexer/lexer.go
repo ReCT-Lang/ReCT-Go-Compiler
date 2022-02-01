@@ -7,6 +7,9 @@ import (
 	"unicode"
 )
 
+// TODO(tokorv): hey gamer, could you add a field to the token struct for "typed value" (you can prob come up with a better name)
+//               its just gonna be the value but already converted into the correct datatype
+
 // lexer : internal struct for Lexical Analysis
 type lexer struct {
 	Code   []byte
