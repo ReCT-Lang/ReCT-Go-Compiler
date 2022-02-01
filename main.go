@@ -11,7 +11,7 @@ func main() {
 	fmt.Println("Testing lexer")
 	tokens := lexer.Lex("tests/test1.rct")
 	for _, token := range tokens {
-		fmt.Println(token.String())
+		fmt.Println(token.String(false))
 	}
 
 	fmt.Println("Testing parser")
