@@ -8,6 +8,10 @@ import (
 )
 
 func main() {
+	//var i = cli.New()
+	//i.Execute([]string{"-s", "tests/test1.rct", "--experimental", "-q"})
+	//return
+
 	print.PrintC(print.Green, "Testing lexer")
 	print.PrintC(print.Green, "-------------\n")
 	tokens := lexer.Lex("tests/test0.8.rct")
