@@ -46,7 +46,7 @@ func (lxr *Lexer) getNumber() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
 
-	for char := lxr.current(); lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(char)); {
+	for char := lxr.Code[lxr.Index]; lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(char)); {
 		buffer += string(char)
 		lxr.Increment()
 	}
@@ -59,7 +59,7 @@ func (lxr *Lexer) getString() {
 	var buffer string
 	lxr.Increment()
 
-	for char := lxr.current(); lxr.Index < len(lxr.Code) && char != '"'; {
+	for char := lxr.Code[lxr.Index]; lxr.Index < len(lxr.Code) && char != '"'; {
 		buffer += string(char)
 		lxr.Increment()
 	}
@@ -87,7 +87,7 @@ func (lxr *Lexer) getId() {
 	IsLetterOrDigitOrWhatever := func(c rune) bool {
 		return unicode.IsLetter(c) || unicode.IsDigit(c) || string(c) == "_" || string(c) == "."
 	}
-	for char := lxr.current(); lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(char)); {
+	for char := lxr.Code[lxr.Index]; lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(char)); {
 		buffer += string(char)
 		lxr.Increment()
 	}
@@ -106,7 +106,7 @@ func (lxr *Lexer) getOperator() {
 		return '\000'
 	}
 
-	switch lxr.current() {
+	switch lxr.Code[lxr.Index] {
 	case '+':
 		_token = PlusToken
 	case '-':
