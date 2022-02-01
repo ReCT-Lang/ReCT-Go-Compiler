@@ -39,13 +39,13 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 	if prs.current().Kind != expected {
 		// cant tell the user which one because theres no way to get a constants name by its value...
 		// so we might need a separate name array for them
-		
+
 		// Switched the TokenKind constants to strings and now added the error message you wanted <3
 		fmt.Printf(
-			"ERROR(%d, %d): Unexpected Token \"%s\"! Expected \"%s\".\n", 
-			prs.current().Line, 
-			prs.current().Column, 
-			prs.current().Kind, 
+			"ERROR(%d, %d): Unexpected Token \"%s\"! Expected \"%s\".\n",
+			prs.current().Line,
+			prs.current().Column,
+			prs.current().Kind,
 			expected,
 		)
 		os.Exit(-1) // die(-1);

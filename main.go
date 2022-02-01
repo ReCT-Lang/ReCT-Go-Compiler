@@ -4,17 +4,18 @@ import (
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/parser"
+	"ReCT-Go-Compiler/print"
 	"fmt"
 )
 
 func main() {
-	fmt.Println("Testing lexer")
+	print.PrintC(print.Yellow, "Testing lexer")
 	tokens := lexer.Lex("tests/test1.rct")
 	for _, token := range tokens {
 		fmt.Println(token.String(false))
 	}
 
-	fmt.Println("Testing parser")
+	print.PrintC(print.Yellow, "Testing parser")
 	members := parser.Parse(tokens)
 	fmt.Println(len(members))
 

@@ -3,22 +3,23 @@ package lexer
 import "fmt"
 
 // TokenKind basically an enum containing all token types.
-// TokenKind has been changed from int to string for better debugging. 
-type TokenKind string 
+// TokenKind has been changed from int to string for better debugging.
+type TokenKind string
+
 const (
 	// Keywords
-	VarKeyword   TokenKind = "var (Keyword)"
-	SetKeyword             = "set (Keyword)"
-	ToKeyword              = "to (Keyword)"
-	IfKeyword              = "if (Keyword)"
-	ElseKeyword            = "else (Keyword)"
-	TrueKeyword            = "true (Keyword)"
-	FalseKeyword           = "false (Keyword)"
-	PrintKeyword           = "Print (Keyword)"
-	FunctionKeyword		   = "function (Keyword)"
-	FromKeyword 		   = "from (Keyword)"
-	ForKeyword 			   = "for (Keyword)"
-	ReturnKeyword = "Return (Keyword)"
+	VarKeyword      TokenKind = "var (Keyword)"
+	SetKeyword                = "set (Keyword)"
+	ToKeyword                 = "to (Keyword)"
+	IfKeyword                 = "if (Keyword)"
+	ElseKeyword               = "else (Keyword)"
+	TrueKeyword               = "true (Keyword)"
+	FalseKeyword              = "false (Keyword)"
+	PrintKeyword              = "Print (Keyword)"
+	FunctionKeyword           = "function (Keyword)"
+	FromKeyword               = "from (Keyword)"
+	ForKeyword                = "for (Keyword)"
+	ReturnKeyword             = "Return (Keyword)"
 
 	// Tokens
 	EOF                   = "EndOfFile"
@@ -36,7 +37,7 @@ const (
 	CloseParenthesisToken = "CloseParenthesis"
 	AssignToken           = "<- (AssignToken)"
 	GreaterThanToken      = "> (GreaterThanToken)"
-	LessThanToken         = "< (LessthanToken" 
+	LessThanToken         = "< (LessthanToken"
 
 	BadToken = "Token Error (BadToken)" // Naughty ;)
 
@@ -47,8 +48,8 @@ const (
 type Token struct {
 	Value  string
 	Kind   TokenKind
-	Line   int 
-	Column int 
+	Line   int
+	Column int
 }
 
 // CreateToken returns a Token created from the arguments provided

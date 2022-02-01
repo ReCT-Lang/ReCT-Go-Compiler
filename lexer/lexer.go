@@ -10,28 +10,29 @@ import (
 // TODO(tokorv): hey gamer, could you add a field to the token struct for "typed value" (you can prob come up with a better name)
 //               its just gonna be the value but already converted into the correct datatype
 
-
 // lexer : internal struct for Lexical Analysis
 type Lexer struct {
 	Code   []byte
-	Line   int 
-	Column int 
+	Line   int
+	Column int
 	Index  int
 	Tokens []Token
 }
 
-// Lex 
+// Lex
 func Lex(filename string) []Token {
-	scanner := &Lexer{ handleFileOpen(filename), 1, 1, 0, make([]Token, 0) }
+	scanner := &Lexer{handleFileOpen(filename), 1, 1, 0, make([]Token, 0)}
 
-	for c := scanner.Code[scanner.Index]; scanner.Index < len(scanner.Code); {
+	for scanner.Index < len(scanner.Code) {
+		c := scanner.Code[scanner.Index]
+
 		if unicode.IsLetter(rune(c)) {
 			scanner.getId()
 		} else if unicode.IsNumber(rune(c)) {
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
-		} else if c != ' ' || c != '\n' || c != '\t' || c != '\v' {
+		} else if c != ' ' && c != '\n' && c != '\t' && c != '\v' {
 			scanner.getOperator()
 		} else {
 			scanner.Increment()
@@ -41,13 +42,13 @@ func Lex(filename string) []Token {
 	return scanner.Tokens
 }
 
-// getNumber 
+// getNumber
 func (lxr *Lexer) getNumber() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
 
-	for char := lxr.Code[lxr.Index]; lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(char)); {
-		buffer += string(char)
+	for lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(lxr.Code[lxr.Index])) {
+		buffer += string(lxr.Code[lxr.Index])
 		lxr.Increment()
 	}
 
@@ -59,8 +60,8 @@ func (lxr *Lexer) getString() {
 	var buffer string
 	lxr.Increment()
 
-	for char := lxr.Code[lxr.Index]; lxr.Index < len(lxr.Code) && char != '"'; {
-		buffer += string(char)
+	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '"' {
+		buffer += string(lxr.Code[lxr.Index])
 		lxr.Increment()
 	}
 	lxr.Increment()
@@ -71,7 +72,8 @@ func (lxr *Lexer) getString() {
 func (lxr *Lexer) Increment() {
 	lxr.Index++
 	lxr.Column++
-	if lxr.Index < len(lxr.Code) {
+
+	if lxr.Index >= len(lxr.Code) {
 		return
 	} else if lxr.Code[lxr.Index] == '\n' {
 		lxr.Line++
@@ -87,21 +89,22 @@ func (lxr *Lexer) getId() {
 	IsLetterOrDigitOrWhatever := func(c rune) bool {
 		return unicode.IsLetter(c) || unicode.IsDigit(c) || string(c) == "_" || string(c) == "."
 	}
-	for char := lxr.Code[lxr.Index]; lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(char)); {
-		buffer += string(char)
+
+	for lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(lxr.Code[lxr.Index])) {
+		buffer += string(lxr.Code[lxr.Index])
 		lxr.Increment()
 	}
 
 	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, CheckIfKeyword(buffer), lxr.Line, lxr.Column))
 }
 
-// getOperator 
+// getOperator
 func (lxr *Lexer) getOperator() {
 	var _token TokenKind
 
 	peek := func(offset int) byte {
 		if lxr.Index+offset < len(lxr.Code) {
-			return lxr.Code[lxr.Index]
+			return lxr.Code[lxr.Index+offset]
 		}
 		return '\000'
 	}
@@ -138,10 +141,10 @@ func (lxr *Lexer) getOperator() {
 		_token = GreaterThanToken
 	default:
 		fmt.Printf(
-			"ERROR(%d, %d): Unexpected character \"%s\"!\n", 
-			lxr.Line, 
-			lxr.Column, 
-			string(lxr.Code[lxr.Index])
+			"ERROR(%d, %d): Unexpected character \"%s\"!\n",
+			lxr.Line,
+			lxr.Column,
+			string(lxr.Code[lxr.Index]),
 		)
 		_token = BadToken
 	}
@@ -149,29 +152,29 @@ func (lxr *Lexer) getOperator() {
 	// (that is why they are separated).
 	if _token == AssignToken {
 		lxr.Tokens = append(
-			lxr.Tokens, 
+			lxr.Tokens,
 			CreateToken(
-				string(peek(-1))+string(lxr.Code[lxr.Index]), 
-				_token, 
-				lxr.Line, 
+				string(peek(-1))+string(lxr.Code[lxr.Index]),
+				_token,
+				lxr.Line,
 				lxr.Column,
-				),
-			)
+			),
+		)
 	} else {
 		lxr.Tokens = append(
-			lxr.Tokens, 
+			lxr.Tokens,
 			CreateToken(
-				string(lxr.Code[lxr.Index]), 
-				_token, 
-				lxr.Line, 
+				string(lxr.Code[lxr.Index]),
+				_token,
+				lxr.Line,
 				lxr.Column,
-				),
-			)
+			),
+		)
 	}
 	lxr.Increment()
 }
 
-// handleFileOpen 
+// handleFileOpen
 func handleFileOpen(filename string) []byte {
 	contents, err := os.ReadFile(filename)
 	if errors.Is(err, os.ErrNotExist) {
@@ -190,18 +193,30 @@ func handleFileOpen(filename string) []byte {
 // CheckIfKeyword forgot about this till I started reading the parser code lol
 func CheckIfKeyword(buffer string) TokenKind {
 	switch buffer {
-	case "var": return VarKeyword
-	case "set": return SetKeyword
-	case "to": return ToKeyword
-	case "if": return IfKeyword
-	case "else": return ElseKeyword
-	case "true": return TrueKeyword
-	case "false": return FalseKeyword
-	case "Print": return PrintKeyword
-	case "function": return FunctionKeyword
-	case "from": return FromKeyword
-	case "for": return ForKeyword
-	case "return": return ReturnKeyword
+	case "var":
+		return VarKeyword
+	case "set":
+		return SetKeyword
+	case "to":
+		return ToKeyword
+	case "if":
+		return IfKeyword
+	case "else":
+		return ElseKeyword
+	case "true":
+		return TrueKeyword
+	case "false":
+		return FalseKeyword
+	case "Print":
+		return PrintKeyword
+	case "function":
+		return FunctionKeyword
+	case "from":
+		return FromKeyword
+	case "for":
+		return ForKeyword
+	case "return":
+		return ReturnKeyword
 	default:
 		return IdToken
 	}
