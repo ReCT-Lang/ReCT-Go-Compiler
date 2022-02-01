@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"unicode"
 )
 
-// TODO(tokorv): hey gamer, could you add a field to the token struct for "typed value" (you can prob come up with a better name)
-//               its just gonna be the value but already converted into the correct datatype
-
-// lexer : internal struct for Lexical Analysis
+// Lexer : internal struct for Lexical Analysis
 type Lexer struct {
 	Code   []byte
 	Line   int
@@ -52,7 +50,11 @@ func (lxr *Lexer) getNumber() {
 		lxr.Increment()
 	}
 
-	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, NumberToken, lxr.Line, lxr.Column))
+	realValueBuffer, err := strconv.Atoi(buffer)
+	if err != nil {
+		fmt.Printf("ERROR: value \"%s\" could not be converted to real value (NumberToken)!", buffer)
+	}
+	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.Line, lxr.Column))
 }
 
 // getString

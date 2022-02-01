@@ -38,7 +38,7 @@ const (
 	CloseParenthesisToken TokenKind = "CloseParenthesis"
 	AssignToken           TokenKind = "<- (AssignToken)"
 	GreaterThanToken      TokenKind = "> (GreaterThanToken)"
-	LessThanToken         TokenKind = "< (LessthanToken"
+	LessThanToken         TokenKind = "< (LessthanToken)"
 
 	BadToken = "Token Error (BadToken)" // Naughty ;)
 
@@ -47,23 +47,34 @@ const (
 
 // Token stores information about lexical structures in the text
 type Token struct {
-	Value  string
-	Kind   TokenKind
-	Line   int
-	Column int
+	Value     string
+	RealValue interface{}
+	Kind      TokenKind
+	Line      int
+	Column    int
 }
 
 // CreateToken returns a Token created from the arguments provided
 func CreateToken(value string, kind TokenKind, line int, column int) Token {
 	return Token{
-		value, kind, line, column,
+		value, nil, kind, line, column,
+	}
+}
+
+// CreateTokenReal the majority of the code base uses CreateToken, however, the Token struct has
+// a "RealValue" which should store the true value of a Token. For example, NumberToken (TokenKind) created using
+// CreateToken will only store its string value and not its real number value. CreateTokenReal will store the
+// converted type (so NumberToken actually stores a number).
+func CreateTokenReal(buffer string, real interface{}, kind TokenKind, line, column int) Token {
+	return Token{
+		buffer, real, kind, line, column,
 	}
 }
 
 // String easy representation of a Token
 func (t Token) String(pretty bool) string {
 	if !pretty {
-		return fmt.Sprintf("Token { value: %s, kind: %d, position: (%d, %d)}", t.Value, t.Kind, t.Line, t.Column)
+		return fmt.Sprintf("Token { value: %s, kind: %s, position: (%d, %d), real: %v}", t.Value, t.Kind, t.Line, t.Column, t.RealValue)
 	} else {
 		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %d, \n\tposition: (%d, %d)\n}", t.Value, t.Kind, t.Line, t.Column)
 	}
