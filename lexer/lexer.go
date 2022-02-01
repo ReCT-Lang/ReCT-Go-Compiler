@@ -37,7 +37,7 @@ func Lex(filename string) []Token {
 			scanner.Increment()
 		}
 	}
-	scanner.Tokens = append(scanner.Tokens, CreateToken("\000", EOF, lxr.Line, lxr.Column))
+	scanner.Tokens = append(scanner.Tokens, CreateToken("\000", EOF, scanner.Line, scanner.Column))
 	return scanner.Tokens
 }
 
@@ -93,7 +93,7 @@ func (lxr *Lexer) getId() {
 		lxr.Increment()
 	}
 
-	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, IdToken, lxr.Line, lxr.Column))
+	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, CheckIfKeyword(buffer), lxr.Line, lxr.Column))
 }
 
 // getOperator 
@@ -175,4 +175,19 @@ func handleFileOpen(filename string) []byte {
 		os.Exit(1)
 	}
 	return contents
+}
+
+// CheckIfKeyword forgot about this till I started reading the parser code lol
+func CheckIfKeyword(buffer string) TokenKind {
+	switch buffer {
+		case "var": return VarKeyword
+		case "set": return SetKeyword
+		case "to": return ToKeyword
+		case "if": return IfKeyword
+		case "else": return ElseKeyword
+		case "true": return TrueKeyword
+		case "false": return FalseKeyword
+	default:
+		return IdToken
+	}
 }
