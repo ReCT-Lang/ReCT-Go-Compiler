@@ -18,6 +18,7 @@ const (
 	FunctionKeyword		   = "function (Keyword)"
 	FromKeyword 		   = "from (Keyword)"
 	ForKeyword 			   = "for (Keyword)"
+	ReturnKeyword = "Return (Keyword)"
 
 	// Tokens
 	EOF                   = "EndOfFile"
@@ -37,7 +38,7 @@ const (
 	GreaterThanToken      = "> (GreaterThanToken)"
 	LessThanToken         = "< (LessthanToken" 
 
-	BadToken = -1 // Naughty ;)
+	BadToken = "Token Error (BadToken)" // Naughty ;)
 
 	Semicolon = "Semicolon ;" // Used to separate statements (for now... )
 )
