@@ -137,25 +137,36 @@ func (lxr *Lexer) getOperator() {
 	case '>':
 		_token = GreaterThanToken
 	default:
-		fmt.Printf("ERROR(%d, %d): Unexpected character \"%s\"!\n", lxr.Line, lxr.Column, string(lxr.Code[lxr.Index]))
+		fmt.Printf(
+			"ERROR(%d, %d): Unexpected character \"%s\"!\n", 
+			lxr.Line, 
+			lxr.Column, 
+			string(lxr.Code[lxr.Index])
+		)
 		_token = BadToken
 	}
 	// AssignToken is 2 characters long while every other operator is 1 character.
 	// (that is why they are separated).
 	if _token == AssignToken {
-		lxr.Tokens = append(lxr.Tokens, 
-			CreateToken(string(peek(-1))+string(lxr.Code[lxr.Index]), 
-			_token, 
-			lxr.Line, 
-			lxr.Column,
-			))
+		lxr.Tokens = append(
+			lxr.Tokens, 
+			CreateToken(
+				string(peek(-1))+string(lxr.Code[lxr.Index]), 
+				_token, 
+				lxr.Line, 
+				lxr.Column,
+				),
+			)
 	} else {
-		lxr.Tokens = append(lxr.Tokens, CreateToken(
-			string(lxr.Code[lxr.Index]), 
-			_token, 
-			lxr.Line, 
-			lxr.Column,
-			))
+		lxr.Tokens = append(
+			lxr.Tokens, 
+			CreateToken(
+				string(lxr.Code[lxr.Index]), 
+				_token, 
+				lxr.Line, 
+				lxr.Column,
+				),
+			)
 	}
 	lxr.Increment()
 }
@@ -179,13 +190,18 @@ func handleFileOpen(filename string) []byte {
 // CheckIfKeyword forgot about this till I started reading the parser code lol
 func CheckIfKeyword(buffer string) TokenKind {
 	switch buffer {
-		case "var": return VarKeyword
-		case "set": return SetKeyword
-		case "to": return ToKeyword
-		case "if": return IfKeyword
-		case "else": return ElseKeyword
-		case "true": return TrueKeyword
-		case "false": return FalseKeyword
+	case "var": return VarKeyword
+	case "set": return SetKeyword
+	case "to": return ToKeyword
+	case "if": return IfKeyword
+	case "else": return ElseKeyword
+	case "true": return TrueKeyword
+	case "false": return FalseKeyword
+	case "Print": return PrintKeyword
+	case "function": return FunctionKeyword
+	case "from": return FromKeyword
+	case "for": return ForKeyword
+	case "return": return ReturnKeyword
 	default:
 		return IdToken
 	}
