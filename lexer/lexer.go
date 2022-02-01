@@ -73,7 +73,7 @@ func (lxr *lexer) getId() {
 	lxr.Index++
 
 	IsLetterOrDigitOrWhatever := func(c rune) bool {
-		return unicode.IsLetter(c) || unicode.IsDigit(c) || string(c) == "_"
+		return unicode.IsLetter(c) || unicode.IsDigit(c) || string(c) == "_" || string(c) == "."
 	}
 	for lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(lxr.Code[lxr.Index])) {
 		buffer += string(lxr.Code[lxr.Index])
