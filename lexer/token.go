@@ -2,40 +2,44 @@ package lexer
 
 import "fmt"
 
-// TokenKind basically an enum containing all token types
-type TokenKind int // Change these to strings for better debugging
+// TokenKind basically an enum containing all token types.
+// TokenKind has been changed from int to string for better debugging. 
+type TokenKind string 
 const (
 	// Keywords
-	VarKeyword   TokenKind = 0
-	SetKeyword             = 1
-	ToKeyword              = 2
-	IfKeyword              = 3
-	ElseKeyword            = 4
-	TrueKeyword            = 5
-	FalseKeyword           = 6
-	PrintKeyword           = 7
+	VarKeyword   TokenKind = "var (Keyword)"
+	SetKeyword             = "set (Keyword)"
+	ToKeyword              = "to (Keyword)"
+	IfKeyword              = "if (Keyword)"
+	ElseKeyword            = "else (Keyword)"
+	TrueKeyword            = "true (Keyword)"
+	FalseKeyword           = "false (Keyword)"
+	PrintKeyword           = "Print (Keyword)"
+	FunctionKeyword		   = "function (Keyword)"
+	FromKeyword 		   = "from (Keyword)"
+	ForKeyword 			   = "for (Keyword)"
 
 	// Tokens
-	EOF                   = 8
-	IdToken               = 9
-	StringToken           = 10
-	NumberToken           = 11
-	PlusToken             = 12
-	MinusToken            = 13
-	StarToken             = 14
-	SlashToken            = 15
-	EqualsToken           = 16
-	OpenBraceToken        = 17
-	CloseBraceToken       = 18
-	OpenParenthesisToken  = 19
-	CloseParenthesisToken = 20
-	AssignToken           = 21
-	GreaterThanToken      = 22
-	LessThanToken         = 23
+	EOF                   = "EndOfFile"
+	IdToken               = "Identifier"
+	StringToken           = "String"
+	NumberToken           = "Number"
+	PlusToken             = "Plus(+)"
+	MinusToken            = "Minus(-)"
+	StarToken             = "Star(*)"
+	SlashToken            = "Slash(/)"
+	EqualsToken           = "Equals(=)"
+	OpenBraceToken        = "OpenBrace"
+	CloseBraceToken       = "Closebrace"
+	OpenParenthesisToken  = "OpenParenthesis"
+	CloseParenthesisToken = "CloseParenthesis"
+	AssignToken           = "<- (AssignToken)"
+	GreaterThanToken      = "> (GreaterThanToken)"
+	LessThanToken         = "< (LessthanToken" 
 
 	BadToken = -1 // Naughty ;)
 
-	Semicolon = 24 // Used to separate statements (for now... )
+	Semicolon = "Semicolon ;" // Used to separate statements (for now... )
 )
 
 // Token stores information about lexical structures in the text
