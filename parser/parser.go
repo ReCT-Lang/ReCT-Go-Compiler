@@ -99,7 +99,7 @@ func (prs *Parser) parseMember() nodes.MemberNode {
 func (prs *Parser) parseGlobalStatement() nodes.MemberNode {
 	statement := prs.parseStatement()
 	// return nodes.CreateGlobalStatementMember(statement) // this doesnt work, not entirely sure what i did wrong but ill figure it out later
-	return &nodes.GlobalStatementMember{
+	return nodes.GlobalStatementMember{
 		Statement: statement,
 	}
 }
@@ -107,21 +107,29 @@ func (prs *Parser) parseGlobalStatement() nodes.MemberNode {
 // <STATEMENTS> ---------------------------------------------------------------
 
 func (prs *Parser) parseStatement() nodes.StatementNode {
+	var statement nodes.StatementNode = nil
+
 	// select correct parsing function based on kind
-	switch prs.current().Kind {
-	case lexer.OpenBraceToken:
-		return prs.parseBlockStatement()
-	case lexer.VarKeyword:
-	case lexer.SetKeyword:
-		return prs.parseVariableDeclaration()
-	case lexer.IfKeyword:
-		return prs.parseIfStatement()
+	cur := prs.current().Kind
+	if cur == lexer.OpenBraceToken {
+		statement = prs.parseBlockStatement()
+
+	} else if cur == lexer.VarKeyword || cur == lexer.SetKeyword {
+		statement = prs.parseVariableDeclaration()
+
+	} else if cur == lexer.IfKeyword {
+		statement = prs.parseIfStatement()
 	}
 
-	return nil //prs.parseExpressionStatement()
+	// if theres a semicolon -> a b s o r b    i t
+	if prs.current().Kind == lexer.Semicolon {
+		prs.consume(lexer.Semicolon)
+	}
+
+	return statement //prs.parseExpressionStatement() (doesnt exist yet)
 }
 
-func (prs *Parser) parseBlockStatement() *nodes.BlockStatementNode {
+func (prs *Parser) parseBlockStatement() nodes.BlockStatementNode {
 	// create a list for our statement
 	statements := make([]nodes.StatementNode, 0)
 
@@ -145,14 +153,11 @@ func (prs *Parser) parseBlockStatement() *nodes.BlockStatementNode {
 	// }
 	closeBrace := prs.consume(lexer.CloseBraceToken)
 
-	return &nodes.BlockStatementNode{
-		OpenBrace:  openBrace,
-		Statments:  statements,
-		CloseBrace: closeBrace,
-	}
+	return nodes.CreateBlockStatementNode(openBrace, statements, closeBrace)
 }
 
-func (prs *Parser) parseVariableDeclaration() *nodes.VariableDeclarationStatementNode {
+func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatementNode {
+
 	// figure out if we need to consume "set" or "var"
 	expecting := lexer.VarKeyword
 	if prs.current().Kind == lexer.SetKeyword {
@@ -167,26 +172,20 @@ func (prs *Parser) parseVariableDeclaration() *nodes.VariableDeclarationStatemen
 	assign := prs.consume(lexer.AssignToken)
 	initializer := prs.parseExpression()
 
-	return &nodes.VariableDeclarationStatementNode{
-		Keyword:     keyword,
-		Identifier:  identifier,
-		AssignToken: assign,
-		Initializer: initializer,
-	}
+	return nodes.CreateVariableDeclarationStatementNode(keyword, identifier, assign, initializer)
 }
 
-func (prs *Parser) parseIfStatement() *nodes.IfStatementNode {
+func (prs *Parser) parseIfStatement() nodes.IfStatementNode {
 	keyword := prs.consume(lexer.IfKeyword)
+
+	prs.consume(lexer.OpenParenthesisToken)
 	condition := prs.parseExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+
 	statement := prs.parseStatement()
 	elseClause := prs.parseElseClause()
 
-	return &nodes.IfStatementNode{
-		IfKeyword:     keyword,
-		Condition:     condition,
-		ThenStatement: statement,
-		ElseClause:    elseClause,
-	}
+	return nodes.CreateIfStatementNode(keyword, condition, statement, elseClause)
 }
 
 func (prs *Parser) parseElseClause() nodes.ElseClauseNode {
@@ -198,10 +197,7 @@ func (prs *Parser) parseElseClause() nodes.ElseClauseNode {
 	keyword := prs.consume(lexer.ElseKeyword)
 	statement := prs.parseStatement()
 
-	return nodes.ElseClauseNode{
-		ElseKeyword:   keyword,
-		ElseStatement: statement,
-	}
+	return nodes.CreateElseClauseNode(keyword, statement)
 }
 
 // </STATEMENTS> --------------------------------------------------------------
@@ -210,30 +206,36 @@ func (prs *Parser) parseElseClause() nodes.ElseClauseNode {
 func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// we only have literals atm
 
-	switch prs.current().Kind {
-	case lexer.StringToken:
+	cur := prs.current().Kind
+	if cur == lexer.StringToken {
 		return prs.parseStringLiteral()
-	case lexer.NumberToken:
+	} else if cur == lexer.NumberToken {
 		return prs.parseNumberLiteral()
+	} else if cur == lexer.TrueKeyword || cur == lexer.FalseKeyword {
+		return prs.parseBoolLiteral()
 	}
 
 	return nil
 }
 
-func (prs *Parser) parseStringLiteral() *nodes.LiteralExpressionNode {
+func (prs *Parser) parseStringLiteral() nodes.LiteralExpressionNode {
 	str := prs.consume(lexer.StringToken)
-	return &nodes.LiteralExpressionNode{
-		LiteralToken: str,
-		LiteralValue: str.Value,
-	}
+	return nodes.CreateLiteralExpressionNode(str)
 }
 
-func (prs *Parser) parseNumberLiteral() *nodes.LiteralExpressionNode {
+func (prs *Parser) parseNumberLiteral() nodes.LiteralExpressionNode {
 	num := prs.consume(lexer.NumberToken)
-	return &nodes.LiteralExpressionNode{
-		LiteralToken: num,
-		LiteralValue: num.Value,
+	return nodes.CreateLiteralExpressionNode(num)
+}
+
+func (prs *Parser) parseBoolLiteral() nodes.LiteralExpressionNode {
+	expecting := lexer.TrueKeyword
+	if prs.current().Kind == lexer.FalseKeyword {
+		expecting = lexer.FalseKeyword
 	}
+
+	_bool := prs.consume(expecting)
+	return nodes.CreateLiteralExpressionNode(_bool)
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------

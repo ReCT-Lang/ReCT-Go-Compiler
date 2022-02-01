@@ -1,6 +1,10 @@
 package nodes
 
-import "ReCT-Go-Compiler/lexer"
+import (
+	"ReCT-Go-Compiler/lexer"
+	"ReCT-Go-Compiler/print"
+	"fmt"
+)
 
 // basic global statement member
 type LiteralExpressionNode struct {
@@ -11,7 +15,13 @@ type LiteralExpressionNode struct {
 }
 
 // implement node type from interface
-func (node *LiteralExpressionNode) NodeType() NodeType { return LiteralExpression }
+func (node LiteralExpressionNode) NodeType() NodeType { return LiteralExpression }
+
+// node print function
+func (node LiteralExpressionNode) Print(indent string) {
+	print.PrintC(print.Yellow, indent+"└ LiteralExpressionNode")
+	fmt.Printf("%s  └ Value: %s\n", indent, node.LiteralToken.Value)
+}
 
 // "constructor" / ooga booga OOP cave man brain
 func CreateLiteralExpressionNode(tok lexer.Token) LiteralExpressionNode {

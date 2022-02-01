@@ -1,0 +1,11 @@
+var name <- "Jerry";
+set age <- 11409830;
+var alive <- true;
+
+if(true)
+	var test <- "";
+
+if (false)
+	var test <- "";
+else 
+	var test <- "";

@@ -3,6 +3,7 @@ package nodes
 // very cool interface for creating syntax nodes
 type SyntaxNode interface {
 	NodeType() NodeType
+	Print(indent string)
 	// only type atm, might contain more stuff like text-location later
 }
 
