@@ -107,6 +107,9 @@ func (prs *Parser) parseGlobalStatement() nodes.MemberNode {
 // <STATEMENTS> ---------------------------------------------------------------
 
 func (prs *Parser) parseStatement() nodes.StatementNode {
+	// Oh, btw if you spend like 15+ minutes looking for a segmenation violation
+	// to do with GlobalStatementMember.Print it's probably because you forgot
+	// to add the statement in parseStatement() before testing it (love from idiot Tokorv)
 	var statement nodes.StatementNode = nil
 
 	// select correct parsing function based on kind
@@ -119,6 +122,9 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 
 	} else if cur == lexer.IfKeyword {
 		statement = prs.parseIfStatement()
+
+	} else if cur == lexer.ReturnKeyword { // I know this would never happen (Just testing)
+		statement = prs.parseReturnStatement()
 	}
 
 	// if theres a semicolon -> a b s o r b    i t
@@ -158,13 +164,18 @@ func (prs *Parser) parseBlockStatement() nodes.BlockStatementNode {
 
 func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatementNode {
 
-	// figure out if we need to consume "set" or "var"
-	expecting := lexer.VarKeyword
-	if prs.current().Kind == lexer.SetKeyword {
-		expecting = lexer.SetKeyword
-	}
+	// We already check for var/set in parseStatement(), this code just repeats the process.
+	// Replaced expecting with prs.current().kind when defining keyword - Tokorv
 
-	keyword := prs.consume(expecting)
+	// figure out if we need to consume "set" or "var"
+	/*
+		expecting := lexer.VarKeyword
+		if prs.current().Kind == lexer.SetKeyword {
+			expecting = lexer.SetKeyword
+		}
+	*/
+
+	keyword := prs.consume(prs.current().Kind) // Replaced expecting
 	identifier := prs.consume(lexer.IdToken)
 
 	// no explicit type clause, im tired lol
@@ -198,6 +209,13 @@ func (prs *Parser) parseElseClause() nodes.ElseClauseNode {
 	statement := prs.parseStatement()
 
 	return nodes.CreateElseClauseNode(keyword, statement)
+}
+
+func (prs *Parser) parseReturnStatement() nodes.ReturnStatementNode {
+	keyword := prs.consume(lexer.ReturnKeyword)
+	expression := prs.parseExpression()
+
+	return nodes.CreateReturnStatementNode(keyword, expression)
 }
 
 // </STATEMENTS> --------------------------------------------------------------
