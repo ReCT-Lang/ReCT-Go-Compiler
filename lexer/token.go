@@ -55,7 +55,7 @@ func CreateToken(value string, kind TokenKind, line int, column int) Token {
 
 // String easy representation of a Token
 func (t Token) String(pretty bool) string {
-	if !pretty) {
+	if !pretty {
 		return fmt.Sprintf("Token { value: %s, kind: %d, position: (%d, %d)}", t.Value, t.Kind, t.Line, t.Column)
 	} else {
 		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %d, \n\tposition: (%d, %d)\n}", t.Value, t.Kind, t.Line, t.Column)

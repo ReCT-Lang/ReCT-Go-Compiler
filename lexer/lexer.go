@@ -43,11 +43,10 @@ func Lex(filename string) []Token {
 
 // getNumber 
 func (lxr *Lexer) getNumber() {
-	var buffer string
-	buffer = string(lxr.Code[lxr.Index])
+	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
 
-	for char := lxr.current(); lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(char)) {
+	for char := lxr.current(); lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(char)); {
 		buffer += string(char)
 		lxr.Increment()
 	}
@@ -138,7 +137,7 @@ func (lxr *Lexer) getOperator() {
 	case '>':
 		_token = GreaterThanToken
 	default:
-		fmt.Printf("ERROR(%d, %d): Unexpected character \"%s\"!\n", lxr.Line, lxr.Column, string(lxr.Code[lxr.Index])))
+		fmt.Printf("ERROR(%d, %d): Unexpected character \"%s\"!\n", lxr.Line, lxr.Column, string(lxr.Code[lxr.Index]))
 		_token = BadToken
 	}
 	// AssignToken is 2 characters long while every other operator is 1 character.
