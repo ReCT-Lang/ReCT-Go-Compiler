@@ -11,7 +11,7 @@ import (
 //               its just gonna be the value but already converted into the correct datatype
 
 // lexer : internal struct for Lexical Analysis
-type lexer struct {
+type Lexer struct {
 	Code   []byte
 	Line   int // Not implemented yet
 	Column int // Not implemented yet
@@ -20,7 +20,7 @@ type lexer struct {
 }
 
 func Lex(filename string) []Token {
-	scanner := &lexer{
+	scanner := &Lexer{
 		handleFileOpen(filename),
 		0,
 		0,
@@ -45,7 +45,7 @@ func Lex(filename string) []Token {
 	return scanner.Tokens
 }
 
-func (lxr *lexer) getNumber() {
+func (lxr *Lexer) getNumber() {
 	var buffer string
 	buffer = string(lxr.Code[lxr.Index])
 	lxr.Index++
@@ -58,7 +58,7 @@ func (lxr *lexer) getNumber() {
 	lxr.Tokens = append(lxr.Tokens, Token{buffer, NumberToken, lxr.Line, lxr.Column})
 }
 
-func (lxr *lexer) getString() {
+func (lxr *Lexer) getString() {
 	var buffer string
 	lxr.Index++
 
@@ -70,7 +70,7 @@ func (lxr *lexer) getString() {
 	lxr.Tokens = append(lxr.Tokens, Token{buffer, StringToken, lxr.Line, lxr.Column})
 }
 
-func (lxr *lexer) getId() {
+func (lxr *Lexer) getId() {
 	var buffer string
 	buffer = string(lxr.Code[lxr.Index])
 	lxr.Index++
@@ -86,7 +86,7 @@ func (lxr *lexer) getId() {
 	lxr.Tokens = append(lxr.Tokens, Token{buffer, IdToken, lxr.Line, lxr.Column})
 }
 
-func (lxr *lexer) getOperator() {
+func (lxr *Lexer) getOperator() {
 	var _token TokenKind
 	peek := func(offset int) byte {
 		if lxr.Index+offset < len(lxr.Code) {

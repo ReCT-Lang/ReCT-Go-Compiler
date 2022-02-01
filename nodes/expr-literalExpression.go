@@ -4,7 +4,7 @@ import "ReCT-Go-Compiler/lexer"
 
 // basic global statement member
 type LiteralExpressionNode struct {
-	StatementNode
+	ExpressionNode
 
 	LiteralToken lexer.Token
 	LiteralValue interface{}
