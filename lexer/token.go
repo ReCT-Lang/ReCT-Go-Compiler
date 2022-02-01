@@ -2,9 +2,8 @@ package lexer
 
 import "fmt"
 
-// TokenKind : Basically an enum
-type TokenKind int
-
+// TokenKind basically an enum containing all token types
+type TokenKind int // Change these to strings for better debugging
 const (
 	// Keywords
 	VarKeyword   TokenKind = 0
@@ -36,22 +35,29 @@ const (
 
 	BadToken = -1 // Naughty ;)
 
-	Semicolon = 24 // Used to separate statements
+	Semicolon = 24 // Used to separate statements (for now... )
 )
 
+// Token stores information about lexical structures in the text
 type Token struct {
 	Value  string
 	Kind   TokenKind
-	Line   int // Not implemented yet (see lexer)
-	Column int // Not implemented yet (see lexer)
+	Line   int 
+	Column int 
 }
 
+// CreateToken returns a Token created from the arguments provided
 func CreateToken(value string, kind TokenKind, line int, column int) Token {
 	return Token{
 		value, kind, line, column,
 	}
 }
 
-func (t Token) String() string {
-	return fmt.Sprintf("Token { value: %s, kind: %d }", t.Value, t.Kind)
+// String easy representation of a Token
+func (t Token) String(pretty bool) string {
+	if !pretty) {
+		return fmt.Sprintf("Token { value: %s, kind: %d, position: (%d, %d)}", t.Value, t.Kind, t.Line, t.Column)
+	} else {
+		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %d, \n\tposition: (%d, %d)\n}", t.Value, t.Kind, t.Line, t.Column)
+	}
 }

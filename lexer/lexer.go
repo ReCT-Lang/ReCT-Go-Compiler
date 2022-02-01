@@ -10,91 +10,104 @@ import (
 // TODO(tokorv): hey gamer, could you add a field to the token struct for "typed value" (you can prob come up with a better name)
 //               its just gonna be the value but already converted into the correct datatype
 
+
 // lexer : internal struct for Lexical Analysis
 type Lexer struct {
 	Code   []byte
-	Line   int // Not implemented yet
-	Column int // Not implemented yet
+	Line   int 
+	Column int 
 	Index  int
 	Tokens []Token
 }
 
+// Lex 
 func Lex(filename string) []Token {
-	scanner := &Lexer{
-		handleFileOpen(filename),
-		0,
-		0,
-		0,
-		make([]Token, 0),
-	}
+	scanner := &Lexer{ handleFileOpen(filename), 1, 1, 0, make([]Token, 0) }
 
-	for scanner.Index < len(scanner.Code) {
-		c := scanner.Code[scanner.Index]
+	for c := scanner.Code[scanner.Index]; scanner.Index < len(scanner.Code); {
 		if unicode.IsLetter(rune(c)) {
 			scanner.getId()
 		} else if unicode.IsNumber(rune(c)) {
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
-		} else if c == ' ' || c == '\n' || c == '\t' || c == '\v' {
-			scanner.Index++
-		} else {
+		} else if c != ' ' || c != '\n' || c != '\t' || c != '\v' {
 			scanner.getOperator()
+		} else {
+			scanner.Increment()
 		}
 	}
+	scanner.Tokens = append(scanner.Tokens, CreateToken("\000", EOF, lxr.Line, lxr.Column))
 	return scanner.Tokens
 }
 
+// getNumber 
 func (lxr *Lexer) getNumber() {
 	var buffer string
 	buffer = string(lxr.Code[lxr.Index])
-	lxr.Index++
+	lxr.Increment()
 
-	for lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(lxr.Code[lxr.Index])) {
-		buffer += string(lxr.Code[lxr.Index])
-		lxr.Index++
+	for char := lxr.current(); lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(char)) {
+		buffer += string(char)
+		lxr.Increment()
 	}
 
-	lxr.Tokens = append(lxr.Tokens, Token{buffer, NumberToken, lxr.Line, lxr.Column})
+	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, NumberToken, lxr.Line, lxr.Column))
 }
 
+// getString
 func (lxr *Lexer) getString() {
 	var buffer string
-	lxr.Index++
+	lxr.Increment()
 
-	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '"' {
-		buffer += string(lxr.Code[lxr.Index])
-		lxr.Index++
+	for char := lxr.current(); lxr.Index < len(lxr.Code) && char != '"'; {
+		buffer += string(char)
+		lxr.Increment()
 	}
-	lxr.Index++ // Can't believe I forgot this aaaaaaa
-	lxr.Tokens = append(lxr.Tokens, Token{buffer, StringToken, lxr.Line, lxr.Column})
+	lxr.Increment()
+	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, StringToken, lxr.Line, lxr.Column))
 }
 
-func (lxr *Lexer) getId() {
-	var buffer string
-	buffer = string(lxr.Code[lxr.Index])
+// Increment increases the scanner's Index, Column, and Lin (if needed).
+func (lxr *Lexer) Increment() {
 	lxr.Index++
+	lxr.Column++
+	if lxr.Index < len(lxr.Code) {
+		return
+	} else if lxr.Code[lxr.Index] == '\n' {
+		lxr.Line++
+		lxr.Column = 1
+	}
+}
+
+// getId
+func (lxr *Lexer) getId() {
+	buffer := string(lxr.Code[lxr.Index])
+	lxr.Increment()
 
 	IsLetterOrDigitOrWhatever := func(c rune) bool {
 		return unicode.IsLetter(c) || unicode.IsDigit(c) || string(c) == "_" || string(c) == "."
 	}
-	for lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(lxr.Code[lxr.Index])) {
-		buffer += string(lxr.Code[lxr.Index])
-		lxr.Index++
+	for char := lxr.current(); lxr.Index < len(lxr.Code) && IsLetterOrDigitOrWhatever(rune(char)); {
+		buffer += string(char)
+		lxr.Increment()
 	}
 
-	lxr.Tokens = append(lxr.Tokens, Token{buffer, IdToken, lxr.Line, lxr.Column})
+	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, IdToken, lxr.Line, lxr.Column))
 }
 
+// getOperator 
 func (lxr *Lexer) getOperator() {
 	var _token TokenKind
+
 	peek := func(offset int) byte {
 		if lxr.Index+offset < len(lxr.Code) {
-			return lxr.Code[lxr.Index+offset]
+			return lxr.Code[lxr.Index]
 		}
 		return '\000'
 	}
-	switch lxr.Code[lxr.Index] {
+
+	switch lxr.current() {
 	case '+':
 		_token = PlusToken
 	case '-':
@@ -117,7 +130,7 @@ func (lxr *Lexer) getOperator() {
 		_token = Semicolon
 	case '<':
 		if peek(1) == '-' {
-			lxr.Index++
+			lxr.Increment()
 			_token = AssignToken
 		} else {
 			_token = LessThanToken
@@ -125,23 +138,30 @@ func (lxr *Lexer) getOperator() {
 	case '>':
 		_token = GreaterThanToken
 	default:
-		fmt.Println("ERROR: Unexpected character somewhere idk where though")
+		fmt.Printf("ERROR(%d, %d): Unexpected character \"%s\"!\n", lxr.Line, lxr.Column, string(lxr.Code[lxr.Index])))
 		_token = BadToken
 	}
+	// AssignToken is 2 characters long while every other operator is 1 character.
+	// (that is why they are separated).
 	if _token == AssignToken {
-		lxr.Tokens = append(lxr.Tokens, CreateToken(
-			string(peek(-1))+string(lxr.Code[lxr.Index]),
-			_token,
-			0,
-			0,
-		),
-		)
+		lxr.Tokens = append(lxr.Tokens, 
+			CreateToken(string(peek(-1))+string(lxr.Code[lxr.Index]), 
+			_token, 
+			lxr.Line, 
+			lxr.Column,
+			))
 	} else {
-		lxr.Tokens = append(lxr.Tokens, CreateToken(string(lxr.Code[lxr.Index]), _token, 0, 0))
+		lxr.Tokens = append(lxr.Tokens, CreateToken(
+			string(lxr.Code[lxr.Index]), 
+			_token, 
+			lxr.Line, 
+			lxr.Column,
+			))
 	}
-	lxr.Index++
+	lxr.Increment()
 }
 
+// handleFileOpen 
 func handleFileOpen(filename string) []byte {
 	contents, err := os.ReadFile(filename)
 	if errors.Is(err, os.ErrNotExist) {
