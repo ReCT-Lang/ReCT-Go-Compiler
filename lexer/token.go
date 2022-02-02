@@ -25,23 +25,36 @@ const (
 	BreakKeyword    TokenKind = "break (Keyword)"
 
 	// Tokens
-	EOF                   TokenKind = "EndOfFile"
-	IdToken               TokenKind = "Identifier"
-	StringToken           TokenKind = "String"
-	NumberToken           TokenKind = "Number"
-	PlusToken             TokenKind = "Plus(+)"
-	MinusToken            TokenKind = "Minus(-)"
-	StarToken             TokenKind = "Star(*)"
-	SlashToken            TokenKind = "Slash(/)"
-	EqualsToken           TokenKind = "Equals(=)"
-	OpenBraceToken        TokenKind = "OpenBrace"
-	CloseBraceToken       TokenKind = "Closebrace"
+	EOF         TokenKind = "EndOfFile"
+	IdToken     TokenKind = "Identifier"
+	StringToken TokenKind = "String"
+	NumberToken TokenKind = "Number"
+
+	// Symbol Tokens
+	PlusToken          TokenKind = "Plus(+)"
+	MinusToken         TokenKind = "Minus(-)"
+	StarToken          TokenKind = "Star(*)"
+	SlashToken         TokenKind = "Slash(/)"
+	EqualsToken        TokenKind = "Equals(=)"
+	NotToken           TokenKind = "Not(!)"
+	NotEqualsToken     TokenKind = "Not Equals(!=)"
+	CommaToken         TokenKind = "Comma(,)"
+	GreaterThanToken   TokenKind = "GreaterThanToken(>)"
+	LessThanToken      TokenKind = "LessThanToken(<)"
+	GreaterEqualsToken TokenKind = "GreaterEqualsToken(>=)"
+	LessEqualsToken    TokenKind = "LessEqualsToken(<=)"
+	AmpersandToken     TokenKind = "AmpersandToken(&)"
+	AmpersandsToken    TokenKind = "AmpersandsToken(&&)"
+	PipeToken          TokenKind = "PipeToken(|)"
+	PipesToken         TokenKind = "PipesToken(||)"
+	HatToken           TokenKind = "HatToken(^)"
+
+	AssignToken TokenKind = "AssignToken(<-)"
+
+	OpenBraceToken        TokenKind = "OpenBrace({)"
+	CloseBraceToken       TokenKind = "Closebrace(})"
 	OpenParenthesisToken  TokenKind = "OpenParenthesis"
 	CloseParenthesisToken TokenKind = "CloseParenthesis"
-	CommaToken            TokenKind = "Comma(,)"
-	AssignToken           TokenKind = "<- (AssignToken)"
-	GreaterThanToken      TokenKind = "> (GreaterThanToken)"
-	LessThanToken         TokenKind = "< (LessThanToken)"
 
 	BadToken TokenKind = "Token Error (BadToken)" // Naughty ;)
 

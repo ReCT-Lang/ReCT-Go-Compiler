@@ -111,6 +111,13 @@ func (lxr *Lexer) getOperator() {
 		return '\000'
 	}
 
+	// save our current index for later
+	startIndex := lxr.Index
+
+	// save the line and column so we're always using the first of possibly many characters
+	line := lxr.Line
+	column := lxr.Column
+
 	switch lxr.Code[lxr.Index] {
 	case '+':
 		_token = PlusToken
@@ -122,6 +129,13 @@ func (lxr *Lexer) getOperator() {
 		_token = StarToken
 	case '=':
 		_token = EqualsToken
+	case '!':
+		if peek(1) == '=' {
+			lxr.Increment()
+			_token = NotEqualsToken
+		} else {
+			_token = NotToken
+		}
 	case '(':
 		_token = OpenParenthesisToken
 	case ')':
@@ -136,11 +150,36 @@ func (lxr *Lexer) getOperator() {
 		if peek(1) == '-' {
 			lxr.Increment()
 			_token = AssignToken
+		} else if peek(1) == '=' {
+			lxr.Increment()
+			_token = LessEqualsToken
 		} else {
 			_token = LessThanToken
 		}
 	case '>':
-		_token = GreaterThanToken
+		if peek(1) == '=' {
+			lxr.Increment()
+			_token = GreaterEqualsToken
+		} else {
+			_token = GreaterThanToken
+		}
+	case '^':
+		_token = HatToken
+	case '&':
+		if peek(1) == '&' {
+			lxr.Increment()
+			_token = AmpersandsToken
+		} else {
+			_token = AmpersandToken
+		}
+	case '|':
+		if peek(1) == '|' {
+			lxr.Increment()
+			_token = PipesToken
+		} else {
+			_token = PipeToken
+		}
+
 	default:
 		fmt.Printf(
 			"ERROR(%d, %d): Unexpected character \"%s\"!\n",
@@ -152,27 +191,18 @@ func (lxr *Lexer) getOperator() {
 	}
 	// AssignToken is 2 characters long while every other operator is 1 character.
 	// (that is why they are separated).
-	if _token == AssignToken {
-		lxr.Tokens = append(
-			lxr.Tokens,
-			CreateToken(
-				string(peek(-1))+string(lxr.Code[lxr.Index]),
-				_token,
-				lxr.Line,
-				lxr.Column,
-			),
-		)
-	} else {
-		lxr.Tokens = append(
-			lxr.Tokens,
-			CreateToken(
-				string(lxr.Code[lxr.Index]),
-				_token,
-				lxr.Line,
-				lxr.Column,
-			),
-		)
-	}
+
+	// Generalised this a litte because we now got a few multi-char operators - Red
+	lxr.Tokens = append(
+		lxr.Tokens,
+		CreateToken(
+			string(lxr.Code)[startIndex:lxr.Index+1],
+			_token,
+			line,
+			column,
+		),
+	)
+
 	lxr.Increment()
 }
 

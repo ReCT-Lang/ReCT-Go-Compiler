@@ -1,0 +1,9 @@
+set globalVar <- "coolVar";
+var anInt <- 1;
+var anotherInt <- 2;
+
+if ( anInt >= anotherInt )
+	Print("first one is bigger or equal");
+
+if ( anInt != anotherInt )
+	Print("ints arent equal");
