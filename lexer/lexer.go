@@ -122,7 +122,12 @@ func (lxr *Lexer) getOperator() {
 	case '+':
 		_token = PlusToken
 	case '-':
-		_token = MinusToken
+		if peek(1) == '>' {
+			lxr.Increment()
+			_token = AccessToken
+		} else {
+			_token = MinusToken
+		}
 	case '/':
 		_token = SlashToken
 	case '*':

@@ -36,6 +36,12 @@ const (
 	// Members
 	// -------
 	GlobalStatement NodeType = iota
+	FunctionDeclaration
+
+	// General
+	// -------
+	Parameter
+	TypeClause
 
 	// Statements
 	// ----------
@@ -60,23 +66,4 @@ const (
 	CallExpression
 	UnaryExpression
 	BinaryExpression
-
-	/*
-			 * // Members
-			 * // -------
-			 * FunctionDeclaration
-			 *
-			 * // General nodes (that dont qualify as statements)
-			 * // ----------------------------------------------
-			 * Parameter
-			 * TypeClause
-			 *
-			 * // Statements
-			 * // -----------
-			 *    all done!
-			 *
-			 * // Expressions
-			 * // -----------
-		     *    all done!
-	*/
 )

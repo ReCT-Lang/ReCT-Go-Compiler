@@ -14,7 +14,7 @@ func main() {
 
 	print.PrintC(print.Green, "Testing lexer")
 	print.PrintC(print.Green, "-------------\n")
-	tokens := lexer.Lex("tests/test2.rct")
+	tokens := lexer.Lex("tests/test3.rct")
 	for _, token := range tokens {
 		fmt.Println(token.String(false))
 	}

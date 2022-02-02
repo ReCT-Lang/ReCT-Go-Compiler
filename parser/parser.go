@@ -91,18 +91,76 @@ func (prs *Parser) parseMembers() []nodes.MemberNode {
 
 func (prs *Parser) parseMember() nodes.MemberNode {
 	// functions / classes would go here \/
-	// if prs.current().Kind == lexer.FunctionKeyword { ... }
+	if prs.current().Kind == lexer.FunctionKeyword {
+		return prs.parseFunctionDeclaration()
+	}
 
 	// global statements (any statements outside of any functions)
 	return prs.parseGlobalStatement()
 }
 
-func (prs *Parser) parseGlobalStatement() nodes.MemberNode {
+func (prs *Parser) parseGlobalStatement() nodes.GlobalStatementMember {
 	statement := prs.parseStatement()
-	// return nodes.CreateGlobalStatementMember(statement) // this doesnt work, not entirely sure what i did wrong but ill figure it out later
-	return nodes.GlobalStatementMember{
-		Statement: statement,
+	return nodes.CreateGlobalStatementMember(statement)
+}
+
+func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
+	prs.consume(lexer.FunctionKeyword)
+	identifier := prs.consume(lexer.IdToken)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	params := prs.parseParameterList()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	typeClause := prs.parseOptionalTypeClause()
+
+	body := prs.parseBlockStatement()
+
+	return nodes.CreateFunctionDeclarationMember(identifier, params, typeClause, body)
+}
+
+func (prs *Parser) parseParameterList() []nodes.ParameterNode {
+	params := make([]nodes.ParameterNode, 0)
+
+	for prs.current().Kind != lexer.CloseParenthesisToken &&
+		prs.current().Kind != lexer.EOF {
+
+		param := prs.parseParameter()
+		params = append(params, param)
+
+		if prs.current().Kind == lexer.CommaToken {
+			prs.consume(lexer.CommaToken)
+		} else {
+			break
+		}
 	}
+
+	return params
+}
+
+func (prs *Parser) parseParameter() nodes.ParameterNode {
+	identifier := prs.consume(lexer.IdToken)
+	typeClause := prs.parseTypeClause()
+	return nodes.CreateParameterNode(identifier, typeClause)
+}
+
+func (prs *Parser) parseOptionalTypeClause() nodes.TypeClauseNode {
+	// if theres no type clause, return an empty one
+	if prs.current().Kind != lexer.IdToken && prs.current().Kind != lexer.AccessToken {
+		return nodes.TypeClauseNode{}
+	}
+
+	return prs.parseTypeClause()
+}
+
+func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
+	// if theres a '->' token, consume it
+	if prs.current().Kind == lexer.AccessToken {
+		prs.consume(lexer.AccessToken)
+	}
+
+	identifier := prs.consume(lexer.IdToken)
+	return nodes.CreateTypeClauseNode(identifier)
 }
 
 // <STATEMENTS> ---------------------------------------------------------------
@@ -185,17 +243,20 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 
 	// We already check for var/set in parseStatement(), this code just repeats the process.
 	// Replaced expecting with prs.current().kind when defining keyword - Tokorv
-	// smort!  - RedCube
+	// smort  - RedCube
 
 	keyword := prs.consume(prs.current().Kind) // Replaced expecting
 	identifier := prs.consume(lexer.IdToken)
 
-	// no explicit type clause, im tired lol
+	typeClause := nodes.TypeClauseNode{}
+	if prs.current().Kind == lexer.IdToken && prs.peek(1).Kind == lexer.IdToken {
+		typeClause = prs.parseOptionalTypeClause()
+	}
 
 	assign := prs.consume(lexer.AssignToken)
 	initializer := prs.parseExpression()
 
-	return nodes.CreateVariableDeclarationStatementNode(keyword, identifier, assign, initializer)
+	return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, initializer)
 }
 
 func (prs *Parser) parseIfStatement() nodes.IfStatementNode {

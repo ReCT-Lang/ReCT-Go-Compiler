@@ -1,0 +1,12 @@
+Print("functions!");
+muchFunction("yes");
+
+function muchFunction(someParam string)
+{
+
+}
+
+function intFunction() int
+{
+	return 0;
+}

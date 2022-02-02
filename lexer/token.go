@@ -50,6 +50,7 @@ const (
 	HatToken           TokenKind = "HatToken(^)"
 
 	AssignToken TokenKind = "AssignToken(<-)"
+	AccessToken TokenKind = "AccessToken(->)"
 
 	OpenBraceToken        TokenKind = "OpenBrace({)"
 	CloseBraceToken       TokenKind = "Closebrace(})"
