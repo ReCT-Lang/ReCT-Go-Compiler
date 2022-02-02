@@ -50,6 +50,7 @@ const (
 	WhileStatement
 	BreakStatement
 	ContinueStatement
+	FromToStatement
 
 	// Expressions
 	// -----------
