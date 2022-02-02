@@ -16,7 +16,7 @@ type WhileStatementNode struct {
 }
 
 // NodeType Copy + Paste again
-func (node WhileStatementNode) NodeType() NodeType { return WhileStatement }
+func (WhileStatementNode) NodeType() NodeType { return WhileStatement }
 
 // Print Prints beautiful stuff in console
 func (node WhileStatementNode) Print(indent string) {
