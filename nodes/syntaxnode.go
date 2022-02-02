@@ -30,8 +30,6 @@ type NodeType int
 
 const (
 	// commented stuff has yet to be implemented
-	// will implement this when im awake again lol
-	// unless someone else here is brave / bored enough
 	// i am basing these objects off of the rect 1.0 source
 	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Syntax
 
@@ -57,13 +55,13 @@ const (
 	// -----------
 	LiteralExpression
 	ParenthesisedExpression
-
-	// TODO
 	NameExpression
-	UnaryExpression
-	BinaryExpression
 	AssignmentExpression
 	CallExpression
+
+	// TODO (Parsing)
+	UnaryExpression
+	BinaryExpression
 
 	/*
 			 * // Members
@@ -81,10 +79,7 @@ const (
 			 *
 			 * // Expressions
 			 * // -----------
-		     * NameExpression
 		     * UnaryExpression
-		     * BinaryExpression
-		     * AssignmentExpression
-		     * CallExpression
+			 * BinaryExpression
 	*/
 )
