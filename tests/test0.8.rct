@@ -1,5 +1,5 @@
 var name <- "Jerry";
-set age <- 11409830;
+set age <- (11409830);
 var alive <- true;
 
 if(true)

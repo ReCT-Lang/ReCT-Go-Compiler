@@ -307,9 +307,20 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseNumberLiteral()
 	} else if cur == lexer.TrueKeyword || cur == lexer.FalseKeyword {
 		return prs.parseBoolLiteral()
+	} else if cur == lexer.OpenParenthesisToken {
+		return prs.parseParenthesisedExpression()
 	}
 
 	return nil
+}
+
+func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionNode {
+
+	prs.consume(lexer.OpenParenthesisToken)
+	expression := prs.parseExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	return nodes.CreateParenthesisedExpressionNode(expression)
 }
 
 func (prs *Parser) parseStringLiteral() nodes.LiteralExpressionNode {

@@ -79,6 +79,6 @@ func (t Token) String(pretty bool) string {
 	if !pretty {
 		return fmt.Sprintf("Token { value: %s, kind: %s, position: (%d, %d), real: %v}", t.Value, t.Kind, t.Line, t.Column, t.RealValue)
 	} else {
-		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %d, \n\tposition: (%d, %d)\n}", t.Value, t.Kind, t.Line, t.Column)
+		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %s, \n\tposition: (%d, %d)\n}", t.Value, t.Kind, t.Line, t.Column)
 	}
 }
