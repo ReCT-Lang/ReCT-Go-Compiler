@@ -48,6 +48,8 @@ const (
 	ReturnStatement
 	ForStatement
 	WhileStatement
+	BreakStatement
+	ContinueStatement
 
 	// Expressions
 	// -----------
@@ -65,8 +67,6 @@ const (
 			 *
 			 * // Statements
 			 * // -----------
-			 * BreakStatement
-			 * ContinueStatement
 			 * ExpressionStatement
 			 *
 			 * // Expressions
