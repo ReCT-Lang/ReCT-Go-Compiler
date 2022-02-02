@@ -17,7 +17,7 @@ type IfStatementNode struct {
 }
 
 // implement node type from interface
-func (node IfStatementNode) NodeType() NodeType { return IfStatement }
+func (IfStatementNode) NodeType() NodeType { return IfStatement }
 
 // node print function
 func (node IfStatementNode) Print(indent string) {

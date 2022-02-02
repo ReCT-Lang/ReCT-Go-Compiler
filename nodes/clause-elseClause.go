@@ -16,7 +16,7 @@ type ElseClauseNode struct {
 }
 
 // implement node type from interface
-func (node ElseClauseNode) NodeType() NodeType { return ElseClause }
+func (ElseClauseNode) NodeType() NodeType { return ElseClause }
 
 // node print function
 func (node ElseClauseNode) Print(indent string) {
