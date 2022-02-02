@@ -140,10 +140,15 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 		statement = prs.parseFromToStatement()
 
 	} else {
+		statement = prs.parseExpressionStatement()
+
+		// we might need this later but this ^ should ensure that statement is always
+		// either not-nil / set or an error has been thrown already
+
 		// No proper keyword is found
 		// Since StatementNode is nil the program will crash anyway, at least we exit safely
-		fmt.Printf("ERROR: Unexpected Token \"%s\" found! StatementNode nil -> forced exit.", prs.current().Kind)
-		os.Exit(1)
+		//fmt.Printf("ERROR: Unexpected Token \"%s\" found! StatementNode nil -> forced exit.", prs.current().Kind)
+		//os.Exit(1)
 	}
 
 	// if theres a semicolon -> a b s o r b    i t
@@ -151,7 +156,7 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 		prs.consume(lexer.Semicolon)
 	}
 
-	return statement //prs.parseExpressionStatement() (doesnt exist yet)
+	return statement
 }
 
 func (prs *Parser) parseBlockStatement() nodes.BlockStatementNode {
@@ -185,14 +190,7 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 
 	// We already check for var/set in parseStatement(), this code just repeats the process.
 	// Replaced expecting with prs.current().kind when defining keyword - Tokorv
-
-	// figure out if we need to consume "set" or "var"
-	/*
-		expecting := lexer.VarKeyword
-		if prs.current().Kind == lexer.SetKeyword {
-			expecting = lexer.SetKeyword
-		}
-	*/
+	// smort!  - RedCube
 
 	keyword := prs.consume(prs.current().Kind) // Replaced expecting
 	identifier := prs.consume(lexer.IdToken)
@@ -232,7 +230,12 @@ func (prs *Parser) parseElseClause() nodes.ElseClauseNode {
 
 func (prs *Parser) parseReturnStatement() nodes.ReturnStatementNode {
 	keyword := prs.consume(lexer.ReturnKeyword)
-	expression := prs.parseExpression()
+
+	var expression nodes.ExpressionNode = nil
+	// if we are at the end of the line (;) theres no return value given
+	if prs.current().Kind != lexer.Semicolon {
+		expression = prs.parseExpression()
+	}
 
 	return nodes.CreateReturnStatementNode(keyword, expression)
 }
@@ -294,6 +297,11 @@ func (prs *Parser) parseContinueStatement() nodes.ContinueStatementNode {
 	return nodes.CreateContinueStatement(keyword)
 }
 
+func (prs *Parser) parseExpressionStatement() nodes.ExpressionStatementNode {
+	expression := prs.parseExpression()
+	return nodes.CreateExpressionStatementNode(expression)
+}
+
 // </STATEMENTS> --------------------------------------------------------------
 // <EXPRESSIONS> --------------------------------------------------------------
 
@@ -334,12 +342,7 @@ func (prs *Parser) parseNumberLiteral() nodes.LiteralExpressionNode {
 }
 
 func (prs *Parser) parseBoolLiteral() nodes.LiteralExpressionNode {
-	expecting := lexer.TrueKeyword
-	if prs.current().Kind == lexer.FalseKeyword {
-		expecting = lexer.FalseKeyword
-	}
-
-	_bool := prs.consume(expecting)
+	_bool := prs.consume(prs.current().Kind)
 	return nodes.CreateLiteralExpressionNode(_bool)
 }
 

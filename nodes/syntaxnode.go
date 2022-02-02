@@ -51,37 +51,40 @@ const (
 	BreakStatement
 	ContinueStatement
 	FromToStatement
+	ExpressionStatement
 
 	// Expressions
 	// -----------
 	LiteralExpression
 	ParenthesisedExpression
 
+	// TODO
+	NameExpression
+	UnaryExpression
+	BinaryExpression
+	AssignmentExpression
+	CallExpression
+
 	/*
 			 * // Members
 			 * // -------
 			 * FunctionDeclaration
 			 *
-			 * // General nodes (that dont qualify as statement)
+			 * // General nodes (that dont qualify as statements)
 			 * // ----------------------------------------------
 			 * Parameter
 			 * TypeClause
 			 *
 			 * // Statements
 			 * // -----------
-			 * ExpressionStatement
+			 *    all done!
 			 *
 			 * // Expressions
 			 * // -----------
-			 * LiteralExpression
 		     * NameExpression
 		     * UnaryExpression
 		     * BinaryExpression
 		     * AssignmentExpression
 		     * CallExpression
-		     * EndKeyword
-		     * EditVariableToken
-		     * SingleEditVariableToken
-		     * FromKeyword
 	*/
 )

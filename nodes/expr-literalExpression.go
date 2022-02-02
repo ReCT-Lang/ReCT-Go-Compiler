@@ -27,6 +27,6 @@ func (node LiteralExpressionNode) Print(indent string) {
 func CreateLiteralExpressionNode(tok lexer.Token) LiteralExpressionNode {
 	return LiteralExpressionNode{
 		LiteralToken: tok,
-		LiteralValue: tok.Value,
+		LiteralValue: tok.RealValue,
 	}
 }
