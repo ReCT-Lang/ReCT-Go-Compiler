@@ -142,13 +142,7 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 	} else {
 		statement = prs.parseExpressionStatement()
 
-		// we might need this later but this ^ should ensure that statement is always
-		// either not-nil / set or an error has been thrown already
-
-		// No proper keyword is found
-		// Since StatementNode is nil the program will crash anyway, at least we exit safely
-		//fmt.Printf("ERROR: Unexpected Token \"%s\" found! StatementNode nil -> forced exit.", prs.current().Kind)
-		//os.Exit(1)
+		// moved the error message to parsePrimaryExpression()
 	}
 
 	// if theres a semicolon -> a b s o r b    i t
@@ -275,7 +269,7 @@ func (prs *Parser) parseFromToStatement() nodes.FromToStatementNode {
 	keyword := prs.consume(lexer.FromKeyword)
 
 	prs.consume(lexer.OpenParenthesisToken)
-	initialiser := prs.parseExpression()
+	initialiser := prs.parseAssignmentExpression()
 	prs.consume(lexer.CloseParenthesisToken)
 
 	prs.consume(lexer.ToKeyword)
@@ -306,8 +300,21 @@ func (prs *Parser) parseExpressionStatement() nodes.ExpressionStatementNode {
 // <EXPRESSIONS> --------------------------------------------------------------
 
 func (prs *Parser) parseExpression() nodes.ExpressionNode {
-	// we only have literals atm
+	// check for more "complex" expressions first
+	// (these are not allowed in binary expressions)
+	// if theres none -> parse normal primary expression
 
+	// assignment expression
+	if prs.current().Kind == lexer.IdToken &&
+		prs.peek(1).Kind == lexer.AssignToken {
+		return prs.parseAssignmentExpression()
+	}
+
+	return prs.parsePrimaryExpression()
+}
+
+// primary expressions being the simple things
+func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	cur := prs.current().Kind
 	if cur == lexer.StringToken {
 		return prs.parseStringLiteral()
@@ -317,9 +324,68 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseBoolLiteral()
 	} else if cur == lexer.OpenParenthesisToken {
 		return prs.parseParenthesisedExpression()
+	} else if cur == lexer.IdToken {
+		return prs.parseNameOrCallExpression()
 	}
 
+	// No proper keyword is found
+	// Since ExpressionNode is nil the program will crash anyway, at least we exit safely
+	fmt.Printf("ERROR: Unexpected Token \"%s\" found! ExpressionNode nil -> forced exit.", prs.current().Kind)
+	os.Exit(1)
+
 	return nil
+}
+
+func (prs *Parser) parseAssignmentExpression() nodes.AssignmentExpressionNode {
+	identifier := prs.consume(lexer.IdToken)
+	prs.consume(lexer.AssignToken)
+	value := prs.parseExpression()
+
+	return nodes.CreateAssignmentExpressionNode(identifier, value)
+}
+
+func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {
+
+	// check for parenthesis for function call
+	if prs.peek(1).Kind == lexer.OpenParenthesisToken {
+		return prs.parseCallExpression()
+	}
+
+	// if not its a name expression
+	return prs.parseNameExpression()
+}
+
+func (prs *Parser) parseCallExpression() nodes.CallExpressionNode {
+	identifier := prs.consume(lexer.IdToken)
+	prs.consume(lexer.OpenParenthesisToken)
+	args := prs.parseArguments()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	return nodes.CreateCallExpressionNode(identifier, args)
+}
+
+func (prs *Parser) parseArguments() []nodes.ExpressionNode {
+	args := make([]nodes.ExpressionNode, 0)
+
+	for prs.current().Kind != lexer.CloseParenthesisToken &&
+		prs.current().Kind != lexer.EOF {
+
+		expression := prs.parseExpression()
+		args = append(args, expression)
+
+		if prs.current().Kind == lexer.CommaToken {
+			prs.consume(lexer.CommaToken)
+		} else {
+			break
+		}
+	}
+
+	return args
+}
+
+func (prs *Parser) parseNameExpression() nodes.NameExpressionNode {
+	identifier := prs.consume(lexer.IdToken)
+	return nodes.CreateNameExpressionNode(identifier)
 }
 
 func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionNode {

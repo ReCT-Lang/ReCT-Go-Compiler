@@ -209,8 +209,6 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return TrueKeyword
 	case "false":
 		return FalseKeyword
-	case "Print":
-		return PrintKeyword
 	case "function":
 		return FunctionKeyword
 	case "from":

@@ -16,14 +16,13 @@ const (
 	ElseKeyword     TokenKind = "else (Keyword)"
 	TrueKeyword     TokenKind = "true (Keyword)"
 	FalseKeyword    TokenKind = "false (Keyword)"
-	PrintKeyword    TokenKind = "Print (Keyword)"
 	FunctionKeyword TokenKind = "function (Keyword)"
 	FromKeyword     TokenKind = "from (Keyword)"
 	ForKeyword      TokenKind = "for (Keyword)"
 	ReturnKeyword   TokenKind = "return (Keyword)"
-	WhileKeyword              = "while (keyword)"
-	ContinueKeyword           = "continue (keyword)"
-	BreakKeyword              = "break (keyword)"
+	WhileKeyword    TokenKind = "while (Keyword)"
+	ContinueKeyword TokenKind = "continue (keyword)"
+	BreakKeyword    TokenKind = "break (Keyword)"
 
 	// Tokens
 	EOF                   TokenKind = "EndOfFile"
@@ -39,13 +38,14 @@ const (
 	CloseBraceToken       TokenKind = "Closebrace"
 	OpenParenthesisToken  TokenKind = "OpenParenthesis"
 	CloseParenthesisToken TokenKind = "CloseParenthesis"
+	CommaToken            TokenKind = "Comma(,)"
 	AssignToken           TokenKind = "<- (AssignToken)"
 	GreaterThanToken      TokenKind = "> (GreaterThanToken)"
-	LessThanToken         TokenKind = "< (LessthanToken)"
+	LessThanToken         TokenKind = "< (LessThanToken)"
 
-	BadToken = "Token Error (BadToken)" // Naughty ;)
+	BadToken TokenKind = "Token Error (BadToken)" // Naughty ;)
 
-	Semicolon = "Semicolon ;" // Used to separate statements (for now... )
+	Semicolon TokenKind = "Semicolon ;" // Used to separate statements (for now... )
 )
 
 // Token stores information about lexical structures in the text
