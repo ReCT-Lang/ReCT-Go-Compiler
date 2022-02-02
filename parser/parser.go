@@ -107,10 +107,8 @@ func (prs *Parser) parseGlobalStatement() nodes.MemberNode {
 // <STATEMENTS> ---------------------------------------------------------------
 
 func (prs *Parser) parseStatement() nodes.StatementNode {
-	// Oh, btw if you spend like 15+ minutes looking for a segmenation violation
-	// to do with GlobalStatementMember.Print it's probably because you forgot
-	// to add the statement in parseStatement() before testing it (love from idiot Tokorv)
 	var statement nodes.StatementNode = nil
+	// nil StatementNode can cause segmentation violation if no correct key is found, I've added an error handler to counter this.
 
 	// select correct parsing function based on kind
 	cur := prs.current().Kind
@@ -123,8 +121,17 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 	} else if cur == lexer.IfKeyword {
 		statement = prs.parseIfStatement()
 
-	} else if cur == lexer.ReturnKeyword { // I know this would never happen (Just testing)
+	} else if cur == lexer.ReturnKeyword {
 		statement = prs.parseReturnStatement()
+
+	} else if cur == lexer.ForKeyword {
+		statement = prs.parseForStatement()
+
+	} else {
+		// No proper keyword is found
+		// Since StatementNode is nil the program will crash anyway, at least we exit safely
+		fmt.Printf("ERROR: Unexpected Token \"%s\" found! StatementNode nil -> forced exit.", prs.current().Kind)
+		os.Exit(1)
 	}
 
 	// if theres a semicolon -> a b s o r b    i t
@@ -216,6 +223,21 @@ func (prs *Parser) parseReturnStatement() nodes.ReturnStatementNode {
 	expression := prs.parseExpression()
 
 	return nodes.CreateReturnStatementNode(keyword, expression)
+}
+
+func (prs *Parser) parseForStatement() nodes.ForStatementNode {
+	keyword := prs.consume(lexer.ForKeyword)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	initialiser := prs.parseVariableDeclaration()
+	prs.consume(lexer.Semicolon)
+	condition := prs.parseExpression()
+	prs.consume(lexer.Semicolon)
+	updation := prs.parseExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+	statement := prs.parseStatement()
+
+	return nodes.CreateForStatementNode(keyword, initialiser, condition, updation, statement)
 }
 
 // </STATEMENTS> --------------------------------------------------------------

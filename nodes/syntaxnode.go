@@ -46,6 +46,7 @@ const (
 	IfStatement
 	ElseClause
 	ReturnStatement
+	ForStatement
 
 	// Expressions
 	// -----------
@@ -64,7 +65,6 @@ const (
 			 * // Statements
 			 * // ----------
 			 * WhileStatement
-			 * ForStatement
 			 * BreakStatement
 			 * ContinueStatement
 			 * ExpressionStatement

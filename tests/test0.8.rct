@@ -11,3 +11,6 @@ else
 	var test <- "";
 
 return 13431;
+
+for (var i <- 0; 100; 100)
+    var test <- "Hello";
