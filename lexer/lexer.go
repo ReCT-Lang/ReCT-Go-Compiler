@@ -219,6 +219,12 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return ForKeyword
 	case "return":
 		return ReturnKeyword
+	case "while":
+		return WhileKeyword
+	case "break":
+		return BreakKeyword
+	case "continue":
+		return ContinueKeyword
 	default:
 		return IdToken
 	}

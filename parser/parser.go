@@ -127,6 +127,8 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 	} else if cur == lexer.ForKeyword {
 		statement = prs.parseForStatement()
 
+	} else if cur == lexer.WhileKeyword {
+		statement = prs.parseWhileStatement()
 	} else {
 		// No proper keyword is found
 		// Since StatementNode is nil the program will crash anyway, at least we exit safely
@@ -238,6 +240,17 @@ func (prs *Parser) parseForStatement() nodes.ForStatementNode {
 	statement := prs.parseStatement()
 
 	return nodes.CreateForStatementNode(keyword, initialiser, condition, updation, statement)
+}
+
+func (prs *Parser) parseWhileStatement() nodes.WhileStatementNode {
+	keyword := prs.consume(lexer.WhileKeyword)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	condition := prs.parseExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+	statement := prs.parseStatement()
+
+	return nodes.CreateWhileStatementNode(keyword, condition, statement)
 }
 
 // </STATEMENTS> --------------------------------------------------------------

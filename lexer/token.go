@@ -20,7 +20,10 @@ const (
 	FunctionKeyword TokenKind = "function (Keyword)"
 	FromKeyword     TokenKind = "from (Keyword)"
 	ForKeyword      TokenKind = "for (Keyword)"
-	ReturnKeyword   TokenKind = "Return (Keyword)"
+	ReturnKeyword   TokenKind = "return (Keyword)"
+	WhileKeyword              = "while (keyword)"
+	ContinueKeyword           = "continue (keyword)"
+	BreakKeyword              = "break (keyword)"
 
 	// Tokens
 	EOF                   TokenKind = "EndOfFile"
