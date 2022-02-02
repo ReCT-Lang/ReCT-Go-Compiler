@@ -9,7 +9,7 @@ type GlobalStatementMember struct {
 }
 
 // implement node type from interface
-func (node GlobalStatementMember) NodeType() NodeType { return GlobalStatement }
+func (GlobalStatementMember) NodeType() NodeType { return GlobalStatement }
 
 // node print function
 func (node GlobalStatementMember) Print(indent string) {

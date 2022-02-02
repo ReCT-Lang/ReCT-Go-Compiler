@@ -129,10 +129,16 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 
 	} else if cur == lexer.WhileKeyword {
 		statement = prs.parseWhileStatement()
+
 	} else if cur == lexer.BreakKeyword {
 		statement = prs.parseBreakStatement()
+
 	} else if cur == lexer.ContinueKeyword {
 		statement = prs.parseContinueStatement()
+
+	} else if cur == lexer.FromKeyword {
+		statement = prs.parseFromToStatement()
+
 	} else {
 		// No proper keyword is found
 		// Since StatementNode is nil the program will crash anyway, at least we exit safely
@@ -234,13 +240,17 @@ func (prs *Parser) parseReturnStatement() nodes.ReturnStatementNode {
 func (prs *Parser) parseForStatement() nodes.ForStatementNode {
 	keyword := prs.consume(lexer.ForKeyword)
 
+	// For ( S; E; E) S
 	prs.consume(lexer.OpenParenthesisToken)
 	initialiser := prs.parseVariableDeclaration()
 	prs.consume(lexer.Semicolon)
+
 	condition := prs.parseExpression()
 	prs.consume(lexer.Semicolon)
+
 	updation := prs.parseExpression()
 	prs.consume(lexer.CloseParenthesisToken)
+
 	statement := prs.parseStatement()
 
 	return nodes.CreateForStatementNode(keyword, initialiser, condition, updation, statement)
@@ -252,9 +262,24 @@ func (prs *Parser) parseWhileStatement() nodes.WhileStatementNode {
 	prs.consume(lexer.OpenParenthesisToken)
 	condition := prs.parseExpression()
 	prs.consume(lexer.CloseParenthesisToken)
+
 	statement := prs.parseStatement()
 
 	return nodes.CreateWhileStatementNode(keyword, condition, statement)
+}
+
+func (prs *Parser) parseFromToStatement() nodes.FromToStatementNode {
+	keyword := prs.consume(lexer.FromKeyword)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	initialiser := prs.parseExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	prs.consume(lexer.ToKeyword)
+	condition := prs.parseExpression()
+
+	statement := prs.parseStatement()
+	return nodes.CreateFromToStatementNode(keyword, initialiser, condition, statement)
 }
 
 func (prs *Parser) parseBreakStatement() nodes.BreakStatementNode {
@@ -282,9 +307,20 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseNumberLiteral()
 	} else if cur == lexer.TrueKeyword || cur == lexer.FalseKeyword {
 		return prs.parseBoolLiteral()
+	} else if cur == lexer.OpenParenthesisToken {
+		return prs.parseParenthesisedExpression()
 	}
 
 	return nil
+}
+
+func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionNode {
+
+	prs.consume(lexer.OpenParenthesisToken)
+	expression := prs.parseExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	return nodes.CreateParenthesisedExpressionNode(expression)
 }
 
 func (prs *Parser) parseStringLiteral() nodes.LiteralExpressionNode {

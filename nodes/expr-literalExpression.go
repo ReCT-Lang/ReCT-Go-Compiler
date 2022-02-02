@@ -15,7 +15,7 @@ type LiteralExpressionNode struct {
 }
 
 // implement node type from interface
-func (node LiteralExpressionNode) NodeType() NodeType { return LiteralExpression }
+func (LiteralExpressionNode) NodeType() NodeType { return LiteralExpression }
 
 // node print function
 func (node LiteralExpressionNode) Print(indent string) {

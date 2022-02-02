@@ -67,7 +67,7 @@ func (lxr *Lexer) getString() {
 		lxr.Increment()
 	}
 	lxr.Increment()
-	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, StringToken, lxr.Line, lxr.Column))
+	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.Line, lxr.Column))
 }
 
 // Increment increases the scanner's Index, Column, and Lin (if needed).

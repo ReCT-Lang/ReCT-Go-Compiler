@@ -14,7 +14,7 @@ type BreakStatementNode struct {
 }
 
 // NodeType Copy + Paste
-func (node BreakStatementNode) NodeType() NodeType { return BreakStatement }
+func (BreakStatementNode) NodeType() NodeType { return BreakStatement }
 
 // Print Prints beautiful stuff in console
 func (node BreakStatementNode) Print(indent string) {

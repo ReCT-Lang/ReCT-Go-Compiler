@@ -1,5 +1,5 @@
 var name <- "Jerry";
-set age <- 11409830;
+set age <- (11409830);
 var alive <- true;
 
 if(true)
@@ -17,3 +17,6 @@ for (var i <- 0; 100; 100)
 
 while (100)
     var test <- "Not Hello actually";
+
+from (100) to 90
+	var test <- "";

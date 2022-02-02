@@ -17,7 +17,7 @@ type VariableDeclarationStatementNode struct {
 }
 
 // implement node type from interface
-func (node VariableDeclarationStatementNode) NodeType() NodeType { return VariableDeclaration }
+func (VariableDeclarationStatementNode) NodeType() NodeType { return VariableDeclaration }
 
 // node print function
 func (node VariableDeclarationStatementNode) Print(indent string) {

@@ -50,10 +50,12 @@ const (
 	WhileStatement
 	BreakStatement
 	ContinueStatement
+	FromToStatement
 
 	// Expressions
 	// -----------
 	LiteralExpression
+	ParenthesisedExpression
 
 	/*
 			 * // Members
@@ -75,13 +77,11 @@ const (
 		     * NameExpression
 		     * UnaryExpression
 		     * BinaryExpression
-		     * ParenthesizedExpression
 		     * AssignmentExpression
 		     * CallExpression
 		     * EndKeyword
 		     * EditVariableToken
 		     * SingleEditVariableToken
 		     * FromKeyword
-		     * FromToStatement
 	*/
 )
