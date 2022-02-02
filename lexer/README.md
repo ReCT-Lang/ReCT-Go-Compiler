@@ -5,7 +5,7 @@ Since we are working with ReCT 1.0/1.1 I'll summarise the Lexical Tokens here.
 
 **keywords** var to set if else while true false for from function int string return
 
-**Operators** + - / * ! <- = != ++ -- <-+ <-- <-/ <-* | || & &&
+**Operators** + - / * ! <- = != < > <= >= ++ -- <-+ <-- <-/ <-* | || & && ^
 
 **Other**: ( ) { } ; "
 

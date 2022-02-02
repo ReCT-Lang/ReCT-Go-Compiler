@@ -8,9 +8,9 @@ import "ReCT-Go-Compiler/lexer"
 func GetUnaryOperatorPrecedence(tok lexer.Token) int {
 	switch tok.Kind {
 
-	case lexer.PlusToken:
-	case lexer.MinusToken:
-	case lexer.NotToken:
+	case lexer.PlusToken,
+		lexer.MinusToken,
+		lexer.NotToken:
 		return 6 // always one higher than the highest binary operator
 
 	default:
@@ -23,27 +23,25 @@ func GetUnaryOperatorPrecedence(tok lexer.Token) int {
 func GetBinaryOperatorPrecedence(tok lexer.Token) int {
 	switch tok.Kind {
 
-	case lexer.StarToken:
-	case lexer.SlashToken:
+	case lexer.StarToken, lexer.SlashToken:
 		return 5
 
-	case lexer.PlusToken:
-	case lexer.MinusToken:
+	case lexer.PlusToken, lexer.MinusToken:
 		return 4
 
-	case lexer.EqualsToken:
-	case lexer.NotEqualsToken:
-	case lexer.LessThanToken:
-	case lexer.GreaterThanToken:
-	case lexer.LessEqualsToken:
-	case lexer.GreaterEqualsToken:
+	case lexer.EqualsToken,
+		lexer.NotEqualsToken,
+		lexer.LessThanToken,
+		lexer.GreaterThanToken,
+		lexer.LessEqualsToken,
+		lexer.GreaterEqualsToken:
 		return 3
 
 	case lexer.AmpersandsToken:
 		return 2
 
-	case lexer.PipesToken:
-	case lexer.HatToken:
+	case lexer.PipesToken,
+		lexer.HatToken:
 		return 1
 
 	default:

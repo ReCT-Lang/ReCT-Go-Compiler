@@ -58,8 +58,6 @@ const (
 	NameExpression
 	AssignmentExpression
 	CallExpression
-
-	// TODO (Parsing)
 	UnaryExpression
 	BinaryExpression
 
@@ -79,7 +77,6 @@ const (
 			 *
 			 * // Expressions
 			 * // -----------
-		     * UnaryExpression
-			 * BinaryExpression
+		     *    all done!
 	*/
 )

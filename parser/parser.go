@@ -3,6 +3,7 @@ package parser
 import (
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/nodes"
+	"ReCT-Go-Compiler/rules"
 	"fmt"
 	"os"
 )
@@ -302,7 +303,7 @@ func (prs *Parser) parseExpressionStatement() nodes.ExpressionStatementNode {
 func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// check for more "complex" expressions first
 	// (these are not allowed in binary expressions)
-	// if theres none -> parse normal primary expression
+	// if theres none -> parse normal binary expression
 
 	// assignment expression
 	if prs.current().Kind == lexer.IdToken &&
@@ -310,7 +311,42 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseAssignmentExpression()
 	}
 
-	return prs.parsePrimaryExpression()
+	return prs.parseBinaryExpression(0)
+}
+
+func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionNode {
+	var left nodes.ExpressionNode
+
+	// check if this is a unary expression
+	unaryPrecedence := rules.GetUnaryOperatorPrecedence(prs.current())
+	if unaryPrecedence != 0 && unaryPrecedence > parentPrecedence {
+		operator := prs.consume(prs.current().Kind)
+		operand := prs.parseBinaryExpression(unaryPrecedence)
+		return nodes.CreateUnaryExpressionNode(operator, operand)
+
+		// if not, start by parsing our left expression
+	} else {
+		left = prs.parsePrimaryExpression()
+	}
+
+	// funky while(true) but go-style
+	for {
+		precedence := rules.GetBinaryOperatorPrecedence(prs.current())
+
+		// if this isnt an operator or it has less precedence:
+		// stop / hand back over to parent
+		if precedence == 0 || precedence <= parentPrecedence {
+			break
+		}
+
+		operator := prs.consume(prs.current().Kind)
+		right := prs.parseBinaryExpression(precedence)
+
+		// set left to our current expression and continue
+		left = nodes.CreateBinaryExpressionNode(operator, left, right)
+	}
+
+	return left
 }
 
 // primary expressions being the simple things
