@@ -14,7 +14,7 @@ type ContinueStatementNode struct {
 }
 
 // NodeType Copy + Paste
-func (node ContinueStatementNode) NodeType() NodeType { return ContinueStatement }
+func (ContinueStatementNode) NodeType() NodeType { return ContinueStatement }
 
 // Print Prints beautiful stuff in console
 func (node ContinueStatementNode) Print(indent string) {

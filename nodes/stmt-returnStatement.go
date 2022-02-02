@@ -15,7 +15,7 @@ type ReturnStatementNode struct {
 }
 
 // NodeType Copy + Paste
-func (node ReturnStatementNode) NodeType() NodeType { return ReturnStatement }
+func (ReturnStatementNode) NodeType() NodeType { return ReturnStatement }
 
 // Print Prints beautiful stuff in console
 func (node ReturnStatementNode) Print(indent string) {

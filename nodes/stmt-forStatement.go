@@ -18,7 +18,7 @@ type ForStatementNode struct {
 }
 
 // NodeType Copy + Paste
-func (node ForStatementNode) NodeType() NodeType { return ForStatement }
+func (ForStatementNode) NodeType() NodeType { return ForStatement }
 
 // Print Prints beautiful stuff in console
 func (node ForStatementNode) Print(indent string) {

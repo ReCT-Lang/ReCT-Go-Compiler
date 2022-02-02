@@ -16,7 +16,7 @@ type BlockStatementNode struct {
 }
 
 // implement node type from interface
-func (node BlockStatementNode) NodeType() NodeType { return BlockStatement }
+func (BlockStatementNode) NodeType() NodeType { return BlockStatement }
 
 // node print function
 func (node BlockStatementNode) Print(indent string) {
