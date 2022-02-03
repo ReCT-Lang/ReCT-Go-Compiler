@@ -3,6 +3,8 @@
 A compiler for the ReCT programming language written in Golang  
 It is currentry under development.  
 
+---
+
 Progress:
 - [x] Lexer
 - [x] Parser
