@@ -49,7 +49,7 @@ var (
 		"SetCursor",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("x", 0, Int),
-			symbols.CreateParameterSymbol("y", 0, Int),
+			symbols.CreateParameterSymbol("y", 1, Int),
 		},
 		Void,
 		nodes.FunctionDeclarationMember{},
@@ -73,7 +73,7 @@ var (
 		"GetSize",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("width", 0, Int),
-			symbols.CreateParameterSymbol("height", 0, Int),
+			symbols.CreateParameterSymbol("height", 1, Int),
 		},
 		Void,
 		nodes.FunctionDeclarationMember{},
@@ -93,7 +93,7 @@ var (
 		[]symbols.ParameterSymbol{},
 		Bool,
 		nodes.FunctionDeclarationMember{},
-	)	
+	)
 
 	Random = symbols.CreateFunctionSymbol(
 		"Random",
