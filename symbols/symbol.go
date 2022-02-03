@@ -3,6 +3,7 @@ package symbols
 type Symbol interface {
 	SymbolType() SymbolType
 	SymbolName() string
+	Print(indent string)
 }
 
 type VariableSymbol interface {

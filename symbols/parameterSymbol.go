@@ -1,5 +1,7 @@
 package symbols
 
+import "ReCT-Go-Compiler/print"
+
 type ParameterSymbol struct {
 	VariableSymbol
 
@@ -11,6 +13,10 @@ type ParameterSymbol struct {
 // implement the symbol interface
 func (ParameterSymbol) SymbolType() SymbolType { return Parameter }
 func (s ParameterSymbol) SymbolName() string   { return s.Name }
+
+func (sym ParameterSymbol) Print(indent string) {
+	print.PrintC(print.Magenta, indent+"└ ParameterSymbol ["+sym.Name+"]")
+}
 
 // implement the var interface
 func (ParameterSymbol) IsGlobal() bool        { return false }

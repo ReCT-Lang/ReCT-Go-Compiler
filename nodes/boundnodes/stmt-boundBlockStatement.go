@@ -14,7 +14,7 @@ type BoundBlockStatementNode struct {
 // implement the interface
 func (BoundBlockStatementNode) NodeType() BoundType { return BoundBlockStatement }
 func (node BoundBlockStatementNode) Print(indent string) {
-	print.PrintC(print.Green, indent+"└ BlockStatementNode")
+	print.PrintC(print.Green, indent+"└ BoundBlockStatementNode")
 	fmt.Println(indent + "  └ Statements: ")
 
 	for _, stmt := range node.Statements {

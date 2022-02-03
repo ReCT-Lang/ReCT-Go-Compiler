@@ -1,5 +1,7 @@
 package symbols
 
+import "ReCT-Go-Compiler/print"
+
 type GlobalVariableSymbol struct {
 	VariableSymbol
 
@@ -11,6 +13,10 @@ type GlobalVariableSymbol struct {
 // implement the symbol interface
 func (GlobalVariableSymbol) SymbolType() SymbolType { return GlobalVariable }
 func (s GlobalVariableSymbol) SymbolName() string   { return s.Name }
+
+func (sym GlobalVariableSymbol) Print(indent string) {
+	print.PrintC(print.Magenta, indent+"└ GlobalVariableSymbol ["+sym.Name+"]")
+}
 
 // implement the var interface
 func (GlobalVariableSymbol) IsGlobal() bool        { return true }

@@ -1,5 +1,7 @@
 package symbols
 
+import "ReCT-Go-Compiler/print"
+
 type LocalVariableSymbol struct {
 	VariableSymbol
 
@@ -11,6 +13,10 @@ type LocalVariableSymbol struct {
 // implement the symbol interface
 func (LocalVariableSymbol) SymbolType() SymbolType { return LocalVariable }
 func (s LocalVariableSymbol) SymbolName() string   { return s.Name }
+
+func (sym LocalVariableSymbol) Print(indent string) {
+	print.PrintC(print.Magenta, indent+"└ LocalVariableSymbol ["+sym.Name+"]")
+}
 
 // implement the var interface
 func (LocalVariableSymbol) IsGlobal() bool        { return false }

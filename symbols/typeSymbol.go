@@ -1,5 +1,9 @@
 package symbols
 
+import (
+	"ReCT-Go-Compiler/print"
+)
+
 type TypeSymbol struct {
 	Symbol
 
@@ -10,6 +14,10 @@ type TypeSymbol struct {
 // implement the interface
 func (TypeSymbol) SymbolType() SymbolType { return Type }
 func (s TypeSymbol) SymbolName() string   { return s.Name }
+
+func (sym TypeSymbol) Print(indent string) {
+	print.PrintC(print.Magenta, indent+"└ TypeSymbol ["+sym.Name+"]")
+}
 
 // a unique identifier for each type
 func (sym TypeSymbol) Fingerprint() string {
