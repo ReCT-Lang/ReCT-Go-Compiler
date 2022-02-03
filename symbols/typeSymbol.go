@@ -21,3 +21,11 @@ func (sym TypeSymbol) Fingerprint() string {
 
 	return id
 }
+
+// constructor
+func CreateTypeSymbol(name string, subTypes []TypeSymbol) TypeSymbol {
+	return TypeSymbol{
+		Name:     name,
+		SubTypes: subTypes,
+	}
+}
