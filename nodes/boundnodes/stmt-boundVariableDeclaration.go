@@ -24,8 +24,9 @@ func (node BoundVariableDeclarationStatementNode) Print(indent string) {
 }
 
 // constructor
-func CreateBoundVariableDeclarationStatementNode(stmts []BoundStatementNode) BoundVariableDeclarationStatementNode {
+func CreateBoundVariableDeclarationStatementNode(variable symbols.VariableSymbol, init BoundExpressionNode) BoundVariableDeclarationStatementNode {
 	return BoundVariableDeclarationStatementNode{
-		Statements: stmts,
+		Variable:    variable,
+		Initializer: init,
 	}
 }

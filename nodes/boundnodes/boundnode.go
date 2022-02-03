@@ -12,6 +12,14 @@ type BoundStatementNode interface {
 	BoundNode
 }
 
+type BoundLoopStatementNode interface {
+	BoundStatementNode
+	LoopBreakLabel() BoundLabel
+	LoopContinueLabel() BoundLabel
+}
+
+type BoundLabel string
+
 type BoundExpressionNode interface {
 	BoundNode
 	Type() symbols.TypeSymbol
@@ -26,8 +34,8 @@ const (
 	BoundVariableDeclaration
 	BoundIfStatement
 	BoundWhileStatement
-	BoundDoWhileStatement
 	BoundForStatement
+	BoundFromToStatement
 	BoundLabelStatement
 	BoundGotoStatement
 	BoundConditionalGotoStatement
@@ -43,5 +51,4 @@ const (
 	BoundBinaryExpression
 	BoundCallExpression
 	BoundConversionExpression
-	BoundFromToStatement
 )
