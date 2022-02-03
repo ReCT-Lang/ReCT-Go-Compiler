@@ -29,7 +29,6 @@ type ExpressionNode interface {
 type NodeType int
 
 const (
-	// commented stuff has yet to be implemented
 	// i am basing these objects off of the rect 1.0 source
 	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Syntax
 

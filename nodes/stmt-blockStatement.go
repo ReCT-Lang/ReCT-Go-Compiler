@@ -11,7 +11,7 @@ type BlockStatementNode struct {
 	StatementNode
 
 	OpenBrace  lexer.Token
-	Statments  []StatementNode
+	Statements []StatementNode
 	CloseBrace lexer.Token
 }
 
@@ -25,7 +25,7 @@ func (node BlockStatementNode) Print(indent string) {
 	fmt.Printf("%s  └ CloseBrace: %s\n", indent, node.CloseBrace.Kind)
 	fmt.Println(indent + "  └ Statements: ")
 
-	for _, stmt := range node.Statments {
+	for _, stmt := range node.Statements {
 		stmt.Print(indent + "    ")
 	}
 
@@ -35,7 +35,7 @@ func (node BlockStatementNode) Print(indent string) {
 func CreateBlockStatementNode(openBrace lexer.Token, statements []StatementNode, closeBrace lexer.Token) BlockStatementNode {
 	return BlockStatementNode{
 		OpenBrace:  openBrace,
-		Statments:  statements,
+		Statements: statements,
 		CloseBrace: closeBrace,
 	}
 }
