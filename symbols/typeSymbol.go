@@ -16,7 +16,7 @@ func (sym TypeSymbol) Fingerprint() string {
 	id := "T_" + sym.Name + "_"
 
 	for _, subtype := range sym.SubTypes {
-		id += subtype.Name
+		id += subtype.Name + ";"
 	}
 
 	return id
