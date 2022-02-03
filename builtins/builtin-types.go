@@ -8,4 +8,5 @@ var (
 	Int    = symbols.CreateTypeSymbol("int", make([]symbols.TypeSymbol, 0))
 	Float  = symbols.CreateTypeSymbol("float", make([]symbols.TypeSymbol, 0))
 	String = symbols.CreateTypeSymbol("string", make([]symbols.TypeSymbol, 0))
+	Any    = symbols.CreateTypeSymbol("any", make([]symbols.TypeSymbol, 0))
 )

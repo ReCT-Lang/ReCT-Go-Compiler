@@ -29,6 +29,9 @@ type BoundExpressionNode interface {
 type BoundType int
 
 const (
+	// based off of rect 1.0 source
+	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Binding
+
 	// Statements
 	BoundBlockStatement BoundType = iota
 	BoundVariableDeclaration
