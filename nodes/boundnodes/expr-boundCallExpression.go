@@ -23,6 +23,9 @@ func (node BoundCallExpressionNode) Print(indent string) {
 	}
 }
 
+// implement the expression node interface
+func (node BoundCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
+
 func CreateCallExpressionNode(function symbols.FunctionSymbol, args []symbols.ParameterSymbol) BoundCallExpressionNode {
 	return BoundCallExpressionNode{
 		Function:  function,

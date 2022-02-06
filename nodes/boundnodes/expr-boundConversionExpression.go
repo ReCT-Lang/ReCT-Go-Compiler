@@ -10,7 +10,7 @@ type BoundConversionExpressionNode struct {
 	BoundExpressionNode
 
 	Expression BoundExpressionNode
-	Type       symbols.TypeSymbol
+	ToType     symbols.TypeSymbol
 }
 
 func (BoundConversionExpressionNode) NodeType() BoundType { return BoundConversionExpression }
@@ -18,14 +18,17 @@ func (BoundConversionExpressionNode) NodeType() BoundType { return BoundConversi
 func (node BoundConversionExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundConversionExpressionNode")
 	fmt.Println(indent + "  └ Type: ")
-	node.Type.Print(indent + "    ")
+	node.ToType.Print(indent + "    ")
 	fmt.Println(indent + "  └ Expression: ")
 	node.Expression.Print(indent + "    ")
 }
 
+// implement the expression node interface
+func (node BoundConversionExpressionNode) Type() symbols.TypeSymbol { return node.ToType }
+
 func CreateBoundConversionExpressionNode(_type symbols.TypeSymbol, expression BoundExpressionNode) BoundConversionExpressionNode {
 	return BoundConversionExpressionNode{
-		Type:       _type,
+		ToType:     _type,
 		Expression: expression,
 	}
 }

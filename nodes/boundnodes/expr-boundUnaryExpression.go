@@ -11,7 +11,6 @@ type BoundUnaryExpressionNode struct {
 
 	Op         BoundUnaryOperator
 	Expression BoundExpressionNode
-	Type       symbols.TypeSymbol
 }
 
 func (BoundUnaryExpressionNode) NodeType() BoundType { return BoundUnaryExpression }
@@ -22,6 +21,9 @@ func (node BoundUnaryExpressionNode) Print(indent string) {
 	fmt.Println(indent + "  └ Expression: ")
 	node.Expression.Print(indent + "    ")
 }
+
+// implement the expression node interface
+func (node BoundUnaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 
 func CreateBoundUnaryExpressionNode(op BoundUnaryOperator, expression BoundExpressionNode) BoundUnaryExpressionNode {
 	return BoundUnaryExpressionNode{

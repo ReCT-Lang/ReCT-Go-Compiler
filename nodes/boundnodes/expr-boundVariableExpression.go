@@ -10,7 +10,6 @@ type BoundVariableExpressionNode struct {
 	BoundExpressionNode
 
 	Variable symbols.VariableSymbol
-	Type     symbols.TypeSymbol
 }
 
 func (BoundVariableExpressionNode) NodeType() BoundType { return BoundVariableExpression }
@@ -21,9 +20,11 @@ func (node BoundVariableExpressionNode) Print(indent string) {
 	node.Variable.Print(indent + "    ")
 }
 
+// implement the expression node interface
+func (node BoundVariableExpressionNode) Type() symbols.TypeSymbol { return node.Variable.VarType() }
+
 func CreateBoundVariableExpressionNode(variable symbols.VariableSymbol) BoundVariableExpressionNode {
 	return BoundVariableExpressionNode{
 		Variable: variable,
-		Type:     variable.VarType(),
 	}
 }

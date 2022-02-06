@@ -12,7 +12,6 @@ type BoundBinaryExpressionNode struct {
 	Left  BoundExpressionNode
 	Op    BoundBinaryOperator
 	Right BoundExpressionNode
-	Type  symbols.TypeSymbol
 }
 
 func (BoundBinaryExpressionNode) NodeType() BoundType { return BoundBinaryExpression }
@@ -25,6 +24,9 @@ func (node BoundBinaryExpressionNode) Print(indent string) {
 	fmt.Println(indent + "  └ Right: ")
 	node.Right.Print(indent + "    ")
 }
+
+// implement the expression node interface
+func (node BoundBinaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 
 func CreateBoundBinaryExpressionNode(left BoundExpressionNode, op BoundBinaryOperator, right BoundExpressionNode) BoundBinaryExpressionNode {
 	return BoundBinaryExpressionNode{

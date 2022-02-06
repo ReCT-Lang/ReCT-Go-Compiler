@@ -12,8 +12,8 @@ import (
 type BoundLiteralExpressionNode struct {
 	BoundExpressionNode
 
-	Value interface{}
-	Type  symbols.TypeSymbol
+	Value       interface{}
+	LiteralType symbols.TypeSymbol
 }
 
 // implement node type from interface
@@ -24,8 +24,11 @@ func (node BoundLiteralExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundLiteralExpressionNode")
 	fmt.Printf("%s  └ Value: %s\n", indent, node.Value.(string))
 	fmt.Println(indent + "  └ Type: ")
-	node.Type.Print(indent + "    ")
+	node.LiteralType.Print(indent + "    ")
 }
+
+// implement the expression node interface
+func (node BoundLiteralExpressionNode) Type() symbols.TypeSymbol { return node.LiteralType }
 
 // Doubt this is right
 func CreateBoundLiteralExpressionNode(value interface{}) BoundLiteralExpressionNode {
@@ -45,7 +48,7 @@ func CreateBoundLiteralExpressionNode(value interface{}) BoundLiteralExpressionN
 		os.Exit(1) // shrug
 	}
 	return BoundLiteralExpressionNode{
-		Value: value,
-		Type:  _type,
+		Value:       value,
+		LiteralType: _type,
 	}
 }

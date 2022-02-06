@@ -1,7 +1,9 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/print"
+	"ReCT-Go-Compiler/symbols"
 )
 
 type BoundErrorExpressionNode struct {
@@ -13,6 +15,9 @@ func (BoundErrorExpressionNode) NodeType() BoundType { return BoundErrorExpressi
 func (node BoundErrorExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundErrorExpressionNode")
 }
+
+// implement the expression node interface
+func (node BoundErrorExpressionNode) Type() symbols.TypeSymbol { return builtins.Error }
 
 func CreateBoundErrorExpressionNode() BoundErrorExpressionNode {
 	return BoundErrorExpressionNode{}
