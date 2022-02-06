@@ -21,7 +21,7 @@ func (node BoundBinaryExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundBinaryExpressionNode")
 	fmt.Println(indent + "  └ Left: ")
 	node.Left.Print(indent + "    ")
-	fmt.Printf("%s  └ ContinueLabel: %d", indent, node.Op.OperatorKind)
+	fmt.Printf("%s  └ Operator: %d", indent, node.Op.OperatorKind)
 	fmt.Println(indent + "  └ Right: ")
 	node.Right.Print(indent + "    ")
 }
