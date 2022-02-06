@@ -14,7 +14,7 @@ type BoundConditionalGotoStatementNode struct {
 }
 
 // implement the interface
-func (BoundConditionalGotoStatementNode) NodeType() BoundType { return BoundGotoStatement }
+func (BoundConditionalGotoStatementNode) NodeType() BoundType { return BoundConditionalGotoStatement }
 func (node BoundConditionalGotoStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ BoundConditionalGotoStatementNode")
 	fmt.Println(indent + "  └ Condition:")
