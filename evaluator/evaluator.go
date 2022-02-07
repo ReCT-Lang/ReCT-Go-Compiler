@@ -6,9 +6,12 @@ import (
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
+	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
+	"time"
 )
 
 type Evaluator struct {
@@ -48,6 +51,8 @@ func (evl *Evaluator) Assign(sym symbols.VariableSymbol, value interface{}) {
 	}
 }
 
+var reader *bufio.Reader
+
 // evaluate!
 func Evaluate(program binder.BoundProgram) {
 	evaluator := Evaluator{
@@ -56,6 +61,10 @@ func Evaluate(program binder.BoundProgram) {
 		Functions: make(map[string]binder.BoundFunction),
 		Locals:    []map[string]interface{}{},
 	}
+
+	// setup things
+	reader = bufio.NewReader(os.Stdin)
+	rand.Seed(time.Now().UnixNano())
 
 	evaluator.PushLocals()
 
@@ -352,6 +361,33 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 		fmt.Print(text)
 		return nil
 
+	} else if expr.Function.GetFingerprint() == builtins.Input.GetFingerprint() {
+		text, _ := reader.ReadString('\n')
+		return text
+
+	} else if expr.Function.GetFingerprint() == builtins.InputKey.GetFingerprint() {
+		char, _ := reader.ReadByte()
+		return string(char)
+
+	} else if expr.Function.GetFingerprint() == builtins.Clear.GetFingerprint() {
+		fmt.Print("\033[2J")            // clear screen
+		fmt.Printf("\033[%d;%dH", 0, 0) // set cursor
+		return nil
+
+	} else if expr.Function.GetFingerprint() == builtins.SetCursor.GetFingerprint() {
+		x := evl.EvaluateExpression(expr.Arguments[0])
+		y := evl.EvaluateExpression(expr.Arguments[1])
+		fmt.Printf("\033[%d;%dH", x, y) // set cursor
+		return nil
+
+	} else if expr.Function.GetFingerprint() == builtins.Random.GetFingerprint() {
+		max := evl.EvaluateExpression(expr.Arguments[0])
+		return rand.Intn(max.(int))
+
+	} else if expr.Function.GetFingerprint() == builtins.Sleep.GetFingerprint() {
+		mills := evl.EvaluateExpression(expr.Arguments[0])
+		time.Sleep(time.Duration(mills.(int)) * time.Millisecond)
+		return nil
 	}
 
 	locals := make(map[string]interface{})
