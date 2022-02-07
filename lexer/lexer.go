@@ -127,6 +127,8 @@ func (lxr *Lexer) getOperator() {
 	switch lxr.Code[lxr.Index] {
 	case '+':
 		_token = PlusToken
+  case '%':
+    _token = ModulusToken
 	case '-':
 		if peek(1) == '>' {
 			lxr.Increment()

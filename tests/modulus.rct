@@ -1,0 +1,3 @@
+set modulus <- 3 % 2;
+
+Print(modulus);

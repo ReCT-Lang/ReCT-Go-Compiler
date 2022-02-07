@@ -13,6 +13,7 @@ const (
 	Subtraction     BoundBinaryOperatorType = "Subtraction"
 	Multiplication  BoundBinaryOperatorType = "Multiplication"
 	Division        BoundBinaryOperatorType = "Division"
+	Modulus         BoundBinaryOperatorType = "Modulus"
 	LogicalAnd      BoundBinaryOperatorType = "LogicalAnd"
 	LogicalOr       BoundBinaryOperatorType = "LogicalOr"
 	BitwiseAnd      BoundBinaryOperatorType = "BitwiseAnd"
@@ -78,6 +79,7 @@ var BinaryOperators []BoundBinaryOperator = []BoundBinaryOperator{
 	/* *  */ CreateBoundBinaryOperatorAllSame(lexer.StarToken, Multiplication, builtins.Int),
 	/* /  */ CreateBoundBinaryOperatorAllSame(lexer.SlashToken, Division, builtins.Int),
 	/* &  */ CreateBoundBinaryOperatorAllSame(lexer.AmpersandToken, BitwiseAnd, builtins.Int),
+	/* %  */ CreateBoundBinaryOperatorAllSame(lexer.ModulusToken, Modulus, builtins.Int),
 	/* |  */ CreateBoundBinaryOperatorAllSame(lexer.PipeToken, BitwiseOr, builtins.Int),
 	/* ^  */ CreateBoundBinaryOperatorAllSame(lexer.HatToken, BitwiseXor, builtins.Int),
 	/* =  */ CreateBoundBinaryOperatorSameInputs(lexer.EqualsToken, Equals, builtins.Int, builtins.Bool),
@@ -92,6 +94,7 @@ var BinaryOperators []BoundBinaryOperator = []BoundBinaryOperator{
 	/* -  */ CreateBoundBinaryOperatorAllSame(lexer.MinusToken, Subtraction, builtins.Float),
 	/* *  */ CreateBoundBinaryOperatorAllSame(lexer.StarToken, Multiplication, builtins.Float),
 	/* /  */ CreateBoundBinaryOperatorAllSame(lexer.SlashToken, Division, builtins.Float),
+	/* %  */ CreateBoundBinaryOperatorAllSame(lexer.ModulusToken, Modulus, builtins.Float),
 	/* &  */ //CreateBoundBinaryOperatorAllSame(lexer.AmpersandToken, BitwiseAnd, builtins.Float),
 	/* |  */ //CreateBoundBinaryOperatorAllSame(lexer.PipeToken, BitwiseOr, builtins.Float),
 	/* ^  */ //CreateBoundBinaryOperatorAllSame(lexer.HatToken, BitwiseXor, builtins.Float),
