@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"math"
 )
 
 type Evaluator struct {
@@ -259,6 +260,15 @@ func (evl *Evaluator) EvaluateBinaryExpression(expr boundnodes.BoundBinaryExpres
 			return left.(int) / right.(int)
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return left.(float32) / right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+  case boundnodes.Modulus:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) % right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return math.Mod(left.(float64), right.(float64))
 		}
 		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
 		os.Exit(-1)

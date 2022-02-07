@@ -32,6 +32,7 @@ const (
 
 	// Symbol Tokens
 	PlusToken          TokenKind = "Plus(+)"
+	ModulusToken       TokenKind = "Modulus(%)"
 	MinusToken         TokenKind = "Minus(-)"
 	StarToken          TokenKind = "Star(*)"
 	SlashToken         TokenKind = "Slash(/)"
