@@ -1,0 +1,8 @@
+var a <- "";
+
+for (var i <- 0; false; var b <- "" )
+{
+	var c <- 0;	
+}
+
+var d <-  "";

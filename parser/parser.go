@@ -246,13 +246,13 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 	// smort  - RedCube
 
 	keyword := prs.consume(prs.current().Kind) // Replaced expecting
-	identifier := prs.consume(lexer.IdToken)
 
 	typeClause := nodes.TypeClauseNode{}
 	if prs.current().Kind == lexer.IdToken && prs.peek(1).Kind == lexer.IdToken {
-		typeClause = prs.parseOptionalTypeClause()
+		typeClause = prs.parseTypeClause()
 	}
 
+	identifier := prs.consume(lexer.IdToken)
 	assign := prs.consume(lexer.AssignToken)
 	initializer := prs.parseExpression()
 
@@ -307,7 +307,7 @@ func (prs *Parser) parseForStatement() nodes.ForStatementNode {
 	condition := prs.parseExpression()
 	prs.consume(lexer.Semicolon)
 
-	updation := prs.parseExpression()
+	updation := prs.parseStatement()
 	prs.consume(lexer.CloseParenthesisToken)
 
 	statement := prs.parseStatement()

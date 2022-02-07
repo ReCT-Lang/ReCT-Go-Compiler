@@ -22,7 +22,16 @@ func (BoundLiteralExpressionNode) NodeType() BoundType { return BoundLiteralExpr
 // node print function
 func (node BoundLiteralExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundLiteralExpressionNode")
-	fmt.Printf("%s  └ Value: %s\n", indent, node.Value.(string))
+
+	if node.LiteralType.Fingerprint() == builtins.String.Fingerprint() {
+		fmt.Printf("%s  └ Value: %s\n", indent, node.Value.(string))
+
+	} else if node.LiteralType.Fingerprint() == builtins.Int.Fingerprint() {
+		fmt.Printf("%s  └ Value: %d\n", indent, node.Value.(int))
+
+	} else if node.LiteralType.Fingerprint() == builtins.Bool.Fingerprint() {
+		fmt.Printf("%s  └ Value: %t\n", indent, node.Value.(bool))
+	}
 	fmt.Println(indent + "  └ Type: ")
 	node.LiteralType.Print(indent + "    ")
 }

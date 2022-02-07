@@ -26,7 +26,7 @@ type ExpressionNode interface {
 }
 
 // cool node type Enum straight up stolen from ReCT v1.0
-type NodeType int
+type NodeType string
 
 const (
 	// i am basing these objects off of the rect 1.0 source
@@ -34,35 +34,35 @@ const (
 
 	// Members
 	// -------
-	GlobalStatement NodeType = iota
-	FunctionDeclaration
+	GlobalStatement     NodeType = "Global Statement"
+	FunctionDeclaration NodeType = "Function Declaration"
 
 	// General
 	// -------
-	Parameter
-	TypeClause
+	Parameter  NodeType = "Parameter"
+	TypeClause NodeType = "Type Clause"
 
 	// Statements
 	// ----------
-	BlockStatement
-	VariableDeclaration
-	IfStatement
-	ElseClause
-	ReturnStatement
-	ForStatement
-	WhileStatement
-	BreakStatement
-	ContinueStatement
-	FromToStatement
-	ExpressionStatement
+	BlockStatement      NodeType = "Block Statement"
+	VariableDeclaration NodeType = "Variable Declaration"
+	IfStatement         NodeType = "If Statement"
+	ElseClause          NodeType = "Else Clause"
+	ReturnStatement     NodeType = "Return Statement"
+	ForStatement        NodeType = "For Statement"
+	WhileStatement      NodeType = "While Statement"
+	BreakStatement      NodeType = "Break Statement"
+	ContinueStatement   NodeType = "Continue Statement"
+	FromToStatement     NodeType = "FromTo Statement"
+	ExpressionStatement NodeType = "Expression Statement"
 
 	// Expressions
 	// -----------
-	LiteralExpression
-	ParenthesisedExpression
-	NameExpression
-	AssignmentExpression
-	CallExpression
-	UnaryExpression
-	BinaryExpression
+	LiteralExpression       NodeType = "Literal Expression"
+	ParenthesisedExpression NodeType = "Parenthesised Expression"
+	NameExpression          NodeType = "Name Expression"
+	AssignmentExpression    NodeType = "Assignment Expression"
+	CallExpression          NodeType = "Call Expression"
+	UnaryExpression         NodeType = "Unary Expression"
+	BinaryExpression        NodeType = "Binary Expression"
 )

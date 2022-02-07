@@ -31,8 +31,8 @@ func (node BoundForStatementNode) Print(indent string) {
 	fmt.Println(indent + "  └ Body: ")
 	node.Body.Print(indent + "    ")
 
-	fmt.Printf("%s  └ BreakLabel: %s", indent, node.BreakLabel)
-	fmt.Printf("%s  └ ContinueLabel: %s", indent, node.ContinueLabel)
+	fmt.Printf("%s  └ BreakLabel: %s\n", indent, node.BreakLabel)
+	fmt.Printf("%s  └ ContinueLabel: %s\n", indent, node.ContinueLabel)
 }
 
 func (node BoundForStatementNode) LoopBreakLabel() BoundLabel    { return node.BreakLabel }

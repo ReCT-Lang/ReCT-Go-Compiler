@@ -13,7 +13,7 @@ type ForStatementNode struct {
 	Keyword    lexer.Token
 	Initaliser VariableDeclarationStatementNode
 	Condition  ExpressionNode
-	Updation   ExpressionNode
+	Updation   StatementNode
 	Statement  StatementNode
 }
 

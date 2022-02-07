@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/print"
@@ -14,7 +15,7 @@ func main() {
 
 	print.PrintC(print.Green, "Testing lexer")
 	print.PrintC(print.Green, "-------------\n")
-	tokens := lexer.Lex("tests/test3.rct")
+	tokens := lexer.Lex("tests/test0.1.rct")
 	for _, token := range tokens {
 		fmt.Println(token.String(false))
 	}
@@ -28,4 +29,9 @@ func main() {
 	for _, member := range members {
 		member.Print("")
 	}
+
+	print.PrintC(print.Red, "Testing binder")
+	print.PrintC(print.Red, "--------------\n")
+	globalScope := binder.BindGlobalScope(members)
+	globalScope.Print()
 }

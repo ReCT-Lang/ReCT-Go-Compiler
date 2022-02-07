@@ -97,7 +97,13 @@ func (lxr *Lexer) getId() {
 		lxr.Increment()
 	}
 
-	lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, CheckIfKeyword(buffer), lxr.Line, lxr.Column))
+	kwType := CheckIfKeyword(buffer)
+
+	if kwType == TrueKeyword || kwType == FalseKeyword {
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, kwType == TrueKeyword, kwType, lxr.Line, lxr.Column))
+	} else {
+		lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, kwType, lxr.Line, lxr.Column))
+	}
 }
 
 // getOperator
