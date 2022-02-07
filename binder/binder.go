@@ -100,6 +100,16 @@ func (bin *Binder) BindStatementInternal(stmt nodes.StatementNode) boundnodes.Bo
 		return bin.BindReturnStatement(stmt.(nodes.ReturnStatementNode))
 	case nodes.ForStatement:
 		return bin.BindForStatement(stmt.(nodes.ForStatementNode))
+	case nodes.WhileStatement:
+		return bin.BindWhileStatement(stmt.(nodes.WhileStatementNode))
+	case nodes.FromToStatement:
+		return bin.BindFromToStatement(stmt.(nodes.FromToStatementNode))
+	case nodes.BreakStatement:
+		return bin.BindBreakStatement(stmt.(nodes.BreakStatementNode))
+	case nodes.ContinueStatement:
+		return bin.BindContinueStatement(stmt.(nodes.ContinueStatementNode))
+	case nodes.ExpressionStatement:
+		return bin.BindExpressionStatement(stmt.(nodes.ExpressionStatementNode))
 	}
 
 	print.PrintC(print.Red, "Unexpected statement node! Got: '"+string(stmt.NodeType())+"'")
@@ -206,6 +216,64 @@ func (bin *Binder) BindLoopBody(stmt nodes.StatementNode) (boundnodes.BoundState
 	bin.PopLabels()
 
 	return loopBody, breakLabel, continueLabel
+}
+
+func (bin *Binder) BindWhileStatement(stmt nodes.WhileStatementNode) boundnodes.BoundWhileStatementNode {
+	bin.PushScope(CreateScope(bin.ActiveScope))
+
+	condition := bin.BindExpression(stmt.Condition)
+	convertedCondition := bin.BindConversion(condition, builtins.Bool, false)
+
+	body, breakLabel, continueLabel := bin.BindLoopBody(stmt.Statement)
+
+	bin.PopScope()
+	return boundnodes.CreateBoundWhileStatementNode(convertedCondition, body, breakLabel, continueLabel)
+}
+
+func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnodes.BoundFromToStatementNode {
+	bin.PushScope(CreateScope(bin.ActiveScope))
+
+	variable := bin.BindVariableCreation(stmt.Identifier, true, false, builtins.Int)
+	lowerBound := bin.BindExpression(stmt.LowerBound)
+	upperBound := bin.BindExpression(stmt.UpperBound)
+
+	if lowerBound.Type().Fingerprint() != builtins.Int.Fingerprint() ||
+		upperBound.Type().Fingerprint() != builtins.Int.Fingerprint() {
+		print.PrintC(print.Red, "FromTo statement only allows for integer values!")
+		os.Exit(-1)
+	}
+
+	body, breakLabel, continueLabel := bin.BindLoopBody(stmt.Statement)
+
+	bin.PopScope()
+	return boundnodes.CreateBoundFromToStatementNode(variable, lowerBound, upperBound, body, breakLabel, continueLabel)
+}
+
+func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.BoundGotoStatementNode {
+	// if we're not in any loop
+	if len(bin.BreakLabels) == 0 {
+		print.PrintC(print.Red, "Cannot use break statement outside of a loop!")
+		os.Exit(-1)
+	}
+
+	breakLabel, _ := bin.GetLabels()
+	return boundnodes.CreateBoundGotoStatementNode(breakLabel)
+}
+
+func (bin *Binder) BindContinueStatement(stmt nodes.ContinueStatementNode) boundnodes.BoundGotoStatementNode {
+	// if we're not in any loop
+	if len(bin.BreakLabels) == 0 {
+		print.PrintC(print.Red, "Cannot use continue statement outside of a loop!")
+		os.Exit(-1)
+	}
+
+	_, continueLabel := bin.GetLabels()
+	return boundnodes.CreateBoundGotoStatementNode(continueLabel)
+}
+
+func (bin *Binder) BindExpressionStatement(stmt nodes.ExpressionStatementNode) boundnodes.BoundExpressionStatementNode {
+	expression := bin.BindExpression(stmt.Expression)
+	return boundnodes.CreateBoundExpressionStatementNode(expression)
 }
 
 // </STATEMENTS> --------------------------------------------------------------

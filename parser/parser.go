@@ -331,14 +331,16 @@ func (prs *Parser) parseFromToStatement() nodes.FromToStatementNode {
 	keyword := prs.consume(lexer.FromKeyword)
 
 	prs.consume(lexer.OpenParenthesisToken)
-	initialiser := prs.parseAssignmentExpression()
+	identifier := prs.consume(lexer.IdToken)
+	prs.consume(lexer.AssignToken)
+	lowerBound := prs.parseExpression()
 	prs.consume(lexer.CloseParenthesisToken)
 
 	prs.consume(lexer.ToKeyword)
-	condition := prs.parseExpression()
+	upperBound := prs.parseExpression()
 
 	statement := prs.parseStatement()
-	return nodes.CreateFromToStatementNode(keyword, initialiser, condition, statement)
+	return nodes.CreateFromToStatementNode(keyword, identifier, lowerBound, upperBound, statement)
 }
 
 func (prs *Parser) parseBreakStatement() nodes.BreakStatementNode {
