@@ -35,7 +35,7 @@ func (cl *CLInterface) Execute(args []string) {
 
 	var opts struct {
 		Quiet        bool   `short:"q" long:"quiet" description:"Disable verbose actions"`
-		File         string `short:"s" long:"source" alias:"f"description:"The source to compile" required:"true"`
+		File         string `short:"s" long:"source" alias:"f" description:"The source to compile" required:"true"`
 		Unsafe       bool   `long:"unsafe" description:"Enable unsafe code"`
 		Experimental bool   `long:"experimental" description:"Enable experimental features"`
 	}
