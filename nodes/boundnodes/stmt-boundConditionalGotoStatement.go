@@ -19,8 +19,8 @@ func (node BoundConditionalGotoStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ BoundConditionalGotoStatementNode")
 	fmt.Println(indent + "  └ Condition:")
 	node.Condition.Print(indent + "    ")
-	fmt.Printf("%s  └ Label: %s", indent, node.Label)
-	fmt.Printf("%s  └ JumpIfTrue: %t", indent, node.JumpIfTrue)
+	fmt.Printf("%s  └ Label: %s\n", indent, node.Label)
+	fmt.Printf("%s  └ JumpIfTrue: %t\n", indent, node.JumpIfTrue)
 }
 
 // constructor

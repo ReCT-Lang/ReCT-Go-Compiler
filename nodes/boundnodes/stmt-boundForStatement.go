@@ -18,7 +18,7 @@ type BoundForStatementNode struct {
 }
 
 // implement the interface
-func (BoundForStatementNode) NodeType() BoundType { return BoundWhileStatement }
+func (BoundForStatementNode) NodeType() BoundType { return BoundForStatement }
 func (node BoundForStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ BoundForStatementNode")
 	fmt.Println(indent + "  └ Variable: ")

@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"ReCT-Go-Compiler/lowerer"
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
@@ -33,10 +34,11 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	for _, fnc := range globalScope.Functions {
 		binder := CreateBinder(parentScope, fnc)
 		body := binder.BindBlockStatement(fnc.Declaration.Body)
+		loweredBody := lowerer.Lower(fnc, body)
 
 		functionBodies = append(functionBodies, BoundFunction{
 			Symbol: fnc,
-			Body:   body,
+			Body:   loweredBody,
 		})
 	}
 

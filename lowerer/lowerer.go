@@ -2,6 +2,7 @@ package lowerer
 
 import (
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -64,6 +65,7 @@ func CanFallThrough(stmt boundnodes.BoundStatementNode) bool {
 }
 
 func RewriteStatement(stmt boundnodes.BoundStatementNode) boundnodes.BoundStatementNode {
+	fmt.Println(stmt.NodeType())
 	switch stmt.NodeType() {
 	case boundnodes.BoundBlockStatement:
 		return RewriteBlockStatement(stmt.(boundnodes.BoundBlockStatementNode))
@@ -107,39 +109,130 @@ func RewriteVariableDeclaration(stmt boundnodes.BoundVariableDeclarationStatemen
 	return boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, initializer)
 }
 
-func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundIfStatementNode {
-	condition := RewriteExpression(stmt.Condition)
-	thenStatement := RewriteStatement(stmt.ThenStatement)
-	var elseStatement boundnodes.BoundStatementNode = nil
-	if stmt.ElseStatement != nil {
-		elseStatement = RewriteStatement(stmt.ElseStatement)
+func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundStatementNode {
+	if stmt.ElseStatement == nil {
+		// if <condition> { <then> }
+		//
+		// <- gets lowered into: ->
+		//
+		// gotoFalse <condition> end
+		// <then>
+		// end:
+		endLabel := GenerateLabel()
+		gotoFalse := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, endLabel, false)
+		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel)
+		result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+			gotoFalse, stmt.ThenStatement, endLabelStatement,
+		})
+		return RewriteStatement(result)
+
+	} else {
+		// if <condition> { <then> }
+		// else { <else> }
+		//
+		// <- gets lowered into: ->
+		//
+		// gotoFalse <condition> else
+		// <then>
+		// goto end
+		// else:
+		// <else>
+		// end:
+
+		elseLabel := GenerateLabel()
+		endLabel := GenerateLabel()
+
+		gotoFalse := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, elseLabel, false)
+		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel)
+		elseLabelStatement := boundnodes.CreateBoundLabelStatementNode(elseLabel)
+		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel)
+		result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+			gotoFalse, stmt.ThenStatement, gotoEnd, elseLabelStatement, stmt.ElseStatement, endLabelStatement,
+		})
+		return RewriteStatement(result)
 	}
-
-	return boundnodes.CreateBoundIfStatementNode(condition, thenStatement, elseStatement)
 }
 
-func RewriteWhileStatement(stmt boundnodes.BoundWhileStatementNode) boundnodes.BoundWhileStatementNode {
+func RewriteWhileStatement(stmt boundnodes.BoundWhileStatementNode) boundnodes.BoundStatementNode {
+	// while <condition> { <body> }
+	//
+	// <- gets lowered into: ->
+	//
+	// goto continue
+	// body:
+	// <body>
+	// continue:
+	// gotoTrue <condition> body
+	// break:
+	bodyLabel := GenerateLabel()
+
+	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel)
+	bodyLabelStatement := boundnodes.CreateBoundLabelStatementNode(bodyLabel)
+	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel)
+	gotoTrue := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, bodyLabel, true)
+	breakLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.BreakLabel)
+
+	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+		gotoContinue, bodyLabelStatement, stmt.Body, continueLabelStatement, gotoTrue, breakLabelStatement,
+	})
+	return RewriteStatement(result)
+}
+
+func RewriteForStatement(stmt boundnodes.BoundForStatementNode) boundnodes.BoundStatementNode {
 	condition := RewriteExpression(stmt.Condition)
-	body := RewriteStatement(stmt.Body)
+	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel)
 
-	return boundnodes.CreateBoundWhileStatementNode(condition, body, stmt.BreakLabel, stmt.ContinueLabel)
-}
+	whileBody := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+		stmt.Body, continueLabelStatement, stmt.Action,
+	})
+	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel())
 
-func RewriteForStatement(stmt boundnodes.BoundForStatementNode) boundnodes.BoundForStatementNode {
 	variable := RewriteStatement(stmt.Variable).(boundnodes.BoundVariableDeclarationStatementNode)
-	condition := RewriteExpression(stmt.Condition)
-	action := RewriteStatement(stmt.Action)
 
-	body := RewriteStatement(stmt.Body)
-	return boundnodes.CreateBoundForStatementNode(variable, condition, action, body, stmt.BreakLabel, stmt.ContinueLabel)
+	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+		variable, whileStatement,
+	})
+	return RewriteStatement(result)
 }
 
-func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes.BoundFromToStatementNode {
+func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes.BoundStatementNode {
+	// good god what did i just write - RedCube
 	lowerBound := RewriteExpression(stmt.LowerBound)
 	upperBound := RewriteExpression(stmt.UpperBound)
-	body := RewriteStatement(stmt.Body)
+	variableDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, lowerBound)
+	variableExpression := boundnodes.CreateBoundVariableExpressionNode(stmt.Variable)
+	upperBoundSymbol := symbols.CreateLocalVariableSymbol("upperBound", true, builtins.Int)
+	upperBoundDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(upperBoundSymbol, upperBound)
 
-	return boundnodes.CreateBoundFromToStatementNode(stmt.Variable, lowerBound, upperBound, body, stmt.BreakLabel, stmt.ContinueLabel)
+	condition := boundnodes.CreateBoundBinaryExpressionNode(
+		variableExpression,
+		boundnodes.BindBinaryOperator(lexer.LessEqualsToken, builtins.Int, builtins.Int),
+		boundnodes.CreateBoundVariableExpressionNode(upperBoundSymbol),
+	)
+	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel)
+	increment := boundnodes.CreateBoundExpressionStatementNode(
+		boundnodes.CreateBoundAssignmentExpressionNode(
+			stmt.Variable,
+			boundnodes.CreateBoundBinaryExpressionNode(
+				variableExpression,
+				boundnodes.BindBinaryOperator(lexer.PlusToken, builtins.Int, builtins.Int),
+				boundnodes.CreateBoundLiteralExpressionNode(1),
+			),
+		),
+	)
+
+	whileBody := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+		stmt.Body,
+		continueLabelStatement,
+		increment,
+	})
+
+	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel())
+
+	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+		variableDeclaration, upperBoundDeclaration, whileStatement,
+	})
+	return RewriteStatement(result)
 }
 
 func RewriteLabelStatement(stmt boundnodes.BoundLabelStatementNode) boundnodes.BoundLabelStatementNode {
