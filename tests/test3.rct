@@ -11,3 +11,6 @@ function intFunction() int
 {
 	return 0;
 }
+
+var test <- "";
+test->SomeTypedFunction();
