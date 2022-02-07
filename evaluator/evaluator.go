@@ -8,11 +8,11 @@ import (
 	"ReCT-Go-Compiler/symbols"
 	"bufio"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"time"
-	"math"
 )
 
 type Evaluator struct {
@@ -257,14 +257,22 @@ func (evl *Evaluator) EvaluateBinaryExpression(expr boundnodes.BoundBinaryExpres
 
 	case boundnodes.Division:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			if right.(int) == 0 {
+				print.PrintC(print.Red, "Division by 0 is illegal!")
+				os.Exit(-1)
+			}
 			return left.(int) / right.(int)
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			if right.(float32) == 0 {
+				print.PrintC(print.Red, "Division by 0 is illegal!")
+				os.Exit(-1)
+			}
 			return left.(float32) / right.(float32)
 		}
 		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
 		os.Exit(-1)
 
-  case boundnodes.Modulus:
+	case boundnodes.Modulus:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return left.(int) % right.(int)
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
