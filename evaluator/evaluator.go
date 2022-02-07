@@ -6,7 +6,9 @@ import (
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
+	"fmt"
 	"os"
+	"strconv"
 )
 
 type Evaluator struct {
@@ -19,6 +21,10 @@ type Evaluator struct {
 // locals stack helpers
 func (evl *Evaluator) PushLocals() {
 	evl.Locals = append(evl.Locals, make(map[string]interface{}))
+}
+
+func (evl *Evaluator) PushTheseLocals(locals map[string]interface{}) {
+	evl.Locals = append(evl.Locals, locals)
 }
 
 func (evl *Evaluator) PopLocals() {
@@ -60,7 +66,7 @@ func Evaluate(program binder.BoundProgram) {
 
 	mainFunction := program.MainFunction
 	body := evaluator.Functions[mainFunction.GetFingerprint()].Body
-	EvaluateStatement(body)
+	evaluator.EvaluateStatement(body)
 }
 
 func (evl *Evaluator) EvaluateStatement(body boundnodes.BoundBlockStatementNode) interface{} {
@@ -84,17 +90,14 @@ func (evl *Evaluator) EvaluateStatement(body boundnodes.BoundBlockStatementNode)
 		case boundnodes.BoundVariableDeclaration:
 			evl.EvaluateVariableDeclaration(stmt.(boundnodes.BoundVariableDeclarationStatementNode))
 			index++
-			break
 
 		case boundnodes.BoundExpressionStatement:
 			evl.EvaluateExpressionStatement(stmt.(boundnodes.BoundExpressionStatementNode))
 			index++
-			break
 
 		case boundnodes.BoundGotoStatement:
 			gotoStatement := stmt.(boundnodes.BoundGotoStatementNode)
 			index = labelIndexes[gotoStatement.Label]
-			break
 
 		case boundnodes.BoundConditionalGotoStatement:
 			gotoStatement := stmt.(boundnodes.BoundConditionalGotoStatementNode)
@@ -106,11 +109,8 @@ func (evl *Evaluator) EvaluateStatement(body boundnodes.BoundBlockStatementNode)
 				index++
 			}
 
-			break
-
 		case boundnodes.BoundLabelStatement:
 			index++
-			break
 
 		case boundnodes.BoundReturnStatement:
 			returnStatement := stmt.(boundnodes.BoundReturnStatementNode)
@@ -149,6 +149,15 @@ func (evl *Evaluator) EvaluateExpression(expr boundnodes.BoundExpressionNode) in
 
 	case boundnodes.BoundUnaryExpression:
 		return evl.EvaluateUnaryExpression(expr.(boundnodes.BoundUnaryExpressionNode))
+
+	case boundnodes.BoundBinaryExpression:
+		return evl.EvaluateBinaryExpression(expr.(boundnodes.BoundBinaryExpressionNode))
+
+	case boundnodes.BoundCallExpression:
+		return evl.EvaluateCallExpression(expr.(boundnodes.BoundCallExpressionNode))
+
+	case boundnodes.BoundConversionExpression:
+		return evl.EvaluateConversionExpression(expr.(boundnodes.BoundConversionExpressionNode))
 	}
 
 	return nil
@@ -204,9 +213,217 @@ func (evl *Evaluator) EvaluateUnaryExpression(expr boundnodes.BoundUnaryExpressi
 
 func (evl *Evaluator) EvaluateBinaryExpression(expr boundnodes.BoundBinaryExpressionNode) interface{} {
 	left := evl.EvaluateExpression(expr.Left)
-	//right := EvaluateBinaryExpression(expr.Right)
+	right := evl.EvaluateExpression(expr.Right)
+
+	switch expr.Op.OperatorKind {
+	case boundnodes.Addition:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) + right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) + right.(float32)
+		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
+			return left.(string) + right.(string)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.Subtraction:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) - right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) - right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.Multiplication:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) * right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) * right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.Division:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) / right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) / right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.BitwiseAnd:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) & right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return left.(bool) && right.(bool)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.BitwiseOr:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) | right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return left.(bool) || right.(bool)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.BitwiseXor:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) ^ right.(int)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.Equals:
+		return left == right
+
+	case boundnodes.NotEquals:
+		return left != right
+
+	case boundnodes.Greater:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) > right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) > right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.GreaterOrEquals:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) >= right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) >= right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.Less:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) < right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) < right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.LessOrEquals:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return left.(int) <= right.(int)
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return left.(float32) <= right.(float32)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.LogicalAnd:
+		if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return left.(bool) && right.(bool)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	case boundnodes.LogicalOr:
+		if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return left.(bool) || right.(bool)
+		}
+		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
+		os.Exit(-1)
+
+	}
 
 	return left
 }
 
-func ()
+func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpressionNode) interface{} {
+	// Built in functions
+	if expr.Function.GetFingerprint() == builtins.Print.GetFingerprint() {
+		text := evl.EvaluateExpression(expr.Arguments[0])
+		fmt.Println(text)
+		return nil
+
+	} else if expr.Function.GetFingerprint() == builtins.Write.GetFingerprint() {
+		text := evl.EvaluateExpression(expr.Arguments[0])
+		fmt.Print(text)
+		return nil
+
+	}
+
+	locals := make(map[string]interface{})
+	for i, arg := range expr.Arguments {
+		parameter := expr.Function.Parameters[i]
+		argument := evl.EvaluateExpression(arg)
+		locals[parameter.GetFingerprint()] = argument
+	}
+
+	evl.PushTheseLocals(locals)
+
+	body := evl.Functions[expr.Function.GetFingerprint()].Body
+	result := evl.EvaluateStatement(body)
+
+	evl.PopLocals()
+
+	return result
+}
+
+func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversionExpressionNode) interface{} {
+	value := evl.EvaluateExpression(expr.Expression)
+
+	if expr.ToType.Fingerprint() == builtins.Any.Fingerprint() {
+		return value
+
+		// to string conversion
+	} else if expr.ToType.Fingerprint() == builtins.String.Fingerprint() {
+		switch value.(type) {
+		case string:
+			return value.(string)
+		case bool:
+			return fmt.Sprintf("%t", value.(bool))
+		case int:
+			return fmt.Sprintf("%d", value.(int))
+		case float32:
+			return fmt.Sprintf("%f", value.(float32))
+		default:
+			print.PrintC(print.Red, "No Conversion! (cringe)")
+			os.Exit(-1)
+		}
+
+		// string -> bool
+	} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
+		switch value.(type) {
+		case string:
+			val, _ := strconv.ParseBool(value.(string))
+			return val
+		default:
+			print.PrintC(print.Red, "No Conversion! (cringe)")
+			os.Exit(-1)
+		}
+	} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
+		switch value.(type) {
+		case string:
+			val, _ := strconv.Atoi(value.(string))
+			return val
+		default:
+			print.PrintC(print.Red, "No Conversion! (cringe)")
+			os.Exit(-1)
+		}
+	} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
+		switch value.(type) {
+		case string:
+			val, _ := strconv.ParseFloat(value.(string), 32)
+			return val
+		default:
+			print.PrintC(print.Red, "No Conversion! (cringe)")
+			os.Exit(-1)
+		}
+	}
+
+	print.PrintC(print.Red, "idek how this happened (conversion went completely wrong)")
+	os.Exit(-1)
+	return value
+}

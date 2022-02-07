@@ -1,13 +1,19 @@
-Print("functions!");
+Print("much rect, much wow");
 muchFunction("yes");
+
+Print("No fucking way, did this just work?? " + string(intFunction()));
 
 function muchFunction(someParam string)
 {
+	Write("h");
+
 	from(i <- 0) to 100
-		Print("yes");
+		Write(" m");
+
+	Print("");
 }
 
 function intFunction() int
 {
-	return 0;
+	return 69;
 }

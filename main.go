@@ -2,6 +2,7 @@ package main
 
 import (
 	"ReCT-Go-Compiler/binder"
+	"ReCT-Go-Compiler/evaluator"
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/print"
@@ -34,4 +35,9 @@ func main() {
 	print.PrintC(print.Red, "--------------\n")
 	boundProgram := binder.BindProgram(members)
 	boundProgram.Print()
+
+	print.PrintC(print.Cyan, "\nTesting evaluator")
+	print.PrintC(print.Cyan, "-----------------\n")
+	evaluator.Evaluate(boundProgram)
+
 }
