@@ -16,8 +16,6 @@ func GetUnaryOperatorPrecedence(tok lexer.Token) int {
 	default:
 		return 0
 	}
-
-	return 0
 }
 
 func GetBinaryOperatorPrecedence(tok lexer.Token) int {
@@ -47,6 +45,4 @@ func GetBinaryOperatorPrecedence(tok lexer.Token) int {
 	default:
 		return 0
 	}
-
-	return 0
 }
