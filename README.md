@@ -8,6 +8,6 @@ It is currentry under development.
 Progress:
 - [x] Lexer
 - [x] Parser
-- [ ] Binder (WIP)
-- [ ] Lowerer
+- [x] Binder
+- [ ] Lowerer (WIP)
 - [ ] Evaluator
