@@ -21,7 +21,7 @@ func GetUnaryOperatorPrecedence(tok lexer.Token) int {
 func GetBinaryOperatorPrecedence(tok lexer.Token) int {
 	switch tok.Kind {
 
-	case lexer.StarToken, lexer.SlashToken:
+	case lexer.StarToken, lexer.SlashToken, lexer.ModulusToken:
 		return 5
 
 	case lexer.PlusToken, lexer.MinusToken:
