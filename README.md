@@ -9,5 +9,5 @@ Progress:
 - [x] Lexer
 - [x] Parser
 - [x] Binder
-- [ ] Lowerer (WIP)
+- [x] Lowerer
 - [ ] Evaluator
