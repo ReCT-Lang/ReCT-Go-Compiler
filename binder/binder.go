@@ -242,7 +242,7 @@ func (bin *Binder) BindForStatement(stmt nodes.ForStatementNode) boundnodes.Boun
 
 	bin.PopScope()
 
-	return boundnodes.CreateBoundForStatementNode(variable.Variable, convertedCondition, updation, body, breakLabel, continueLabel)
+	return boundnodes.CreateBoundForStatementNode(variable, convertedCondition, updation, body, breakLabel, continueLabel)
 }
 
 func (bin *Binder) BindLoopBody(stmt nodes.StatementNode) (boundnodes.BoundStatementNode, boundnodes.BoundLabel, boundnodes.BoundLabel) {
@@ -448,8 +448,10 @@ func (bin *Binder) BindVariableReference(name string) symbols.VariableSymbol {
 
 	if variable == nil ||
 		!(variable.SymbolType() == symbols.GlobalVariable ||
-			variable.SymbolType() == symbols.LocalVariable) {
+			variable.SymbolType() == symbols.LocalVariable ||
+			variable.SymbolType() == symbols.Parameter) {
 		print.PrintC(print.Red, "Could not find variable '"+name+"'!")
+		os.Exit(-1)
 	}
 
 	return variable.(symbols.VariableSymbol)

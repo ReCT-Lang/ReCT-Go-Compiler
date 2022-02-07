@@ -3,7 +3,8 @@ muchFunction("yes");
 
 function muchFunction(someParam string)
 {
-	Print(someParam);
+	from (i <- 0) to 100
+		Print(someParam);
 }
 
 function intFunction() int

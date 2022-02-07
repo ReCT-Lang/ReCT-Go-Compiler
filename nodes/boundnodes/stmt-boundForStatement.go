@@ -2,14 +2,13 @@ package boundnodes
 
 import (
 	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
 	"fmt"
 )
 
 type BoundForStatementNode struct {
 	BoundLoopStatementNode
 
-	Variable  symbols.VariableSymbol
+	Variable  BoundVariableDeclarationStatementNode
 	Condition BoundExpressionNode
 	Action    BoundStatementNode
 
@@ -39,7 +38,7 @@ func (node BoundForStatementNode) LoopBreakLabel() BoundLabel    { return node.B
 func (node BoundForStatementNode) LoopContinueLabel() BoundLabel { return node.ContinueLabel }
 
 // constructor
-func CreateBoundForStatementNode(variable symbols.VariableSymbol, cond BoundExpressionNode, action BoundStatementNode, body BoundStatementNode, breakLabel BoundLabel, continueLabel BoundLabel) BoundForStatementNode {
+func CreateBoundForStatementNode(variable BoundVariableDeclarationStatementNode, cond BoundExpressionNode, action BoundStatementNode, body BoundStatementNode, breakLabel BoundLabel, continueLabel BoundLabel) BoundForStatementNode {
 	return BoundForStatementNode{
 		Variable:      variable,
 		Condition:     cond,
