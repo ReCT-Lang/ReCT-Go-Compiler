@@ -2,10 +2,10 @@ package main
 
 import (
 	"ReCT-Go-Compiler/binder"
+	"ReCT-Go-Compiler/evaluator"
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/print"
-	"fmt"
 )
 
 func main() {
@@ -13,25 +13,19 @@ func main() {
 	//i.Execute([]string{"-s", "tests/test1.rct", "--experimental", "-q"})
 	//return
 
-	print.PrintC(print.Green, "Testing lexer")
-	print.PrintC(print.Green, "-------------\n")
-	tokens := lexer.Lex("tests/test3.rct")
-	for _, token := range tokens {
-		fmt.Println(token.String(false))
-	}
-	fmt.Print("\n")
+	print.WriteC(print.Green, "-> Lexing...  ")
+	tokens := lexer.Lex("tests/coolishtest.rct")
+	print.PrintC(print.Green, "Done!")
 
-	print.PrintC(print.Yellow, "Testing parser")
-	print.PrintC(print.Yellow, "--------------\n")
+	print.WriteC(print.Yellow, "-> Parsing... ")
 	members := parser.Parse(tokens)
-	fmt.Printf("Members: %d\n", len(members))
+	print.PrintC(print.Green, "Done!")
 
-	for _, member := range members {
-		member.Print("")
-	}
-
-	print.PrintC(print.Red, "Testing binder")
-	print.PrintC(print.Red, "--------------\n")
+	print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
-	boundProgram.Print()
+	print.PrintC(print.Green, "Done!")
+
+	print.PrintC(print.Cyan, "-> Evaluating!")
+	evaluator.Evaluate(boundProgram)
+
 }

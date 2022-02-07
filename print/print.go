@@ -44,3 +44,7 @@ const (
 func PrintC(color string, message string) {
 	fmt.Printf(color, message+"\n")
 }
+
+func WriteC(color string, message string) {
+	fmt.Printf(color, message)
+}

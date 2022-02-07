@@ -1,0 +1,4 @@
+set modulus <- 7 % 4;
+set error <- 1 / 0;
+
+Print(string(modulus));

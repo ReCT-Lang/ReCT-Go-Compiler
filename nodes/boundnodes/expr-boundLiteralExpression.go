@@ -49,6 +49,8 @@ func CreateBoundLiteralExpressionNode(value interface{}) BoundLiteralExpressionN
 		_type = builtins.Bool
 	case int:
 		_type = builtins.Int
+	case float32:
+		_type = builtins.Float
 	default:
 		print.PrintC(
 			print.Red,
