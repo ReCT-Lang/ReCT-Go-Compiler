@@ -65,7 +65,6 @@ func CanFallThrough(stmt boundnodes.BoundStatementNode) bool {
 }
 
 func RewriteStatement(stmt boundnodes.BoundStatementNode) boundnodes.BoundStatementNode {
-	fmt.Println(stmt.NodeType())
 	switch stmt.NodeType() {
 	case boundnodes.BoundBlockStatement:
 		return RewriteBlockStatement(stmt.(boundnodes.BoundBlockStatementNode))
