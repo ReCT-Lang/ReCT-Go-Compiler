@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -45,16 +46,27 @@ func (lxr *Lexer) getNumber() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
 
-	for lxr.Index < len(lxr.Code) && unicode.IsDigit(rune(lxr.Code[lxr.Index])) {
+	for lxr.Index < len(lxr.Code) && (unicode.IsDigit(rune(lxr.Code[lxr.Index])) || rune(lxr.Code[lxr.Index]) == '.') {
 		buffer += string(lxr.Code[lxr.Index])
 		lxr.Increment()
 	}
 
-	realValueBuffer, err := strconv.Atoi(buffer)
-	if err != nil {
-		fmt.Printf("ERROR: value \"%s\" could not be converted to real value (NumberToken)!", buffer)
+	if strings.Contains(buffer, ".") {
+		// float real value
+		realValueBuffer, err := strconv.ParseFloat(buffer, 32)
+		if err != nil {
+			fmt.Printf("ERROR: value \"%s\" could not be converted to real value [float] (NumberToken)!", buffer)
+		}
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, float32(realValueBuffer), NumberToken, lxr.Line, lxr.Column))
+
+	} else {
+		// int real value
+		realValueBuffer, err := strconv.Atoi(buffer)
+		if err != nil {
+			fmt.Printf("ERROR: value \"%s\" could not be converted to real value [int] (NumberToken)!", buffer)
+		}
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.Line, lxr.Column))
 	}
-	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.Line, lxr.Column))
 }
 
 // getString
@@ -127,8 +139,8 @@ func (lxr *Lexer) getOperator() {
 	switch lxr.Code[lxr.Index] {
 	case '+':
 		_token = PlusToken
-  case '%':
-    _token = ModulusToken
+	case '%':
+		_token = ModulusToken
 	case '-':
 		if peek(1) == '>' {
 			lxr.Increment()

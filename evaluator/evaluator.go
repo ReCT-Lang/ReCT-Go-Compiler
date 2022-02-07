@@ -274,8 +274,16 @@ func (evl *Evaluator) EvaluateBinaryExpression(expr boundnodes.BoundBinaryExpres
 
 	case boundnodes.Modulus:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			if right.(int) == 0 {
+				print.PrintC(print.Red, "Division by 0 is illegal!")
+				os.Exit(-1)
+			}
 			return left.(int) % right.(int)
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			if right.(float32) == 0 {
+				print.PrintC(print.Red, "Division by 0 is illegal!")
+				os.Exit(-1)
+			}
 			return math.Mod(left.(float64), right.(float64))
 		}
 		print.PrintC(print.Red, "How did this even happen..? (invalid type on operator evaluation)")
@@ -441,7 +449,7 @@ func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversi
 		case int:
 			return fmt.Sprintf("%d", value.(int))
 		case float32:
-			return fmt.Sprintf("%f", value.(float32))
+			return fmt.Sprintf("%g", value.(float32))
 		default:
 			print.PrintC(print.Red, "No Conversion! (cringe)")
 			os.Exit(-1)
