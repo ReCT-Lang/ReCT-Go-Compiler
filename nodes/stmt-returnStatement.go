@@ -21,8 +21,13 @@ func (ReturnStatementNode) NodeType() NodeType { return ReturnStatement }
 func (node ReturnStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ ReturnStatementNode")
 	fmt.Printf("%s  └ Keyword: %s\n", indent, node.Keyword.Kind)
-	fmt.Println(indent + "  └ Expression: ")
-	node.Expression.Print(indent + "    ")
+
+	if node.Expression == nil {
+		fmt.Printf("%s  └ Expression: none\n", indent)
+	} else {
+		fmt.Println(indent + "  └ Expression: ")
+		node.Expression.Print(indent + "    ")
+	}
 }
 
 // "constructor" / ooga booga OOP cave man brain - Same -_-

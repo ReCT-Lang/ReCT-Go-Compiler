@@ -157,6 +157,8 @@ func (lxr *Lexer) getOperator() {
 		_token = CloseBraceToken
 	case ';':
 		_token = Semicolon
+	case ',':
+		_token = CommaToken
 	case '<':
 		if peek(1) == '-' {
 			lxr.Increment()

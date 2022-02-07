@@ -1,6 +1,9 @@
 package symbols
 
-import "ReCT-Go-Compiler/print"
+import (
+	"ReCT-Go-Compiler/print"
+	"fmt"
+)
 
 type LocalVariableSymbol struct {
 	VariableSymbol
@@ -8,6 +11,7 @@ type LocalVariableSymbol struct {
 	Name     string
 	ReadOnly bool
 	Type     TypeSymbol
+	UniqueID int
 }
 
 // implement the symbol interface
@@ -19,15 +23,18 @@ func (sym LocalVariableSymbol) Print(indent string) {
 }
 
 // implement the var interface
-func (LocalVariableSymbol) IsGlobal() bool        { return false }
-func (s LocalVariableSymbol) IsReadOnly() bool    { return s.ReadOnly }
-func (s LocalVariableSymbol) VarType() TypeSymbol { return s.Type }
+func (LocalVariableSymbol) IsGlobal() bool           { return false }
+func (s LocalVariableSymbol) IsReadOnly() bool       { return s.ReadOnly }
+func (s LocalVariableSymbol) VarType() TypeSymbol    { return s.Type }
+func (s LocalVariableSymbol) GetFingerprint() string { return fmt.Sprintf("VL_%d", s.UniqueID) }
 
 // constructor
 func CreateLocalVariableSymbol(name string, readonly bool, typeSymbol TypeSymbol) LocalVariableSymbol {
+	variableCounter++
 	return LocalVariableSymbol{
 		Name:     name,
 		ReadOnly: readonly,
 		Type:     typeSymbol,
+		UniqueID: variableCounter,
 	}
 }

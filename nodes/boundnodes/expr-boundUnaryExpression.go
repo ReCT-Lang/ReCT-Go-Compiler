@@ -17,7 +17,7 @@ func (BoundUnaryExpressionNode) NodeType() BoundType { return BoundUnaryExpressi
 
 func (node BoundUnaryExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundUnaryExpressionNode")
-	fmt.Printf("%s  └ Operator: %d", indent, node.Op.OperatorKind)
+	fmt.Printf("%s  └ Operator: %s\n", indent, node.Op.OperatorKind)
 	fmt.Println(indent + "  └ Expression: ")
 	node.Expression.Print(indent + "    ")
 }

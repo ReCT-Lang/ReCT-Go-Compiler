@@ -7,7 +7,9 @@ import (
 
 type FunctionSymbol struct {
 	Symbol
-	Exists bool
+
+	Exists  bool
+	BuiltIn bool
 
 	Name        string
 	Parameters  []ParameterSymbol
@@ -20,13 +22,39 @@ func (FunctionSymbol) SymbolType() SymbolType { return Function }
 func (s FunctionSymbol) SymbolName() string   { return s.Name }
 
 func (sym FunctionSymbol) Print(indent string) {
-	print.PrintC(print.Magenta, indent+"└ FunctionSymbol ["+sym.Name+"]")
+	if sym.BuiltIn {
+		print.PrintC(print.Cyan, indent+"└ FunctionSymbol ["+sym.Name+"]")
+	} else {
+		print.PrintC(print.Magenta, indent+"└ FunctionSymbol ["+sym.Name+"]")
+	}
+}
+
+func (s FunctionSymbol) GetFingerprint() string {
+	id := "F_" + s.Name + "_"
+
+	for _, param := range s.Parameters {
+		id += "[" + param.GetFingerprint() + "]"
+	}
+
+	id += s.Type.Name
+	return id
 }
 
 // constructor
 func CreateFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, declaration nodes.FunctionDeclarationMember) FunctionSymbol {
 	return FunctionSymbol{
 		Exists:      true,
+		Name:        name,
+		Parameters:  params,
+		Type:        typeSymbol,
+		Declaration: declaration,
+	}
+}
+
+func CreateBuiltInFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, declaration nodes.FunctionDeclarationMember) FunctionSymbol {
+	return FunctionSymbol{
+		Exists:      true,
+		BuiltIn:     true,
 		Name:        name,
 		Parameters:  params,
 		Type:        typeSymbol,

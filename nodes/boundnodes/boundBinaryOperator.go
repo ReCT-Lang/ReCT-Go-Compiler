@@ -6,24 +6,24 @@ import (
 	"ReCT-Go-Compiler/symbols"
 )
 
-type BoundBinaryOperatorType int
+type BoundBinaryOperatorType string
 
 const (
-	Addition BoundBinaryOperatorType = iota
-	Subtraction
-	Multiplication
-	Division
-	LogicalAnd
-	LogicalOr
-	BitwiseAnd
-	BitwiseOr
-	BitwiseXor
-	Equals
-	NotEquals
-	Less
-	LessOrEquals
-	Greater
-	GreaterOrEquals
+	Addition        BoundBinaryOperatorType = "Addition"
+	Subtraction     BoundBinaryOperatorType = "Subtraction"
+	Multiplication  BoundBinaryOperatorType = "Multiplication"
+	Division        BoundBinaryOperatorType = "Division"
+	LogicalAnd      BoundBinaryOperatorType = "LogicalAnd"
+	LogicalOr       BoundBinaryOperatorType = "LogicalOr"
+	BitwiseAnd      BoundBinaryOperatorType = "BitwiseAnd"
+	BitwiseOr       BoundBinaryOperatorType = "BitwiseOr"
+	BitwiseXor      BoundBinaryOperatorType = "BitwiseXor"
+	Equals          BoundBinaryOperatorType = "Equals"
+	NotEquals       BoundBinaryOperatorType = "NotEquals"
+	Less            BoundBinaryOperatorType = "LessThan"
+	LessOrEquals    BoundBinaryOperatorType = "LessOrEquals"
+	Greater         BoundBinaryOperatorType = "GreaterThan"
+	GreaterOrEquals BoundBinaryOperatorType = "GreaterOrEquals"
 )
 
 type BoundBinaryOperator struct {

@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	Print = symbols.CreateFunctionSymbol(
+	Print = symbols.CreateBuiltInFunctionSymbol(
 		"Print",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("text", 0, String),
@@ -15,7 +15,7 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	Write = symbols.CreateFunctionSymbol(
+	Write = symbols.CreateBuiltInFunctionSymbol(
 		"Write",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("text", 0, String),
@@ -24,28 +24,28 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	Input = symbols.CreateFunctionSymbol(
+	Input = symbols.CreateBuiltInFunctionSymbol(
 		"Input",
 		[]symbols.ParameterSymbol{},
 		String,
 		nodes.FunctionDeclarationMember{},
 	)
 
-	InputKey = symbols.CreateFunctionSymbol(
+	InputKey = symbols.CreateBuiltInFunctionSymbol(
 		"InputKey",
 		[]symbols.ParameterSymbol{},
 		String,
 		nodes.FunctionDeclarationMember{},
 	)
 
-	Clear = symbols.CreateFunctionSymbol(
+	Clear = symbols.CreateBuiltInFunctionSymbol(
 		"Clear",
 		[]symbols.ParameterSymbol{},
 		Void,
 		nodes.FunctionDeclarationMember{},
 	)
 
-	SetCursor = symbols.CreateFunctionSymbol(
+	SetCursor = symbols.CreateBuiltInFunctionSymbol(
 		"SetCursor",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("x", 0, Int),
@@ -55,22 +55,22 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	GetSizeX = symbols.CreateFunctionSymbol(
+	GetSizeX = symbols.CreateBuiltInFunctionSymbol(
 		"GetSizeX",
 		[]symbols.ParameterSymbol{},
 		Int,
 		nodes.FunctionDeclarationMember{},
 	)
 
-	GetSizeY = symbols.CreateFunctionSymbol(
+	GetSizeY = symbols.CreateBuiltInFunctionSymbol(
 		"GetSizeY",
 		[]symbols.ParameterSymbol{},
 		Int,
 		nodes.FunctionDeclarationMember{},
 	)
 
-	SetSize = symbols.CreateFunctionSymbol(
-		"GetSize",
+	SetSize = symbols.CreateBuiltInFunctionSymbol(
+		"SetSize",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("width", 0, Int),
 			symbols.CreateParameterSymbol("height", 1, Int),
@@ -79,7 +79,7 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	SetCursorVisible = symbols.CreateFunctionSymbol(
+	SetCursorVisible = symbols.CreateBuiltInFunctionSymbol(
 		"SetCursorVisible",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("state", 0, Bool),
@@ -88,14 +88,14 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	GetCursorVisible = symbols.CreateFunctionSymbol(
+	GetCursorVisible = symbols.CreateBuiltInFunctionSymbol(
 		"GetCursorVisible",
 		[]symbols.ParameterSymbol{},
 		Bool,
 		nodes.FunctionDeclarationMember{},
 	)
 
-	Random = symbols.CreateFunctionSymbol(
+	Random = symbols.CreateBuiltInFunctionSymbol(
 		"Random",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("maxNum", 0, Int),
@@ -104,7 +104,7 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	Sleep = symbols.CreateFunctionSymbol(
+	Sleep = symbols.CreateBuiltInFunctionSymbol(
 		"Sleep",
 		[]symbols.ParameterSymbol{
 			symbols.CreateParameterSymbol("milliseconds", 0, Int),
@@ -113,7 +113,7 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	Version = symbols.CreateFunctionSymbol(
+	Version = symbols.CreateBuiltInFunctionSymbol(
 		"Version",
 		[]symbols.ParameterSymbol{},
 		String,

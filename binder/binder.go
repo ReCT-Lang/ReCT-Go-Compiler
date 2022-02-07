@@ -62,11 +62,51 @@ func CreateBinder(parent Scope, functionSymbol symbols.FunctionSymbol) *Binder {
 	}
 
 	binder.ActiveScope = &binder.MemberScope
+
+	if binder.FunctionSymbol.Exists {
+		for _, param := range binder.FunctionSymbol.Parameters {
+			binder.ActiveScope.TryDeclareSymbol(param)
+		}
+	}
+
 	return &binder
 }
 
 // binder action
 
+// <MEMBERS> -----------------------------------------------------------------
+
+func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) {
+	boundParameters := make([]symbols.ParameterSymbol, 0)
+
+	for i, param := range mem.Parameters {
+		pName := param.Identifier.Value
+		pType, _ := bin.BindTypeClause(param.TypeClause)
+
+		// check if we've registered this param name before
+		for _, p := range boundParameters {
+			if p.Name == pName {
+				print.PrintC(print.Red, "A parameter with the name '"+pName+"' has already been defined for function '"+mem.Identifier.Value+"'!")
+				os.Exit(-1)
+			}
+		}
+
+		boundParameters = append(boundParameters, symbols.CreateParameterSymbol(pName, i, pType))
+	}
+
+	returnType, exists := bin.BindTypeClause(mem.TypeClause)
+	if !exists {
+		returnType = builtins.Void
+	}
+
+	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem)
+	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
+		print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
+		os.Exit(-1)
+	}
+}
+
+// </MEMBERS> ----------------------------------------------------------------
 // <STATEMENTS> ---------------------------------------------------------------
 func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundStatementNode {
 	result := bin.BindStatementInternal(stmt)
@@ -283,6 +323,18 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 	switch expr.NodeType() {
 	case nodes.LiteralExpression:
 		return bin.BindLiteralExpression(expr.(nodes.LiteralExpressionNode))
+	case nodes.ParenthesisedExpression:
+		return bin.BindParenthesisedExpression(expr.(nodes.ParenthesisedExpressionNode))
+	case nodes.NameExpression:
+		return bin.BindNameExpression(expr.(nodes.NameExpressionNode))
+	case nodes.AssignmentExpression:
+		return bin.BindAssignmentExpression(expr.(nodes.AssignmentExpressionNode))
+	case nodes.CallExpression:
+		return bin.BindCallExpression(expr.(nodes.CallExpressionNode))
+	case nodes.UnaryExpression:
+		return bin.BindUnaryExpression(expr.(nodes.UnaryExpressionNode))
+	case nodes.BinaryExpression:
+		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
 	default:
 		print.PrintC(print.Red, "Not implemented!")
 		os.Exit(-1)
@@ -292,6 +344,83 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 
 func (bin *Binder) BindLiteralExpression(expr nodes.LiteralExpressionNode) boundnodes.BoundLiteralExpressionNode {
 	return boundnodes.CreateBoundLiteralExpressionNode(expr.LiteralValue)
+}
+
+func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressionNode) boundnodes.BoundExpressionNode {
+	return bin.BindExpression(expr.Expression)
+}
+
+func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.BoundVariableExpressionNode {
+	variable := bin.BindVariableReference(expr.Identifier.Value)
+	return boundnodes.CreateBoundVariableExpressionNode(variable)
+}
+
+func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
+	variable := bin.BindVariableReference(expr.Identifier.Value)
+	expression := bin.BindExpression(expr.Expression)
+	convertedExpression := bin.BindConversion(expression, variable.VarType(), false)
+
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression)
+}
+
+func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
+	// check if this is a cast
+	typeSymbol, exists := LookupType(expr.Identifier.Value, true)
+	if exists && len(expr.Arguments) == 1 {
+		// bind the expression and return a conversion
+		expression := bin.BindExpression(expr.Arguments[0])
+		return bin.BindConversion(expression, typeSymbol, true)
+	}
+
+	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
+	for _, arg := range expr.Arguments {
+		boundArg := bin.BindExpression(arg)
+		boundArguments = append(boundArguments, boundArg)
+	}
+
+	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
+	if symbol == nil ||
+		symbol.SymbolType() != symbols.Function {
+		print.PrintC(print.Red, "Cannot find function '"+expr.Identifier.Value+"'!")
+		os.Exit(-1)
+	}
+
+	functionSymbol := symbol.(symbols.FunctionSymbol)
+	if len(boundArguments) != len(functionSymbol.Parameters) {
+		fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
+		os.Exit(-1)
+	}
+
+	for i := 0; i < len(boundArguments); i++ {
+		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false)
+	}
+
+	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments)
+}
+
+func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnodes.BoundUnaryExpressionNode {
+	operand := bin.BindExpression(expr.Operand)
+	op := boundnodes.BindUnaryOperator(expr.Operator.Kind, operand.Type())
+
+	if !op.Exists {
+		print.PrintC(print.Red, "Unary operator '"+expr.Operator.Value+"' is not defined for type '"+operand.Type().Name+"'!")
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreateBoundUnaryExpressionNode(op, operand)
+}
+
+func (bin *Binder) BindBinaryExpression(expr nodes.BinaryExpressionNode) boundnodes.BoundBinaryExpressionNode {
+	left := bin.BindExpression(expr.Left)
+	right := bin.BindExpression(expr.Right)
+	op := boundnodes.BindBinaryOperator(expr.Operator.Kind, left.Type(), right.Type())
+
+	if !op.Exists {
+		print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+left.Type().Name+"' and '"+right.Type().Name+"'!")
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right)
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------
@@ -314,6 +443,18 @@ func (bin *Binder) BindVariableCreation(id lexer.Token, isReadOnly bool, isGloba
 	return variable
 }
 
+func (bin *Binder) BindVariableReference(name string) symbols.VariableSymbol {
+	variable := bin.ActiveScope.TryLookupSymbol(name)
+
+	if variable == nil ||
+		!(variable.SymbolType() == symbols.GlobalVariable ||
+			variable.SymbolType() == symbols.LocalVariable) {
+		print.PrintC(print.Red, "Could not find variable '"+name+"'!")
+	}
+
+	return variable.(symbols.VariableSymbol)
+}
+
 // </SYMBOLS> -----------------------------------------------------------------
 // <IDEK> ---------------------------------------------------------------------
 
@@ -323,7 +464,7 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 		return symbols.TypeSymbol{}, false
 	}
 
-	typ, _ := LookupType(tc.TypeIdentifier.Value)
+	typ, _ := LookupType(tc.TypeIdentifier.Value, false)
 	return typ, true
 }
 
@@ -352,7 +493,7 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 	return boundnodes.CreateBoundConversionExpressionNode(to, expr)
 }
 
-func LookupType(name string) (symbols.TypeSymbol, bool) {
+func LookupType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 	switch name {
 	case "void":
 		return builtins.Void, true
@@ -367,8 +508,10 @@ func LookupType(name string) (symbols.TypeSymbol, bool) {
 	case "any":
 		return builtins.Any, true
 	default:
-		print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
-		os.Exit(-1)
+		if !canFail {
+			print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+			os.Exit(-1)
+		}
 
 		return symbols.TypeSymbol{}, false
 	}

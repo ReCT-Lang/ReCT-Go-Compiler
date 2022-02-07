@@ -1,8 +1,10 @@
-var a <- "";
-
-for (var i <- 0; false; var b <- "" )
+from (i <- 0) to 100
 {
-	var c <- 0;	
-}
+	from (ii <- 0) to 100
+	{
+		var a <- 0;
+		continue;
+	}
 
-var d <-  "";
+	continue;
+}

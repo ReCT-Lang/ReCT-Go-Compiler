@@ -10,7 +10,7 @@ type BoundCallExpressionNode struct {
 	BoundExpressionNode
 
 	Function  symbols.FunctionSymbol
-	Arguments []symbols.ParameterSymbol
+	Arguments []BoundExpressionNode
 }
 
 func (BoundCallExpressionNode) NodeType() BoundType { return BoundCallExpression }
@@ -26,7 +26,7 @@ func (node BoundCallExpressionNode) Print(indent string) {
 // implement the expression node interface
 func (node BoundCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
 
-func CreateCallExpressionNode(function symbols.FunctionSymbol, args []symbols.ParameterSymbol) BoundCallExpressionNode {
+func CreateBoundCallExpressionNode(function symbols.FunctionSymbol, args []BoundExpressionNode) BoundCallExpressionNode {
 	return BoundCallExpressionNode{
 		Function:  function,
 		Arguments: args,

@@ -54,6 +54,11 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
 
+	// declare all our functions
+	for _, fnc := range functionDeclarations {
+		binder.BindFunctionDeclaration(fnc)
+	}
+
 	// bind all our statements
 	boundStatements := make([]boundnodes.BoundStatementNode, 0)
 	for _, stmt := range globalStatements {
@@ -62,8 +67,24 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 
 	return GlobalScope{
 		MainFunction: symbols.CreateFunctionSymbol("main", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}),
+		Functions:    binder.ActiveScope.GetAllFunctions(),
 		Statements:   boundStatements,
 	}
+}
+
+func BindParentScope(globalScope GlobalScope) Scope {
+	parent := BindRootScope()
+	workingScope := CreateScope(&parent)
+
+	for _, fnc := range globalScope.Functions {
+		workingScope.TryDeclareSymbol(fnc)
+	}
+
+	for _, variable := range globalScope.Variables {
+		workingScope.TryDeclareSymbol(variable)
+	}
+
+	return workingScope
 }
 
 func BindRootScope() Scope {

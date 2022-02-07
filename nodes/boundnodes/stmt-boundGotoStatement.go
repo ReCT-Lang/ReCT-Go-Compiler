@@ -15,7 +15,7 @@ type BoundGotoStatementNode struct {
 func (BoundGotoStatementNode) NodeType() BoundType { return BoundGotoStatement }
 func (node BoundGotoStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ BoundGotoStatementNode")
-	fmt.Printf("%s  └ Label: %s", indent, node.Label)
+	fmt.Printf("%s  └ Label: %s\n", indent, node.Label)
 }
 
 // constructor

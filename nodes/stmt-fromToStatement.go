@@ -18,7 +18,7 @@ type FromToStatementNode struct {
 }
 
 // NodeType Copy + Paste again
-func (FromToStatementNode) NodeType() NodeType { return WhileStatement }
+func (FromToStatementNode) NodeType() NodeType { return FromToStatement }
 
 // Print Prints beautiful stuff in console
 func (node FromToStatementNode) Print(indent string) {

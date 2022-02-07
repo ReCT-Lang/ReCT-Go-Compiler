@@ -6,12 +6,12 @@ import (
 	"ReCT-Go-Compiler/symbols"
 )
 
-type BoundUnaryOperatorType int
+type BoundUnaryOperatorType string
 
 const (
-	Identity BoundUnaryOperatorType = iota
-	Negation
-	LogicalNegation
+	Identity        BoundUnaryOperatorType = "Identity"
+	Negation        BoundUnaryOperatorType = "Negation"
+	LogicalNegation BoundUnaryOperatorType = "LogicalNegation"
 )
 
 type BoundUnaryOperator struct {

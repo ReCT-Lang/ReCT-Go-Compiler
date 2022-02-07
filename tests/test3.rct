@@ -3,7 +3,7 @@ muchFunction("yes");
 
 function muchFunction(someParam string)
 {
-
+	Print(someParam);
 }
 
 function intFunction() int

@@ -6,12 +6,15 @@ type Symbol interface {
 	Print(indent string)
 }
 
+var variableCounter = 0
+
 type VariableSymbol interface {
 	Symbol
 
 	IsReadOnly() bool
 	IsGlobal() bool
 	VarType() TypeSymbol
+	GetFingerprint() string
 }
 
 // types of symbols

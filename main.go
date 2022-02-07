@@ -15,7 +15,7 @@ func main() {
 
 	print.PrintC(print.Green, "Testing lexer")
 	print.PrintC(print.Green, "-------------\n")
-	tokens := lexer.Lex("tests/test0.1.rct")
+	tokens := lexer.Lex("tests/test3.rct")
 	for _, token := range tokens {
 		fmt.Println(token.String(false))
 	}
@@ -32,6 +32,6 @@ func main() {
 
 	print.PrintC(print.Red, "Testing binder")
 	print.PrintC(print.Red, "--------------\n")
-	globalScope := binder.BindGlobalScope(members)
-	globalScope.Print()
+	boundProgram := binder.BindProgram(members)
+	boundProgram.Print()
 }

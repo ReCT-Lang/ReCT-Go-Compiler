@@ -9,9 +9,9 @@ type Scope struct {
 
 func (s *Scope) TryDeclareSymbol(sym symbols.Symbol) bool {
 
-	_, found := s.Symbols[sym.SymbolName()]
+	lookup := s.TryLookupSymbol(sym.SymbolName())
 
-	if found {
+	if lookup != nil {
 		return false // symbol already exists
 	} else {
 		s.Symbols[sym.SymbolName()] = sym
@@ -31,6 +31,25 @@ func (s Scope) TryLookupSymbol(name string) symbols.Symbol {
 	}
 
 	return nil
+}
+
+func (s Scope) GetAllFunctions() []symbols.FunctionSymbol {
+	functions := make([]symbols.FunctionSymbol, 0)
+
+	for _, sym := range s.Symbols {
+		if sym.SymbolType() == symbols.Function {
+			functions = append(functions, sym.(symbols.FunctionSymbol))
+		}
+	}
+
+	moreFunctions := make([]symbols.FunctionSymbol, 0)
+	if s.Parent != nil {
+		moreFunctions = s.Parent.GetAllFunctions()
+	}
+
+	functions = append(functions, moreFunctions...)
+
+	return functions
 }
 
 // constructor
