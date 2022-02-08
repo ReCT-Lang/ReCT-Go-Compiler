@@ -54,4 +54,5 @@ const (
 	BoundBinaryExpression
 	BoundCallExpression
 	BoundConversionExpression
+	BoundTypeCallExpression
 )

@@ -42,14 +42,14 @@ func (sym TypeFunctionSymbol) GetFingerprint() string {
 }
 
 // constructor
-func CreateTypedFunctionSymbol(
+func CreateTypeFunctionSymbol(
 	name string,
 	params []ParameterSymbol,
 	typeSymbol TypeSymbol,
 	declaration nodes.FunctionDeclarationMember,
 	origin TypeSymbol,
-) FunctionSymbol {
-	return FunctionSymbol{
+) TypeFunctionSymbol {
+	return TypeFunctionSymbol{
 		Exists:      true,
 		Name:        name,
 		Parameters:  params,
@@ -58,14 +58,14 @@ func CreateTypedFunctionSymbol(
 	}
 }
 
-func CreateBuiltInTypedFunctionSymbol(
+func CreateBuiltInTypeFunctionSymbol(
 	name string,
 	params []ParameterSymbol,
 	typeSymbol TypeSymbol,
 	declaration nodes.FunctionDeclarationMember,
 	origin TypeSymbol,
-) FunctionSymbol {
-	return FunctionSymbol{
+) TypeFunctionSymbol {
+	return TypeFunctionSymbol{
 		Exists:      true,
 		BuiltIn:     true,
 		Name:        name,

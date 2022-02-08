@@ -65,4 +65,5 @@ const (
 	CallExpression          NodeType = "Call Expression"
 	UnaryExpression         NodeType = "Unary Expression"
 	BinaryExpression        NodeType = "Binary Expression"
+	TypeCallExpression      NodeType = "TypeCall Expression"
 )
