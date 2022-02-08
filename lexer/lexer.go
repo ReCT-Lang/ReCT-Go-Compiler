@@ -25,12 +25,21 @@ func Lex(filename string) []Token {
 	for scanner.Index < len(scanner.Code) {
 		c := scanner.Code[scanner.Index]
 
+		peek := func(offset int) byte {
+			if scanner.Index+offset < len(scanner.Code) {
+				return scanner.Code[scanner.Index+offset]
+			}
+			return '\000'
+		}
+
 		if unicode.IsLetter(rune(c)) {
 			scanner.getId()
 		} else if unicode.IsNumber(rune(c)) {
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
+		} else if c == '/' && peek(1) == '/' {
+			scanner.getComment()
 		} else if c != ' ' && c != '\n' && c != '\t' && c != '\v' {
 			scanner.getOperator()
 		} else {
@@ -80,6 +89,16 @@ func (lxr *Lexer) getString() {
 	}
 	lxr.Increment()
 	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.Line, lxr.Column))
+}
+
+// getComment
+func (lxr *Lexer) getComment() {
+
+	// just increment until we're at the end of file or and of a line
+	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '\n' {
+		lxr.Increment()
+	}
+	lxr.Increment()
 }
 
 // Increment increases the scanner's Index, Column, and Lin (if needed).

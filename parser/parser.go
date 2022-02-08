@@ -368,6 +368,24 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// (these are not allowed in binary expressions)
 	// if theres none -> parse normal binary expression
 
+	// variable editors
+	if prs.current().Kind == lexer.IdToken &&
+		prs.peek(1).Kind == lexer.AssignToken &&
+		rules.GetBinaryOperatorPrecedence(prs.peek(2)) != 0 {
+		return prs.parseVariableEditorExpression()
+	}
+
+	// single variable editors (++ and --)
+	if prs.current().Kind == lexer.IdToken &&
+		((prs.peek(1).Kind == lexer.PlusToken && prs.peek(2).Kind == lexer.PlusToken) ||
+			(prs.peek(1).Kind == lexer.MinusToken && prs.peek(2).Kind == lexer.MinusToken)) {
+
+		identifier := prs.consume(lexer.IdToken)
+		operator := prs.consume(prs.current().Kind)
+		prs.consume(prs.current().Kind)
+		return nodes.CreateVariableEditorExpressionNode(identifier, operator, nil, true)
+	}
+
 	// assignment expression
 	if prs.current().Kind == lexer.IdToken &&
 		prs.peek(1).Kind == lexer.AssignToken {
@@ -441,6 +459,16 @@ func (prs *Parser) parseAssignmentExpression() nodes.AssignmentExpressionNode {
 	value := prs.parseExpression()
 
 	return nodes.CreateAssignmentExpressionNode(identifier, value)
+}
+
+func (prs *Parser) parseVariableEditorExpression() nodes.VariableEditorExpressionNode {
+	identifier := prs.consume(lexer.IdToken)
+	prs.consume(lexer.AssignToken)
+	operator := prs.consume(prs.current().Kind)
+
+	expression := prs.parseExpression()
+
+	return nodes.CreateVariableEditorExpressionNode(identifier, operator, expression, false)
 }
 
 func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {

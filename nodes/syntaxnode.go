@@ -58,11 +58,12 @@ const (
 
 	// Expressions
 	// -----------
-	LiteralExpression       NodeType = "Literal Expression"
-	ParenthesisedExpression NodeType = "Parenthesised Expression"
-	NameExpression          NodeType = "Name Expression"
-	AssignmentExpression    NodeType = "Assignment Expression"
-	CallExpression          NodeType = "Call Expression"
-	UnaryExpression         NodeType = "Unary Expression"
-	BinaryExpression        NodeType = "Binary Expression"
+	LiteralExpression        NodeType = "Literal Expression"
+	ParenthesisedExpression  NodeType = "Parenthesised Expression"
+	NameExpression           NodeType = "Name Expression"
+	AssignmentExpression     NodeType = "Assignment Expression"
+	VariableEditorExpression NodeType = "VariableEditor Expression"
+	CallExpression           NodeType = "Call Expression"
+	UnaryExpression          NodeType = "Unary Expression"
+	BinaryExpression         NodeType = "Binary Expression"
 )
