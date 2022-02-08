@@ -1,3 +1,3 @@
 # ReCT Emitter 
-\*Slaps roof of abstract theoretical concept\*
-This bad boy can compile ReCT lowered bound functions to LLVM IR.
+\*Slaps roof of abstract theoretical concept\*  
+This bad boy can compile lowered and bound ReCT functions to LLVM IR.
