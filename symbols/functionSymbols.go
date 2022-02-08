@@ -29,7 +29,7 @@ func (sym FunctionSymbol) Print(indent string) {
 	}
 }
 
-func (s FunctionSymbol) GetFingerprint() string {
+func (s FunctionSymbol) Fingerprint() string {
 	id := "F_" + s.Name + "_"
 
 	for _, param := range s.Parameters {

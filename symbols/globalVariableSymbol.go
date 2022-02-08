@@ -23,10 +23,10 @@ func (sym GlobalVariableSymbol) Print(indent string) {
 }
 
 // implement the var interface
-func (GlobalVariableSymbol) IsGlobal() bool           { return true }
-func (s GlobalVariableSymbol) IsReadOnly() bool       { return s.ReadOnly }
-func (s GlobalVariableSymbol) VarType() TypeSymbol    { return s.Type }
-func (s GlobalVariableSymbol) GetFingerprint() string { return fmt.Sprintf("VG_%d", s.UniqueID) }
+func (GlobalVariableSymbol) IsGlobal() bool        { return true }
+func (s GlobalVariableSymbol) IsReadOnly() bool    { return s.ReadOnly }
+func (s GlobalVariableSymbol) VarType() TypeSymbol { return s.Type }
+func (s GlobalVariableSymbol) Fingerprint() string { return fmt.Sprintf("VG_%d", s.UniqueID) }
 
 // constructor
 func CreateGlobalVariableSymbol(name string, readonly bool, typeSymbol TypeSymbol) GlobalVariableSymbol {

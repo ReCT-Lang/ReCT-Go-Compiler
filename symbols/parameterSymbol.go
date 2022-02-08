@@ -23,10 +23,10 @@ func (sym ParameterSymbol) Print(indent string) {
 }
 
 // implement the var interface
-func (ParameterSymbol) IsGlobal() bool           { return false }
-func (s ParameterSymbol) IsReadOnly() bool       { return true }
-func (s ParameterSymbol) VarType() TypeSymbol    { return s.Type }
-func (s ParameterSymbol) GetFingerprint() string { return fmt.Sprintf("VP_%d", s.UniqueID) }
+func (ParameterSymbol) IsGlobal() bool        { return false }
+func (s ParameterSymbol) IsReadOnly() bool    { return true }
+func (s ParameterSymbol) VarType() TypeSymbol { return s.Type }
+func (s ParameterSymbol) Fingerprint() string { return fmt.Sprintf("VP_%d", s.UniqueID) }
 
 // constructor
 func CreateParameterSymbol(name string, ordinal int, typeSymbol TypeSymbol) ParameterSymbol {

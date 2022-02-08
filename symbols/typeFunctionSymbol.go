@@ -30,7 +30,7 @@ func (sym TypeFunctionSymbol) Print(indent string) {
 	}
 }
 
-func (sym TypeFunctionSymbol) GetFingerprint() string {
+func (sym TypeFunctionSymbol) Fingerprint() string {
 	id := "F_" + sym.Name + "_"
 
 	for _, param := range sym.Parameters {

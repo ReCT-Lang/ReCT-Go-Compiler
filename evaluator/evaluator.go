@@ -54,17 +54,17 @@ func (evl *Evaluator) SetLocal(fingerprint string, value interface{}) {
 // variable helpers
 func (evl *Evaluator) Assign(sym symbols.VariableSymbol, value interface{}) {
 	if sym.IsGlobal() {
-		evl.Globals[sym.GetFingerprint()] = value
+		evl.Globals[sym.Fingerprint()] = value
 	} else {
-		evl.SetLocal(sym.GetFingerprint(), value)
+		evl.SetLocal(sym.Fingerprint(), value)
 	}
 }
 
 func (evl *Evaluator) Read(sym symbols.VariableSymbol) interface{} {
 	if sym.IsGlobal() {
-		return evl.Globals[sym.GetFingerprint()]
+		return evl.Globals[sym.Fingerprint()]
 	} else {
-		return evl.GetLocal(sym.GetFingerprint())
+		return evl.GetLocal(sym.Fingerprint())
 	}
 }
 
@@ -89,11 +89,11 @@ func Evaluate(program binder.BoundProgram) {
 
 	for _, fnc := range program.Functions {
 		symbol := fnc.Symbol
-		evaluator.Functions[symbol.GetFingerprint()] = fnc
+		evaluator.Functions[symbol.Fingerprint()] = fnc
 	}
 
 	mainFunction := program.MainFunction
-	body := evaluator.Functions[mainFunction.GetFingerprint()].Body
+	body := evaluator.Functions[mainFunction.Fingerprint()].Body
 	evaluator.EvaluateStatement(body)
 }
 
@@ -393,37 +393,37 @@ func (evl *Evaluator) EvaluateBinaryExpression(expr boundnodes.BoundBinaryExpres
 
 func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpressionNode) interface{} {
 	// Built in functions
-	if expr.Function.GetFingerprint() == builtins.Print.GetFingerprint() {
+	if expr.Function.Fingerprint() == builtins.Print.Fingerprint() {
 		text := evl.EvaluateExpression(expr.Arguments[0])
 		fmt.Println(text)
 		return nil
 
-	} else if expr.Function.GetFingerprint() == builtins.Write.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Write.Fingerprint() {
 		text := evl.EvaluateExpression(expr.Arguments[0])
 		fmt.Print(text)
 		return nil
 
-	} else if expr.Function.GetFingerprint() == builtins.Input.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Input.Fingerprint() {
 		text, _ := reader.ReadString('\n')
 		return text
 
-	} else if expr.Function.GetFingerprint() == builtins.InputKey.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.InputKey.Fingerprint() {
 		b := make([]byte, 1)
 		os.Stdin.Read(b)
 		return string(b)
 
-	} else if expr.Function.GetFingerprint() == builtins.Clear.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Clear.Fingerprint() {
 		fmt.Print("\033[2J")            // clear screen
 		fmt.Printf("\033[%d;%dH", 0, 0) // set cursor
 		return nil
 
-	} else if expr.Function.GetFingerprint() == builtins.SetCursor.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.SetCursor.Fingerprint() {
 		x := evl.EvaluateExpression(expr.Arguments[0])
 		y := evl.EvaluateExpression(expr.Arguments[1])
 		fmt.Printf("\033[%d;%dH", y, x) // set cursor
 		return nil
 
-	} else if expr.Function.GetFingerprint() == builtins.SetCursorVisible.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.SetCursorVisible.Fingerprint() {
 		visible := evl.EvaluateExpression(expr.Arguments[0])
 		cursorVisible = visible.(bool)
 
@@ -435,27 +435,27 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 
 		return nil
 
-	} else if expr.Function.GetFingerprint() == builtins.GetCursorVisible.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.GetCursorVisible.Fingerprint() {
 		return cursorVisible
 
-	} else if expr.Function.GetFingerprint() == builtins.GetSizeX.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.GetSizeX.Fingerprint() {
 		width, _, _ := terminal.GetSize(0)
 		return width
 
-	} else if expr.Function.GetFingerprint() == builtins.GetSizeY.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.GetSizeY.Fingerprint() {
 		_, height, _ := terminal.GetSize(0)
 		return height
 
-	} else if expr.Function.GetFingerprint() == builtins.Random.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Random.Fingerprint() {
 		max := evl.EvaluateExpression(expr.Arguments[0])
 		return rand.Intn(max.(int))
 
-	} else if expr.Function.GetFingerprint() == builtins.Sleep.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Sleep.Fingerprint() {
 		mills := evl.EvaluateExpression(expr.Arguments[0])
 		time.Sleep(time.Duration(mills.(int)) * time.Millisecond)
 		return nil
 
-	} else if expr.Function.GetFingerprint() == builtins.Version.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Version.Fingerprint() {
 		return info.RECT_VERSION
 	}
 
@@ -463,12 +463,12 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 	for i, arg := range expr.Arguments {
 		parameter := expr.Function.Parameters[i]
 		argument := evl.EvaluateExpression(arg)
-		locals[parameter.GetFingerprint()] = argument
+		locals[parameter.Fingerprint()] = argument
 	}
 
 	evl.PushTheseLocals(locals)
 
-	body := evl.Functions[expr.Function.GetFingerprint()].Body
+	body := evl.Functions[expr.Function.Fingerprint()].Body
 	result := evl.EvaluateStatement(body)
 
 	evl.PopLocals()
@@ -481,11 +481,11 @@ func (evl *Evaluator) EvaluateTypeCallExpression(expr boundnodes.BoundTypeCallEx
 	varValue := evl.Read(expr.Variable)
 
 	// check if the given functions fingerprint matches the GetLength() function's fingerprint
-	if expr.Function.GetFingerprint() == builtins.GetLength.GetFingerprint() {
+	if expr.Function.Fingerprint() == builtins.GetLength.Fingerprint() {
 		// return the length
 		return len(varValue.(string))
 
-	} else if expr.Function.GetFingerprint() == builtins.Substring.GetFingerprint() {
+	} else if expr.Function.Fingerprint() == builtins.Substring.Fingerprint() {
 		// get index and length of the substring
 		index := evl.EvaluateExpression(expr.Arguments[0])
 		length := evl.EvaluateExpression(expr.Arguments[1])
@@ -493,7 +493,7 @@ func (evl *Evaluator) EvaluateTypeCallExpression(expr boundnodes.BoundTypeCallEx
 		// create the substring
 		return varValue.(string)[index.(int) : index.(int)+length.(int)]
 	} else {
-		print.PrintCF(print.Red, "Unknown type function! [%s]", expr.Function.GetFingerprint())
+		print.PrintCF(print.Red, "Unknown type function! [%s]", expr.Function.Fingerprint())
 		os.Exit(-1)
 
 		return nil

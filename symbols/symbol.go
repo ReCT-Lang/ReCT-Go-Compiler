@@ -14,7 +14,7 @@ type VariableSymbol interface {
 	IsReadOnly() bool
 	IsGlobal() bool
 	VarType() TypeSymbol
-	GetFingerprint() string
+	Fingerprint() string
 }
 
 // types of symbols
