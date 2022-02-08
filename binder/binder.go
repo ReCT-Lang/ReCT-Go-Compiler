@@ -401,12 +401,6 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
 	variable := bin.BindVariableReference(expr.Identifier.Value)
 
-	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
-	for _, arg := range expr.Arguments {
-		boundArg := bin.BindExpression(arg)
-		boundArguments = append(boundArguments, boundArg)
-	}
-
 	// This line will error out because CallIdentifier.RealValue is nil (interface)
 	// I've replaced it with CallIdentifier.Value which seems to do the trick.
 	function := bin.LookupTypeFunction(expr.CallIdentifier.Value) // Should be a string anyway
@@ -420,6 +414,24 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 			),
 		)
 		os.Exit(-1)
+	}
+
+	// bind all given arguments
+	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
+	for _, arg := range expr.Arguments {
+		boundArg := bin.BindExpression(arg)
+		boundArguments = append(boundArguments, boundArg)
+	}
+
+	// make sure we got the right number of arguments
+	if len(boundArguments) != len(function.Parameters) {
+		print.PrintCF(print.Red, "Typefunction '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
+		os.Exit(-1)
+	}
+
+	// make sure all arguments are the right type
+	for i, arg := range boundArguments {
+		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false)
 	}
 
 	return boundnodes.CreateBoundTypeCallExpressionNode(variable, function, boundArguments)
@@ -536,6 +548,8 @@ func (bin *Binder) LookupTypeFunction(name string) symbols.TypeFunctionSymbol {
 	switch name {
 	case "GetLength":
 		return builtins.GetLength
+	case "Substring":
+		return builtins.Substring
 	default:
 		print.PrintC(
 			print.Red,

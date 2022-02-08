@@ -33,7 +33,7 @@ func (s FunctionSymbol) GetFingerprint() string {
 	id := "F_" + s.Name + "_"
 
 	for _, param := range s.Parameters {
-		id += "[" + param.GetFingerprint() + "]"
+		id += "[" + param.Type.Fingerprint() + "]"
 	}
 
 	id += s.Type.Name

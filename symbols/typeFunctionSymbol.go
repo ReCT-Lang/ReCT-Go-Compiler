@@ -34,7 +34,7 @@ func (sym TypeFunctionSymbol) GetFingerprint() string {
 	id := "F_" + sym.Name + "_"
 
 	for _, param := range sym.Parameters {
-		id += "[" + param.GetFingerprint() + "]"
+		id += "[" + param.Type.Fingerprint() + "]"
 	}
 
 	id += sym.Type.Name

@@ -484,6 +484,14 @@ func (evl *Evaluator) EvaluateTypeCallExpression(expr boundnodes.BoundTypeCallEx
 	if expr.Function.GetFingerprint() == builtins.GetLength.GetFingerprint() {
 		// return the length
 		return len(varValue.(string))
+
+	} else if expr.Function.GetFingerprint() == builtins.Substring.GetFingerprint() {
+		// get index and length of the substring
+		index := evl.EvaluateExpression(expr.Arguments[0])
+		length := evl.EvaluateExpression(expr.Arguments[1])
+
+		// create the substring
+		return varValue.(string)[index.(int) : index.(int)+length.(int)]
 	} else {
 		print.PrintCF(print.Red, "Unknown type function! [%s]", expr.Function.GetFingerprint())
 		os.Exit(-1)
