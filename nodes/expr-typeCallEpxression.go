@@ -15,7 +15,7 @@ type TypeCallExpressionNode struct {
 }
 
 // implement node type from interface
-func (TypeCallExpressionNode) NodeType() NodeType { return CallExpression }
+func (TypeCallExpressionNode) NodeType() NodeType { return TypeCallExpression }
 
 // node print function
 func (node TypeCallExpressionNode) Print(indent string) {
