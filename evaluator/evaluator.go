@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/info"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
@@ -11,8 +12,11 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strconv"
 	"time"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Evaluator struct {
@@ -57,6 +61,7 @@ func (evl *Evaluator) Assign(sym symbols.VariableSymbol, value interface{}) {
 }
 
 var reader *bufio.Reader
+var cursorVisible bool = true
 
 // evaluate!
 func Evaluate(program binder.BoundProgram) {
@@ -69,6 +74,7 @@ func Evaluate(program binder.BoundProgram) {
 
 	// setup things
 	reader = bufio.NewReader(os.Stdin)
+	exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run() // disable input buffering
 	rand.Seed(time.Now().UnixNano())
 
 	evaluator.PushLocals()
@@ -398,8 +404,9 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 		return text
 
 	} else if expr.Function.GetFingerprint() == builtins.InputKey.GetFingerprint() {
-		char, _ := reader.ReadByte()
-		return string(char)
+		b := make([]byte, 1)
+		os.Stdin.Read(b)
+		return string(b)
 
 	} else if expr.Function.GetFingerprint() == builtins.Clear.GetFingerprint() {
 		fmt.Print("\033[2J")            // clear screen
@@ -409,8 +416,31 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 	} else if expr.Function.GetFingerprint() == builtins.SetCursor.GetFingerprint() {
 		x := evl.EvaluateExpression(expr.Arguments[0])
 		y := evl.EvaluateExpression(expr.Arguments[1])
-		fmt.Printf("\033[%d;%dH", x, y) // set cursor
+		fmt.Printf("\033[%d;%dH", y, x) // set cursor
 		return nil
+
+	} else if expr.Function.GetFingerprint() == builtins.SetCursorVisible.GetFingerprint() {
+		visible := evl.EvaluateExpression(expr.Arguments[0])
+		cursorVisible = visible.(bool)
+
+		if cursorVisible {
+			fmt.Print("\033[?25h")
+		} else {
+			fmt.Print("\033[?25l")
+		}
+
+		return nil
+
+	} else if expr.Function.GetFingerprint() == builtins.GetCursorVisible.GetFingerprint() {
+		return cursorVisible
+
+	} else if expr.Function.GetFingerprint() == builtins.GetSizeX.GetFingerprint() {
+		width, _, _ := terminal.GetSize(0)
+		return width
+
+	} else if expr.Function.GetFingerprint() == builtins.GetSizeY.GetFingerprint() {
+		_, height, _ := terminal.GetSize(0)
+		return height
 
 	} else if expr.Function.GetFingerprint() == builtins.Random.GetFingerprint() {
 		max := evl.EvaluateExpression(expr.Arguments[0])
@@ -420,6 +450,9 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 		mills := evl.EvaluateExpression(expr.Arguments[0])
 		time.Sleep(time.Duration(mills.(int)) * time.Millisecond)
 		return nil
+
+	} else if expr.Function.GetFingerprint() == builtins.Version.GetFingerprint() {
+		return info.RECT_VERSION
 	}
 
 	locals := make(map[string]interface{})

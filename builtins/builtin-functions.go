@@ -69,16 +69,6 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
-	SetSize = symbols.CreateBuiltInFunctionSymbol(
-		"SetSize",
-		[]symbols.ParameterSymbol{
-			symbols.CreateParameterSymbol("width", 0, Int),
-			symbols.CreateParameterSymbol("height", 1, Int),
-		},
-		Void,
-		nodes.FunctionDeclarationMember{},
-	)
-
 	SetCursorVisible = symbols.CreateBuiltInFunctionSymbol(
 		"SetCursorVisible",
 		[]symbols.ParameterSymbol{

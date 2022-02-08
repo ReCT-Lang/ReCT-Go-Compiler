@@ -14,7 +14,7 @@ func main() {
 	//return
 
 	print.WriteC(print.Green, "-> Lexing...  ")
-	tokens := lexer.Lex("tests/coolishtest.rct")
+	tokens := lexer.Lex("tests/BuiltInFunctions.rct")
 	print.PrintC(print.Green, "Done!")
 
 	print.WriteC(print.Yellow, "-> Parsing... ")
