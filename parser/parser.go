@@ -420,9 +420,6 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	if prs.current().Kind == lexer.IdToken &&
 		prs.peek(1).Kind == lexer.AssignToken {
 		return prs.parseAssignmentExpression()
-	} else if prs.current().Kind == lexer.IdToken &&
-		prs.peek(1).Kind == lexer.AccessToken {
-		return prs.parseTypeCallExpression()
 	}
 
 	return prs.parseBinaryExpression(0)
@@ -468,12 +465,20 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	cur := prs.current().Kind
 	if cur == lexer.StringToken {
 		return prs.parseStringLiteral()
+
 	} else if cur == lexer.NumberToken {
 		return prs.parseNumberLiteral()
+
 	} else if cur == lexer.TrueKeyword || cur == lexer.FalseKeyword {
 		return prs.parseBoolLiteral()
+
 	} else if cur == lexer.OpenParenthesisToken {
 		return prs.parseParenthesisedExpression()
+
+	} else if prs.current().Kind == lexer.IdToken &&
+		prs.peek(1).Kind == lexer.AccessToken {
+		return prs.parseTypeCallExpression()
+
 	} else if cur == lexer.IdToken {
 		return prs.parseNameOrCallExpression()
 	}
