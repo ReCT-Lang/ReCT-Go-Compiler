@@ -24,6 +24,7 @@ func main() {
 	print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
 	print.PrintC(print.Green, "Done!")
+	//boundProgram.Print()
 
 	print.PrintC(print.Cyan, "-> Evaluating!")
 	evaluator.Evaluate(boundProgram)

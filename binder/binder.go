@@ -329,12 +329,14 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindNameExpression(expr.(nodes.NameExpressionNode))
 	case nodes.AssignmentExpression:
 		return bin.BindAssignmentExpression(expr.(nodes.AssignmentExpressionNode))
+	case nodes.VariableEditorExpression:
+		return bin.BindVariableEditorExpression(expr.(nodes.VariableEditorExpressionNode))
 	case nodes.CallExpression:
 		return bin.BindCallExpression(expr.(nodes.CallExpressionNode))
-	case nodes.TypeCallExpression:
-		return bin.BindTypeCallExpression(expr.(nodes.TypeCallExpressionNode))
 	case nodes.UnaryExpression:
 		return bin.BindUnaryExpression(expr.(nodes.UnaryExpressionNode))
+	case nodes.TypeCallExpression:
+		return bin.BindTypeCallExpression(expr.(nodes.TypeCallExpressionNode))
 	case nodes.BinaryExpression:
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
 	default:
@@ -363,6 +365,37 @@ func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode)
 	convertedExpression := bin.BindConversion(expression, variable.VarType(), false)
 
 	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression)
+}
+
+func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpressionNode) boundnodes.BoundAssignmentExpressionNode {
+	// bind the variabke
+	variable := bin.BindVariableReference(expr.Identifier.Value)
+
+	// create a placeholder expression of value 1
+	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNode(1)
+
+	// if we have an expression given, use it instead
+	if expr.Expression != nil {
+		expression = bin.BindExpression(expr.Expression)
+	}
+
+	// bind the operator and binary expression for our operation
+	operator := boundnodes.BindBinaryOperator(expr.Operator.Kind, variable.VarType(), expression.Type())
+
+	// check if the operator is valid
+	if !operator.Exists {
+		print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+variable.VarType().Name+"' and '"+expression.Type().Name+"'!")
+		os.Exit(-1)
+	}
+
+	binaryExpression := boundnodes.CreateBoundBinaryExpressionNode(
+		boundnodes.CreateBoundVariableExpressionNode(variable),
+		operator,
+		expression,
+	)
+
+	// return it as an assignment
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression)
 }
 
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {

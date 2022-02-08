@@ -39,6 +39,10 @@ func (evl *Evaluator) GetLocals() map[string]interface{} {
 	return evl.Locals[len(evl.Locals)-1]
 }
 
+func (evl *Evaluator) GetLocal(name string) interface{} {
+	return evl.Locals[len(evl.Locals)-1][name]
+}
+
 func (evl *Evaluator) SetLocal(fingerprint string, value interface{}) {
 	evl.Locals[len(evl.Locals)-1][fingerprint] = value
 }
@@ -178,11 +182,13 @@ func (evl *Evaluator) EvaluateLiteralExpression(expr boundnodes.BoundLiteralExpr
 }
 
 func (evl *Evaluator) EvaluateVariableExpression(expr boundnodes.BoundVariableExpressionNode) interface{} {
+	//print.WriteC(print.Yellow, "LOOKING FOR: "+expr.Variable.GetFingerprint()+" ")
 	if expr.Variable.IsGlobal() {
+		//fmt.Println("")
 		return evl.Globals[expr.Variable.GetFingerprint()]
 	} else {
-		locals := evl.GetLocals()
-		return locals[expr.Variable.GetFingerprint()]
+		//fmt.Println(evl.GetLocal(expr.Variable.GetFingerprint()))
+		return evl.GetLocal(expr.Variable.GetFingerprint())
 	}
 }
 
