@@ -9,7 +9,7 @@ import (
 	"unicode"
 )
 
-// Lexer : Lexer struct
+// Lexer : Lexer struct for lexing :GentlemenSphere:
 type Lexer struct {
 	Code   []byte
 	Line   int
@@ -18,9 +18,13 @@ type Lexer struct {
 	Tokens []Token
 }
 
+// Lex takes a filename and converts it into it's respective lexical tokens
 func Lex(filename string) []Token {
+	// Opens the file and returns its contents as a byte array
+	// It then creates a lexer pointer using the byte array and a few default values.
 	scanner := &Lexer{handleFileOpen(filename), 1, 1, 0, make([]Token, 0)}
 
+	// Scanning for all the juicy tokens mmmmmmmmmmmmmmmmm
 	for scanner.Index < len(scanner.Code) {
 		c := scanner.Code[scanner.Index]
 
@@ -45,11 +49,13 @@ func Lex(filename string) []Token {
 			scanner.Increment()
 		}
 	}
+	// Finally, adding an End of File token to help detect the end of the file in the parser (syntax)
 	scanner.Tokens = append(scanner.Tokens, CreateToken("\000", EOF, scanner.Line, scanner.Column))
 	return scanner.Tokens
 }
 
-// getNumber
+// getNumber keeps getting bytes until it finds a non-number
+// then it generates an integer (or a float) token and slaps it back to the lexer.
 func (lxr *Lexer) getNumber() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
@@ -59,6 +65,7 @@ func (lxr *Lexer) getNumber() {
 		lxr.Increment()
 	}
 
+	// Checking if number is actually an imposter... float
 	if strings.Contains(buffer, ".") {
 		// float real value
 		realValueBuffer, err := strconv.ParseFloat(buffer, 32)
@@ -77,7 +84,8 @@ func (lxr *Lexer) getNumber() {
 	}
 }
 
-// getString
+// getString once it finds an " it'll keep getting bytes until it finds another "
+// Basically it's a string detector, string tokens are given back to the lexer (via Tokens []Token).
 func (lxr *Lexer) getString() {
 	var buffer string
 	lxr.Increment()
@@ -90,8 +98,12 @@ func (lxr *Lexer) getString() {
 	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.Line, lxr.Column))
 }
 
-// getComment
+// getComment we don't want to add comments to the Tokens because they have nothing of value
+// for us to process (at least for now), instead we just keep incrementing through them to increase
+// the Lexer Column and Line until we find a new line.
 func (lxr *Lexer) getComment() {
+	// We could just skip the line? Maybe future optimisation?
+	// You don't need to keep track of the column because it gets reset after a new line anyway :/
 
 	// just increment until we're at the end of file or and of a line
 	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '\n' {
@@ -100,7 +112,9 @@ func (lxr *Lexer) getComment() {
 	lxr.Increment()
 }
 
-// Increment increases the scanner's Index, Column, and Lin (if needed).
+// Increment increases the scanner's Index, Column, and Line (if needed).
+// This will also check if the index is out of range (End Of File) but leaves
+// Error handling to the parent function.
 func (lxr *Lexer) Increment() {
 	lxr.Index++
 	lxr.Column++
@@ -113,7 +127,9 @@ func (lxr *Lexer) Increment() {
 	}
 }
 
-// getId
+// getId gets and identifier Token and appends it to the Lexer Tokens
+// A identifier token is just a series of alphanumerical characters like name29, FunctionCall, a38rja
+// ReCT identifiers can't start with a number nor an underscore
 func (lxr *Lexer) getId() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
@@ -127,8 +143,10 @@ func (lxr *Lexer) getId() {
 		lxr.Increment()
 	}
 
+	// checks if identifier is actually a keyword
 	kwType := CheckIfKeyword(buffer)
 
+	// Mmm converting true/false into actual boolean values
 	if kwType == TrueKeyword || kwType == FalseKeyword {
 		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, kwType == TrueKeyword, kwType, lxr.Line, lxr.Column))
 	} else {
@@ -136,7 +154,8 @@ func (lxr *Lexer) getId() {
 	}
 }
 
-// getOperator
+// getOperator checks for plus/minus/assign/etc tokens
+// this functional also handles unexpected character!
 func (lxr *Lexer) getOperator() {
 	var _token TokenKind
 
@@ -150,7 +169,7 @@ func (lxr *Lexer) getOperator() {
 	// save our current index for later
 	startIndex := lxr.Index
 
-	// save the line and column so we're always using the first of possibly many characters
+	// save the line and column, so we're always using the first of possibly many characters
 	line := lxr.Line
 	column := lxr.Column
 
@@ -237,7 +256,7 @@ func (lxr *Lexer) getOperator() {
 	// AssignToken is 2 characters long while every other operator is 1 character.
 	// (that is why they are separated).
 
-	// Generalised this a litte because we now got a few multi-char operators - Red
+	// Generalised this a little because we now got a few multi-char operators - Red, thanks - Tokorv xD
 	lxr.Tokens = append(
 		lxr.Tokens,
 		CreateToken(
@@ -251,7 +270,8 @@ func (lxr *Lexer) getOperator() {
 	lxr.Increment()
 }
 
-// handleFileOpen
+// handleFileOpen reads the file and returns a byte array ([]byte)
+// only handles NotExist and Permission error btw
 func handleFileOpen(filename string) []byte {
 	contents, err := os.ReadFile(filename)
 	if errors.Is(err, os.ErrNotExist) {
@@ -267,7 +287,7 @@ func handleFileOpen(filename string) []byte {
 	return contents
 }
 
-// CheckIfKeyword forgot about this till I started reading the parser code lol
+// CheckIfKeyword used by Lexer.getId to convert an identifier Token to a keyword Token
 func CheckIfKeyword(buffer string) TokenKind {
 	switch buffer {
 	case "var":

@@ -72,5 +72,6 @@ func CreateBuiltInTypeFunctionSymbol(
 		Parameters:  params,
 		Type:        typeSymbol,
 		Declaration: declaration,
+		OriginType:  origin,
 	}
 }

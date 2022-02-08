@@ -49,9 +49,8 @@ const (
 	PipeToken          TokenKind = "PipeToken(|)"
 	PipesToken         TokenKind = "PipesToken(||)"
 	HatToken           TokenKind = "HatToken(^)"
-
-	AssignToken TokenKind = "AssignToken(<-)"
-	AccessToken TokenKind = "AccessToken(->)"
+	AssignToken        TokenKind = "AssignToken(<-)"
+	AccessToken        TokenKind = "AccessToken(->)"
 
 	OpenBraceToken        TokenKind = "OpenBrace({)"
 	CloseBraceToken       TokenKind = "Closebrace(})"
@@ -90,6 +89,7 @@ func CreateTokenReal(buffer string, real interface{}, kind TokenKind, line, colu
 }
 
 // String easy representation of a Token
+// You can also make it *pretty* - like we ever used that lmao
 func (t Token) String(pretty bool) string {
 	if !pretty {
 		return fmt.Sprintf("Token { value: %s, kind: %s, position: (%d, %d), real: %v}", t.Value, t.Kind, t.Line, t.Column, t.RealValue)
