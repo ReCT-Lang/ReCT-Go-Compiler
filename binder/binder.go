@@ -407,7 +407,9 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 		boundArguments = append(boundArguments, boundArg)
 	}
 
-	function := bin.LookupTypeFunction(expr.CallIdentifier.RealValue.(string)) // Should be a string anyway
+	// This line will error out because CallIdentifier.RealValue is nil (interface)
+	// I've replaced it with CallIdentifier.Value which seems to do the trick.
+	function := bin.LookupTypeFunction(expr.CallIdentifier.Value) // Should be a string anyway
 	if function.OriginType.Name != variable.VarType().Name {
 		print.PrintC(
 			print.Red,

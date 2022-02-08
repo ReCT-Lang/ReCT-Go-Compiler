@@ -11,8 +11,15 @@ import (
 	"os"
 )
 
-// Defaults
+/* cli.go handles flags and command line arguments for the project
+ * Everything is documented below, this was moved away from its own package
+ * formally cli/cli.go because it makes more sense for the flags to be processed
+ * inside the main package - you gain no benefit from having cli as its own package.
+ */
 
+// Defaults
+// These are the default values of all flags
+// The values are set using the flag library, but they are also commented below
 var helpFlag bool      // false -h
 var interpretFlag bool // true  -i
 var showVersion bool   // false -v
@@ -20,8 +27,10 @@ var fileLog bool       // false -l
 var debug bool         // -xx
 var files []string
 
-const executableName string = "rgoc" // in case we change it later
-const discordInvite string = "https://discord.gg/kk9MsnABdF"
+// Constants that are used throughout code
+// Should be updated when necessary
+const executableName string = "rgoc"                         // in case we change it later
+const discordInvite string = "https://discord.gg/kk9MsnABdF" // infinite link
 const currentVersion string = "1.1"
 
 // init initializes and processes (parses) compiler flags
@@ -77,8 +86,8 @@ func help() {
 	fmt.Println("--------------\nReCT Go Compiler\n--------------")
 	fmt.Print("Usage: ")
 	print.PrintC(print.Green, "rgoc <file> [options]\n")
-	fmt.Println("<file> can be the path to any ReCT file (.rct)\n")
-	fmt.Println("[Options]")
+	fmt.Println("<file> can be the path to any ReCT file (.rct)")
+	fmt.Println("\n[Options]")
 	fmt.Printf("Help : %s -h : disabled (default) : Shows this help message!\n", executableName)
 	fmt.Printf("Interpret : %s -i : enabled (default) : Enables interpreter mode, source code will be interpreted instead of compiled.\n", executableName)
 	fmt.Printf("File logging : %s -l : disabled (default) : Logs process information in a log file\n", executableName)
