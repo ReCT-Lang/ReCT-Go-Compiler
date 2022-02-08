@@ -68,6 +68,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	return GlobalScope{
 		MainFunction: symbols.CreateFunctionSymbol("main", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}),
 		Functions:    binder.ActiveScope.GetAllFunctions(),
+		Variables:    binder.ActiveScope.GetAllVariables(),
 		Statements:   boundStatements,
 	}
 }
@@ -81,6 +82,11 @@ func BindParentScope(globalScope GlobalScope) Scope {
 	}
 
 	for _, variable := range globalScope.Variables {
+		// only bring over global vars
+		if !variable.IsGlobal() {
+			continue
+		}
+
 		workingScope.TryDeclareSymbol(variable)
 	}
 

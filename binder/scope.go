@@ -52,6 +52,27 @@ func (s Scope) GetAllFunctions() []symbols.FunctionSymbol {
 	return functions
 }
 
+func (s Scope) GetAllVariables() []symbols.VariableSymbol {
+	variables := make([]symbols.VariableSymbol, 0)
+
+	for _, sym := range s.Symbols {
+		if sym.SymbolType() == symbols.LocalVariable ||
+			sym.SymbolType() == symbols.GlobalVariable ||
+			sym.SymbolType() == symbols.Parameter {
+			variables = append(variables, sym.(symbols.VariableSymbol))
+		}
+	}
+
+	moreVariables := make([]symbols.VariableSymbol, 0)
+	if s.Parent != nil {
+		moreVariables = s.Parent.GetAllVariables()
+	}
+
+	variables = append(variables, moreVariables...)
+
+	return variables
+}
+
 // constructor
 func CreateScope(parent *Scope) Scope {
 	return Scope{

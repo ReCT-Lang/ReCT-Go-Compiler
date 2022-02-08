@@ -26,9 +26,10 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	functionBodies := make([]BoundFunction, 0)
 
 	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements)
+	loweredMainBody := lowerer.Lower(globalScope.MainFunction, mainBody)
 	functionBodies = append(functionBodies, BoundFunction{
 		Symbol: globalScope.MainFunction,
-		Body:   mainBody,
+		Body:   loweredMainBody,
 	})
 
 	for _, fnc := range globalScope.Functions {
