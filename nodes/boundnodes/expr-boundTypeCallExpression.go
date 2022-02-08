@@ -17,6 +17,9 @@ type BoundTypeCallExpressionNode struct {
 // implement node type from interface
 func (BoundTypeCallExpressionNode) NodeType() BoundType { return BoundTypeCallExpression }
 
+// implement the expression node interface
+func (node BoundTypeCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
+
 // node print function
 func (node BoundTypeCallExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundTypeCallExpressionNode")

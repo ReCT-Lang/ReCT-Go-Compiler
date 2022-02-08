@@ -490,7 +490,11 @@ func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversi
 		case float32:
 			return fmt.Sprintf("%g", value.(float32))
 		default:
-			print.PrintC(print.Red, "No Conversion! (cringe)")
+			if value == nil {
+				return "cringe"
+			}
+
+			print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
 			os.Exit(-1)
 		}
 
@@ -501,7 +505,7 @@ func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversi
 			val, _ := strconv.ParseBool(value.(string))
 			return val
 		default:
-			print.PrintC(print.Red, "No Conversion! (cringe)")
+			print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
 			os.Exit(-1)
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
@@ -510,7 +514,7 @@ func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversi
 			val, _ := strconv.Atoi(value.(string))
 			return val
 		default:
-			print.PrintC(print.Red, "No Conversion! (cringe)")
+			print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
 			os.Exit(-1)
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
@@ -519,7 +523,7 @@ func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversi
 			val, _ := strconv.ParseFloat(value.(string), 32)
 			return val
 		default:
-			print.PrintC(print.Red, "No Conversion! (cringe)")
+			print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
 			os.Exit(-1)
 		}
 	}
