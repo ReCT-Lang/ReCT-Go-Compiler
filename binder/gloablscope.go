@@ -104,7 +104,6 @@ func BindRootScope() Scope {
 	scope.TryDeclareSymbol(builtins.SetCursor)
 	scope.TryDeclareSymbol(builtins.GetSizeX)
 	scope.TryDeclareSymbol(builtins.GetSizeY)
-	scope.TryDeclareSymbol(builtins.SetSize)
 	scope.TryDeclareSymbol(builtins.SetCursorVisible)
 	scope.TryDeclareSymbol(builtins.GetCursorVisible)
 	scope.TryDeclareSymbol(builtins.Random)
