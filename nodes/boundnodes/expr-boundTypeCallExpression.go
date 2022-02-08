@@ -34,7 +34,7 @@ func (node BoundTypeCallExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreatBoundTypeCallExpressionNode(
+func CreateBoundTypeCallExpressionNode(
 	id symbols.VariableSymbol,
 	callId symbols.TypeFunctionSymbol,
 	args []BoundExpressionNode,

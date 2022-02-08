@@ -51,12 +51,20 @@ func (evl *Evaluator) SetLocal(fingerprint string, value interface{}) {
 	evl.Locals[len(evl.Locals)-1][fingerprint] = value
 }
 
-// variable helper
+// variable helpers
 func (evl *Evaluator) Assign(sym symbols.VariableSymbol, value interface{}) {
 	if sym.IsGlobal() {
 		evl.Globals[sym.GetFingerprint()] = value
 	} else {
 		evl.SetLocal(sym.GetFingerprint(), value)
+	}
+}
+
+func (evl *Evaluator) Read(sym symbols.VariableSymbol) interface{} {
+	if sym.IsGlobal() {
+		return evl.Globals[sym.GetFingerprint()]
+	} else {
+		return evl.GetLocal(sym.GetFingerprint())
 	}
 }
 
@@ -176,6 +184,9 @@ func (evl *Evaluator) EvaluateExpression(expr boundnodes.BoundExpressionNode) in
 	case boundnodes.BoundCallExpression:
 		return evl.EvaluateCallExpression(expr.(boundnodes.BoundCallExpressionNode))
 
+	case boundnodes.BoundTypeCallExpression:
+		return evl.EvaluateTypeCallExpression(expr.(boundnodes.BoundTypeCallExpressionNode))
+
 	case boundnodes.BoundConversionExpression:
 		return evl.EvaluateConversionExpression(expr.(boundnodes.BoundConversionExpressionNode))
 	}
@@ -188,14 +199,7 @@ func (evl *Evaluator) EvaluateLiteralExpression(expr boundnodes.BoundLiteralExpr
 }
 
 func (evl *Evaluator) EvaluateVariableExpression(expr boundnodes.BoundVariableExpressionNode) interface{} {
-	//print.WriteC(print.Yellow, "LOOKING FOR: "+expr.Variable.GetFingerprint()+" ")
-	if expr.Variable.IsGlobal() {
-		//fmt.Println("")
-		return evl.Globals[expr.Variable.GetFingerprint()]
-	} else {
-		//fmt.Println(evl.GetLocal(expr.Variable.GetFingerprint()))
-		return evl.GetLocal(expr.Variable.GetFingerprint())
-	}
+	return evl.Read(expr.Variable)
 }
 
 func (evl *Evaluator) EvaluateAssignmentExpression(expr boundnodes.BoundAssignmentExpressionNode) interface{} {
@@ -470,6 +474,22 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 	evl.PopLocals()
 
 	return result
+}
+
+func (evl *Evaluator) EvaluateTypeCallExpression(expr boundnodes.BoundTypeCallExpressionNode) interface{} {
+	// get value of variable
+	varValue := evl.Read(expr.Variable)
+
+	// check if the given functions fingerprint matches the GetLength() function's fingerprint
+	if expr.Function.GetFingerprint() == builtins.GetLength.GetFingerprint() {
+		// return the length
+		return len(varValue.(string))
+	} else {
+		print.PrintCF(print.Red, "Unknown type function! [%s]", expr.Function.GetFingerprint())
+		os.Exit(-1)
+
+		return nil
+	}
 }
 
 func (evl *Evaluator) EvaluateConversionExpression(expr boundnodes.BoundConversionExpressionNode) interface{} {

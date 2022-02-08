@@ -422,7 +422,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreatBoundTypeCallExpressionNode(variable, function, boundArguments)
+	return boundnodes.CreateBoundTypeCallExpressionNode(variable, function, boundArguments)
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {

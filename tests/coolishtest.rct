@@ -1,2 +1,3 @@
 var someString <- "this is so cringe";
-Print(string(someString->GetLength()));
+Print("String: '"+someString+"'");
+Print("Length of string: " + string(someString->GetLength()));
