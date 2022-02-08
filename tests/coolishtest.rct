@@ -1,0 +1,2 @@
+var someString <- "this is so cringe";
+Print(string(someString->GetLength()));
