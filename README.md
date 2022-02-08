@@ -10,4 +10,5 @@ Progress:
 - [x] Parser
 - [x] Binder
 - [x] Lowerer
-- [ ] Evaluator
+- [x] Evaluator
+- [ ] very cool IR emitter
