@@ -38,7 +38,7 @@ func (prs *Parser) peek(offset int) lexer.Token {
 // consume a syntax token is It's what we're looking for if not -> just die for now
 func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 	if prs.current().Kind != expected {
-		// cant tell the user which one because theres no way to get a constants name by its value...
+		// can't tell the user which one because there's no way to get a constants name by its value...
 		// so we might need a separate name array for them
 
 		// Switched the TokenKind constants to strings and now added the error message you wanted <3
@@ -97,7 +97,7 @@ func (prs *Parser) parseMember() nodes.MemberNode {
 		return prs.parseFunctionDeclaration()
 	}
 
-	// global statements (any statements outside of any functions)
+	// global statements (any statements outside any functions)
 	return prs.parseGlobalStatement()
 }
 
@@ -193,7 +193,7 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 
 // <STATEMENTS> ---------------------------------------------------------------
 
-// parseStatement
+// parseStatement Based off the first keyword it'll parse a statement
 func (prs *Parser) parseStatement() nodes.StatementNode {
 	var statement nodes.StatementNode = nil
 	// nil StatementNode can cause segmentation violation if no correct key is found. (handled in parsePrimaryExpression)
@@ -229,6 +229,7 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 		statement = prs.parseFromToStatement()
 
 	} else {
+		// Lastly we process an expression
 		statement = prs.parseExpressionStatement()
 
 		// moved the error message to parsePrimaryExpression()
@@ -242,6 +243,8 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 	return statement
 }
 
+// parseBlockStatement this statement contains a bunch of other statements while also being a statement itself
+// Example if { ... } (the "{ ... }" is the block statement).
 func (prs *Parser) parseBlockStatement() nodes.BlockStatementNode {
 	// create a list for our statement
 	statements := make([]nodes.StatementNode, 0)
@@ -254,6 +257,7 @@ func (prs *Parser) parseBlockStatement() nodes.BlockStatementNode {
 
 		startToken := prs.current()
 
+		// We keep getting more statements until we either hit
 		statement := prs.parseStatement()
 		statements = append(statements, statement)
 
@@ -269,139 +273,209 @@ func (prs *Parser) parseBlockStatement() nodes.BlockStatementNode {
 	return nodes.CreateBlockStatementNode(openBrace, statements, closeBrace)
 }
 
+// parseVariableDeclaration parses a variable declaration like var x <- 10;
+// Example: var name <- "Jerry";
 func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatementNode {
 
-	// We already check for var/set in parseStatement(), this code just repeats the process.
-	// Replaced expecting with prs.current().kind when defining keyword - Tokorv
-	// smort  - RedCube
+	// Firstly we absorb the var or set keyword
+	// In our case (example) we are absorbing var.
+	// We don't need to check the kind because we already do that in parseStatement
+	keyword := prs.consume(prs.current().Kind)
 
-	keyword := prs.consume(prs.current().Kind) // Replaced expecting
-
+	// Next we check if there is a type in the variable declaration like:
+	// var x string;
+	// We assign typeClause and empty node and check, this means the typeClause will remain empty
+	// if there is no type in the declaration.
 	typeClause := nodes.TypeClauseNode{}
 	if prs.current().Kind == lexer.IdToken && prs.peek(1).Kind == lexer.IdToken {
 		typeClause = prs.parseTypeClause()
 	}
 
+	// We consume the variable name, the assign token (<-) and then parse the value as an expression.
 	identifier := prs.consume(lexer.IdToken)
 	assign := prs.consume(lexer.AssignToken)
+
+	// parsing an expression allows variable to be defined as 1*2/5+3 or string + string, instead of a single simple value
 	initializer := prs.parseExpression()
 
 	return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, initializer)
 }
 
+// parseIfStatement as you can probably guess, this function is called when parseStatement gets an IfKeyword Token.
 func (prs *Parser) parseIfStatement() nodes.IfStatementNode {
+	// Remember if statements?
+	// if ( ... ) { ... }
+
+	// Here we get the "if"
 	keyword := prs.consume(lexer.IfKeyword)
 
+	// Consuming the ( ... )
 	prs.consume(lexer.OpenParenthesisToken)
-	condition := prs.parseExpression()
+	condition := prs.parseExpression() // ... is an expression, it should evaluate to true or false (this isn't checked here)
 	prs.consume(lexer.CloseParenthesisToken)
 
+	// Finally, the statement which is shown as { ... }
+	// Though most people put a block statement after an if, ReCT lets you put a single statement if you want.
+	// Remember a blockStatement is a type of statement it's still valid.
 	statement := prs.parseStatement()
+
+	// To end it, we parse the "else" of an if statement.
+	// this will be an empty elseClauseNode
 	elseClause := prs.parseElseClause()
 
 	return nodes.CreateIfStatementNode(keyword, condition, statement, elseClause)
 }
 
+// parseElseClause this parses else statements
+// Example else { ... } (this usually comes after an if statement like: if ( ... ) { ... } else { ... }
 func (prs *Parser) parseElseClause() nodes.ElseClauseNode {
-	// if theres no else -> dont parse an else lol
+
+	// if theres no else -> dont parse an else lol - Red
 	if prs.current().Kind != lexer.ElseKeyword {
 		return nodes.ElseClauseNode{}
 	}
 
+	// consume keyword and parse statement
 	keyword := prs.consume(lexer.ElseKeyword)
+
+	// Same as if statement this can be a single statement or a block statement
 	statement := prs.parseStatement()
 
 	return nodes.CreateElseClauseNode(keyword, statement)
 }
 
+// parseReturnStatement handles return statements like: return ...
+// happens at the end of a function, if you don't know that you should be reading this tbh
 func (prs *Parser) parseReturnStatement() nodes.ReturnStatementNode {
+
+	// a b s o r b return keyword
 	keyword := prs.consume(lexer.ReturnKeyword)
 
 	var expression nodes.ExpressionNode = nil
-	// if we are at the end of the line (;) theres no return value given
+	// if we are at the end of the line (;) there's no return value given
 	if prs.current().Kind != lexer.Semicolon {
+		// mmm yummy expression
 		expression = prs.parseExpression()
 	}
 
 	return nodes.CreateReturnStatementNode(keyword, expression)
 }
 
+// parseForStatement handles for statements (loops)
+// Example: for ( ..., ..., ...) { ... }
 func (prs *Parser) parseForStatement() nodes.ForStatementNode {
+	// First we consume that for keyword, so we can get to the good parts
 	keyword := prs.consume(lexer.ForKeyword)
 
-	// For ( S; E; E) S
+	// now need to parse each statement ( ... ) in ( ..., ..., ... )
 	prs.consume(lexer.OpenParenthesisToken)
+
+	// First is the initializer (a statement declared before the loop begins)
+	// this is usually: var i = 0, and "i" is used throughout the loop.
 	initialiser := prs.parseVariableDeclaration()
-	prs.consume(lexer.Semicolon)
+	prs.consume(lexer.Semicolon) // a b s o r b ;
 
+	// Second is the condition (if the condition becomes false the loop ends)
+	// Examples of this are: i < 10, i < x->GetLength(), etc.
 	condition := prs.parseExpression()
-	prs.consume(lexer.Semicolon)
+	prs.consume(lexer.Semicolon) // a b s o r b ;
 
+	// Finally, is the updation (name stolen from Java) where the initialiser is modified each iteration (usually)
 	updation := prs.parseStatement()
-	prs.consume(lexer.CloseParenthesisToken)
+	prs.consume(lexer.CloseParenthesisToken) // we've finished with the loop "parameters" now we should get the "contents"
 
+	// Loop contents can be a single statement or sexy block statement with lots of statements
 	statement := prs.parseStatement()
 
+	// pretty sure I write this, glad it didn't require correcting - tokorv
 	return nodes.CreateForStatementNode(keyword, initialiser, condition, updation, statement)
 }
 
+// parseWhileStatement a while loop
+// Example: while ( ... ) { ... }
 func (prs *Parser) parseWhileStatement() nodes.WhileStatementNode {
+
+	// We already know WhileKeyword is there because we detected it in parseStatement
+	// not we consume it to move to the next token.
 	keyword := prs.consume(lexer.WhileKeyword)
 
-	prs.consume(lexer.OpenParenthesisToken)
-	condition := prs.parseExpression()
-	prs.consume(lexer.CloseParenthesisToken)
+	// This is where we handle ( ... )
+	prs.consume(lexer.OpenParenthesisToken)  // consume (
+	condition := prs.parseExpression()       // conditional expression (if false stop loop)
+	prs.consume(lexer.CloseParenthesisToken) // consume )
 
+	// Finally, we get all the statements
+	// Usually this is a blockStatement, but it can be a single statement like Print()
 	statement := prs.parseStatement()
 
 	return nodes.CreateWhileStatementNode(keyword, condition, statement)
 }
 
+// parseFromToStatement a from to loop (quite unique to rect I think)
+// this loop takes two arguments, a start, and an end.
+// Example: from ( ... ) to ... { ... }
+// Code Example: from i <- 0 to 100 { Print(string(i)); }
+// the above code ill print all numbers from 0 to 100.
 func (prs *Parser) parseFromToStatement() nodes.FromToStatementNode {
+
+	// We're expecting it from parseStatement,
+	// we consume it, so we can parse the other tokens
 	keyword := prs.consume(lexer.FromKeyword)
 
-	prs.consume(lexer.OpenParenthesisToken)
-	identifier := prs.consume(lexer.IdToken)
-	prs.consume(lexer.AssignToken)
-	lowerBound := prs.parseExpression()
-	prs.consume(lexer.CloseParenthesisToken)
+	// this is where we handle ( ... ) : ( i <- 0 )
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	identifier := prs.consume(lexer.IdToken) // and identifier (usually "i", but can be valid identifier really)
+	prs.consume(lexer.AssignToken)           // <- (assignToken)
+	lowerBound := prs.parseExpression()      // Now we get the initial value of the identifier (in: i <- 0, it's the 0)
+	prs.consume(lexer.CloseParenthesisToken) // )
 
+	// We should get a "to" keyword next (see example)
 	prs.consume(lexer.ToKeyword)
+
+	// and we get the identifiers limit (if the identifier is >= to the limit the loop will break)
 	upperBound := prs.parseExpression()
 
+	// and now we get the statement, same as all other loops, this can be a blockStatement or single statement
 	statement := prs.parseStatement()
 	return nodes.CreateFromToStatementNode(keyword, identifier, lowerBound, upperBound, statement)
 }
 
+// parseBreakStatement processes "break" keyword (honesty nothing special, similar process to continue and return)
 func (prs *Parser) parseBreakStatement() nodes.BreakStatementNode {
 	keyword := prs.consume(lexer.BreakKeyword)
 
 	return nodes.CreateBreakStatement(keyword)
 }
 
+// parseContinueStatement processes the "continue" keyword, not much happening really.
 func (prs *Parser) parseContinueStatement() nodes.ContinueStatementNode {
 	keyword := prs.consume(lexer.ContinueKeyword)
 
 	return nodes.CreateContinueStatement(keyword)
 }
 
+// parseExpressionStatement expressions are 2nd class citizens, they come after statements
+// If no statement can be found, we try to process an expression.
 func (prs *Parser) parseExpressionStatement() nodes.ExpressionStatementNode {
 	expression := prs.parseExpression()
+	// We basically parse an expression
 	return nodes.CreateExpressionStatementNode(expression)
 }
 
 // </STATEMENTS> --------------------------------------------------------------
 // <EXPRESSIONS> --------------------------------------------------------------
 
+// parseExpression
 func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// check for more "complex" expressions first
 	// (these are not allowed in binary expressions)
-	// if theres none -> parse normal binary expression
+	// if there's none -> parse normal binary expression
 
 	// variable editors
 	if prs.current().Kind == lexer.IdToken &&
 		prs.peek(1).Kind == lexer.AssignToken &&
 		rules.GetBinaryOperatorPrecedence(prs.peek(2)) != 0 {
+		// if <-+ <-- <-/ <-* : (for the uneducated these are the equivalents of += -= /= *= in ReCT.
 		return prs.parseVariableEditorExpression()
 	}
 
@@ -410,9 +484,9 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		((prs.peek(1).Kind == lexer.PlusToken && prs.peek(2).Kind == lexer.PlusToken) ||
 			(prs.peek(1).Kind == lexer.MinusToken && prs.peek(2).Kind == lexer.MinusToken)) {
 
-		identifier := prs.consume(lexer.IdToken)
-		operator := prs.consume(prs.current().Kind)
-		prs.consume(prs.current().Kind)
+		identifier := prs.consume(lexer.IdToken)    // the "i" in "i++"
+		operator := prs.consume(prs.current().Kind) // the "+"
+		prs.consume(prs.current().Kind)             // another "+", we don't have to check because we do that in the if statement above
 		return nodes.CreateVariableEditorExpressionNode(identifier, operator, nil, true)
 	}
 
@@ -422,9 +496,11 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseAssignmentExpression()
 	}
 
+	// if none of the above are what we want, it must be a binary expression!
 	return prs.parseBinaryExpression(0)
 }
 
+// parseBinaryExpression
 func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionNode {
 	var left nodes.ExpressionNode
 
@@ -444,7 +520,7 @@ func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionN
 	for {
 		precedence := rules.GetBinaryOperatorPrecedence(prs.current())
 
-		// if this isnt an operator or it has less precedence:
+		// if this isn't an operator, or it has less precedence:
 		// stop / hand back over to parent
 		if precedence == 0 || precedence <= parentPrecedence {
 			break
@@ -460,7 +536,7 @@ func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionN
 	return left
 }
 
-// primary expressions being the simple things
+// parsePrimaryExpression primary expressions being the simple things
 func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	cur := prs.current().Kind
 	if cur == lexer.StringToken {
@@ -491,24 +567,32 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	return nil
 }
 
+// parseAssignmentExpression takes an assignmentExpression and returns a node of the same type
+// Example: x <- 100;
+// this is when x has already been defined but is now being assigned a new value.
 func (prs *Parser) parseAssignmentExpression() nodes.AssignmentExpressionNode {
-	identifier := prs.consume(lexer.IdToken)
-	prs.consume(lexer.AssignToken)
-	value := prs.parseExpression()
+	identifier := prs.consume(lexer.IdToken) // the variable you're assigning the new value (like "x")
+	prs.consume(lexer.AssignToken)           // check and skip past the <- (assignToken)
+	value := prs.parseExpression()           // new value of variable (like "x"'s new value is 100).
 
 	return nodes.CreateAssignmentExpressionNode(identifier, value)
 }
 
+// parseVariableEditorExpression this parses an expression like i <-+ 1, the variable is reassigned using the
+// AssignToken, and an operator instead of an expression
 func (prs *Parser) parseVariableEditorExpression() nodes.VariableEditorExpressionNode {
-	identifier := prs.consume(lexer.IdToken)
-	prs.consume(lexer.AssignToken)
-	operator := prs.consume(prs.current().Kind)
+	identifier := prs.consume(lexer.IdToken)    // Get the identifier you want to edit
+	prs.consume(lexer.AssignToken)              // a b s o r b assignment token (we don't need it)
+	operator := prs.consume(prs.current().Kind) // get the operator (this is important as we want to know if it's an
+	// PLUS(+) MINUS(-) DIVIDE(/) or STAR(*))
 
+	// Get new expression value
 	expression := prs.parseExpression()
 
 	return nodes.CreateVariableEditorExpressionNode(identifier, operator, expression, false)
 }
 
+// parseNameOrCallExpression we're either parsing a NameExpressionNode or a CallExpressionNode
 func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {
 
 	// check for parenthesis for function call
@@ -516,58 +600,80 @@ func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {
 		return prs.parseCallExpression()
 	}
 
-	// if not its a name expression
+	// if not, it's a name expression
 	return prs.parseNameExpression()
 }
 
+// parseCallExpression this for when we're calling a function
+// For example: Print("hello");
+// we need "Print", and the parameters "hello"
 func (prs *Parser) parseCallExpression() nodes.CallExpressionNode {
+
+	// We need the identifier to know which function the program called
 	identifier := prs.consume(lexer.IdToken)
-	prs.consume(lexer.OpenParenthesisToken)
-	args := prs.parseArguments()
-	prs.consume(lexer.CloseParenthesisToken)
+
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	args := prs.parseArguments()             // We get the arguments being put into the function
+	prs.consume(lexer.CloseParenthesisToken) // )
 
 	return nodes.CreateCallExpressionNode(identifier, args)
 }
 
+// parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)
+// Example: string->GetLength()
+// the data type is string (though in a program it's going to be a variable with the type string)
+// GetLength is the exact function call we need
+// Anything in the ( ... ) we need to get as arguments
 func (prs *Parser) parseTypeCallExpression() nodes.TypeCallExpressionNode {
-	identifier := prs.consume(lexer.IdToken)
 
-	prs.consume(lexer.AccessToken)
-	callIdentifier := prs.consume(lexer.IdToken)
+	identifier := prs.consume(lexer.IdToken) // the variable we're calling the function on
 
-	prs.consume(lexer.OpenParenthesisToken)
-	args := prs.parseArguments()
-	prs.consume(lexer.CloseParenthesisToken)
+	prs.consume(lexer.AccessToken)               // ->
+	callIdentifier := prs.consume(lexer.IdToken) // now we need the name of the call (like "GetLength()")
+
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	args := prs.parseArguments()             // any arguments in the function call itself
+	prs.consume(lexer.CloseParenthesisToken) // )
 
 	return nodes.CreateTypeCallExpressionNode(identifier, callIdentifier, args)
 }
 
+// parseArguments this is when we want to get a series of arguments in a function call function definition.
+// Example: arg1 string, arg2 int, arg3 bool,
 func (prs *Parser) parseArguments() []nodes.ExpressionNode {
-	args := make([]nodes.ExpressionNode, 0)
+	args := make([]nodes.ExpressionNode, 0) // our slice of arguments
 
+	// We keep looping to get all the yummy arguments
 	for prs.current().Kind != lexer.CloseParenthesisToken &&
 		prs.current().Kind != lexer.EOF {
 
+		// arguments are just cooler expressions change my mind.
 		expression := prs.parseExpression()
 		args = append(args, expression)
 
 		if prs.current().Kind == lexer.CommaToken {
-			prs.consume(lexer.CommaToken)
+			prs.consume(lexer.CommaToken) // then we re-loop and get the next argument expression
 		} else {
-			break
+			break // if not a comma, we know there are no more arguments left
 		}
 	}
 
 	return args
 }
 
+// parseNameExpression just consumes an identifier
 func (prs *Parser) parseNameExpression() nodes.NameExpressionNode {
+	// Doesn't get any more simple than this
 	identifier := prs.consume(lexer.IdToken)
 	return nodes.CreateNameExpressionNode(identifier)
 }
 
+// parseParenthesisedExpression this is an expression wrapped in parentheses
+// Example: ( 1 + 1 + 1 + 1 + 1 ) or ( "Hello" )
+// The above are relatively simple, remember this can be any Expression even complex ones.
 func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionNode {
 
+	// It's quite literally just consuming the parentheses and passing the expression as a new Node
 	prs.consume(lexer.OpenParenthesisToken)
 	expression := prs.parseExpression()
 	prs.consume(lexer.CloseParenthesisToken)
@@ -575,16 +681,22 @@ func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionN
 	return nodes.CreateParenthesisedExpressionNode(expression)
 }
 
+// parseStringLiteral
 func (prs *Parser) parseStringLiteral() nodes.LiteralExpressionNode {
+	// a string token can be found in the lexer in lexer.getString()
 	str := prs.consume(lexer.StringToken)
 	return nodes.CreateLiteralExpressionNode(str)
 }
 
+// parseNumberLiteral
 func (prs *Parser) parseNumberLiteral() nodes.LiteralExpressionNode {
+	// a number token can be found in the lexer in lexer.getNumber()
 	num := prs.consume(lexer.NumberToken)
 	return nodes.CreateLiteralExpressionNode(num)
 }
 
+// parseBoolLiteral it's *literally* just a bool (true or false)
+// Example: true, false
 func (prs *Parser) parseBoolLiteral() nodes.LiteralExpressionNode {
 	_bool := prs.consume(prs.current().Kind)
 	return nodes.CreateLiteralExpressionNode(_bool)
