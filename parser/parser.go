@@ -390,6 +390,9 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	if prs.current().Kind == lexer.IdToken &&
 		prs.peek(1).Kind == lexer.AssignToken {
 		return prs.parseAssignmentExpression()
+	} else if prs.current().Kind == lexer.IdToken &&
+		prs.peek(1).Kind == lexer.AccessToken {
+		return prs.parseTypeCallExpression()
 	}
 
 	return prs.parseBinaryExpression(0)
@@ -489,6 +492,19 @@ func (prs *Parser) parseCallExpression() nodes.CallExpressionNode {
 	prs.consume(lexer.CloseParenthesisToken)
 
 	return nodes.CreateCallExpressionNode(identifier, args)
+}
+
+func (prs *Parser) parseTypeCallExpression() nodes.TypeCallExpressionNode {
+	identifier := prs.consume(lexer.IdToken)
+
+	prs.consume(lexer.AccessToken)
+	callIdentifier := prs.consume(lexer.IdToken)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	args := prs.parseArguments()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	return nodes.CreateTypeCallExpressionNode(identifier, callIdentifier, args)
 }
 
 func (prs *Parser) parseArguments() []nodes.ExpressionNode {

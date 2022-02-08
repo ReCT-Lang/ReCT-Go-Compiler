@@ -9,7 +9,7 @@ import (
 	"unicode"
 )
 
-// Lexer : internal struct for Lexical Analysis
+// Lexer : Lexer struct
 type Lexer struct {
 	Code   []byte
 	Line   int
@@ -18,7 +18,6 @@ type Lexer struct {
 	Tokens []Token
 }
 
-// Lex
 func Lex(filename string) []Token {
 	scanner := &Lexer{handleFileOpen(filename), 1, 1, 0, make([]Token, 0)}
 

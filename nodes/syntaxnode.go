@@ -62,8 +62,9 @@ const (
 	ParenthesisedExpression  NodeType = "Parenthesised Expression"
 	NameExpression           NodeType = "Name Expression"
 	AssignmentExpression     NodeType = "Assignment Expression"
-	VariableEditorExpression NodeType = "VariableEditor Expression"
 	CallExpression           NodeType = "Call Expression"
 	UnaryExpression          NodeType = "Unary Expression"
 	BinaryExpression         NodeType = "Binary Expression"
+	VariableEditorExpression NodeType = "VariableEditor Expression"
+	TypeCallExpression       NodeType = "TypeCall Expression"
 )

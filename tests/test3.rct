@@ -18,5 +18,13 @@ function muchFunction(someParam string)
 
 function intFunction() int
 {
+<<<<<<< HEAD
+	return 0;
+}
+
+var test <- "";
+test->SomeTypedFunction();
+=======
 	return 69;
 }
+>>>>>>> 296ee3d58f49a190258ce5a3149e925f7aceca95

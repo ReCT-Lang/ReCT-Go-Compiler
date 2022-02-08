@@ -335,6 +335,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindCallExpression(expr.(nodes.CallExpressionNode))
 	case nodes.UnaryExpression:
 		return bin.BindUnaryExpression(expr.(nodes.UnaryExpressionNode))
+	case nodes.TypeCallExpression:
+		return bin.BindTypeCallExpression(expr.(nodes.TypeCallExpressionNode))
 	case nodes.BinaryExpression:
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
 	default:
@@ -394,6 +396,31 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 
 	// return it as an assignment
 	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression)
+}
+
+func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
+	variable := bin.BindVariableReference(expr.Identifier.Value)
+
+	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
+	for _, arg := range expr.Arguments {
+		boundArg := bin.BindExpression(arg)
+		boundArguments = append(boundArguments, boundArg)
+	}
+
+	function := bin.LookupTypeFunction(expr.CallIdentifier.RealValue.(string)) // Should be a string anyway
+	if function.OriginType.Name != variable.VarType().Name {
+		print.PrintC(
+			print.Red,
+			fmt.Sprintf(
+				"ERROR: builtin function call \"%s\" cannot be called on a %s datatype!",
+				function.Name,
+				variable.VarType().Name,
+			),
+		)
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreatBoundTypeCallExpressionNode(variable, function, boundArguments)
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
@@ -501,6 +528,20 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 
 	typ, _ := LookupType(tc.TypeIdentifier.Value, false)
 	return typ, true
+}
+
+func (bin *Binder) LookupTypeFunction(name string) symbols.TypeFunctionSymbol {
+	switch name {
+	case "GetLength":
+		return builtins.GetLength
+	default:
+		print.PrintC(
+			print.Red,
+			fmt.Sprintf("Could not find builtin TypeFunctionSymbol \"%s\"!", name),
+		)
+		os.Exit(-1)
+	}
+	return symbols.TypeFunctionSymbol{}
 }
 
 // </IDEK> --------------------------------------------------------------------
