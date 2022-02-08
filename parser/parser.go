@@ -35,7 +35,7 @@ func (prs *Parser) peek(offset int) lexer.Token {
 	return prs.Tokens[prs.Index+offset]
 }
 
-// consume a syntax token is its what we're looking for if not -> just die for now
+// consume a syntax token is It's what we're looking for if not -> just die for now
 func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 	if prs.current().Kind != expected {
 		// cant tell the user which one because theres no way to get a constants name by its value...
@@ -59,7 +59,7 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 
 // </HELPERS> -----------------------------------------------------------------
 
-// parse a compilation (with all its functions, classes, enums, global statements, etc...)
+// Parse parse a compilation (with all its functions, classes, enums, global statements, etc...)
 func Parse(tokens []lexer.Token) []nodes.MemberNode {
 	parser := Parser{
 		Tokens: tokens,
@@ -69,6 +69,7 @@ func Parse(tokens []lexer.Token) []nodes.MemberNode {
 	return parser.parseMembers()
 }
 
+// parseMembers begin parsing one member at a time until we hit lexer.EOF Token
 func (prs *Parser) parseMembers() []nodes.MemberNode {
 	members := make([]nodes.MemberNode, 0)
 
@@ -89,6 +90,7 @@ func (prs *Parser) parseMembers() []nodes.MemberNode {
 	return members
 }
 
+// parseMember begins parsing either functions or global statements
 func (prs *Parser) parseMember() nodes.MemberNode {
 	// functions / classes would go here \/
 	if prs.current().Kind == lexer.FunctionKeyword {
@@ -99,38 +101,59 @@ func (prs *Parser) parseMember() nodes.MemberNode {
 	return prs.parseGlobalStatement()
 }
 
+// parseGlobalStatement parse a statement and return as a global statement member
+// this becomes a member node and eventually is appended onto our member node list
+// then we parse the next member in parseMembers.
 func (prs *Parser) parseGlobalStatement() nodes.GlobalStatementMember {
 	statement := prs.parseStatement()
 	return nodes.CreateGlobalStatementMember(statement)
 }
 
+// parseFunctionDeclaration checks for a valid order of Tokens, parses all the statements inside the function
+// and then returns it as a function declaration member.
 func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
-	prs.consume(lexer.FunctionKeyword)
+
+	// Example:
+	// function functionName(functionArg1 string) string { ... }
+	prs.consume(lexer.FunctionKeyword) // We know we are getting a functional already so just consume this
+
+	// consume the "functionName" (which is an identifier token).
 	identifier := prs.consume(lexer.IdToken)
 
+	// this is where we parse the parameters (e.g., functionArg1)
 	prs.consume(lexer.OpenParenthesisToken)
-	params := prs.parseParameterList()
+	params := prs.parseParameterList() // We only need the arguments not the parenthesis tokens UwU
 	prs.consume(lexer.CloseParenthesisToken)
 
+	// This is optional, not all functions need a return type as not all functions return a value.
+	// Our example returns a string type, so we will need the TypeClause later.
+	// if there is no return type the typeClause will be empty.
 	typeClause := prs.parseOptionalTypeClause()
 
+	// This is where we parse all our statements in the function
+	// the block statement will handle multiple statements inside itself
 	body := prs.parseBlockStatement()
 
 	return nodes.CreateFunctionDeclarationMember(identifier, params, typeClause, body)
 }
 
+// parseParameterList we parse a list of arguments (usually for a function or functionCall)
+// In code this looks like: (arg1 string, arg2 int, arg3 string) ... etc
 func (prs *Parser) parseParameterList() []nodes.ParameterNode {
-	params := make([]nodes.ParameterNode, 0)
+	params := make([]nodes.ParameterNode, 0) // list of our arguments
 
 	for prs.current().Kind != lexer.CloseParenthesisToken &&
 		prs.current().Kind != lexer.EOF {
 
+		// Get a single argument and add it to the list
 		param := prs.parseParameter()
 		params = append(params, param)
 
+		// skip over the commas
 		if prs.current().Kind == lexer.CommaToken {
 			prs.consume(lexer.CommaToken)
 		} else {
+			// if it isn't a comma what the hell is going on we need to get out of here!
 			break
 		}
 	}
@@ -138,14 +161,18 @@ func (prs *Parser) parseParameterList() []nodes.ParameterNode {
 	return params
 }
 
+// parseParameter gets a single parameter and returns it
+// example: arg1 string
+// arg1 is the identifier, string is the typeClause
 func (prs *Parser) parseParameter() nodes.ParameterNode {
 	identifier := prs.consume(lexer.IdToken)
 	typeClause := prs.parseTypeClause()
 	return nodes.CreateParameterNode(identifier, typeClause)
 }
 
+// parseOptionalTypeClause we check if a typeClause is there, return an empty one if so, otherwise we return a TypeClauseNode
 func (prs *Parser) parseOptionalTypeClause() nodes.TypeClauseNode {
-	// if theres no type clause, return an empty one
+	// if there's no type clause, return an empty one
 	if prs.current().Kind != lexer.IdToken && prs.current().Kind != lexer.AccessToken {
 		return nodes.TypeClauseNode{}
 	}
@@ -153,6 +180,7 @@ func (prs *Parser) parseOptionalTypeClause() nodes.TypeClauseNode {
 	return prs.parseTypeClause()
 }
 
+// parseTypeClause consumes the datatype and returns it in node form
 func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 	// if theres a '->' token, consume it
 	if prs.current().Kind == lexer.AccessToken {
@@ -165,36 +193,38 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 
 // <STATEMENTS> ---------------------------------------------------------------
 
+// parseStatement
 func (prs *Parser) parseStatement() nodes.StatementNode {
 	var statement nodes.StatementNode = nil
-	// nil StatementNode can cause segmentation violation if no correct key is found, I've added an error handler to counter this.
+	// nil StatementNode can cause segmentation violation if no correct key is found. (handled in parsePrimaryExpression)
 
 	// select correct parsing function based on kind
 	cur := prs.current().Kind
+	// { ... }
 	if cur == lexer.OpenBraceToken {
 		statement = prs.parseBlockStatement()
-
+		// var|set name <- "Jerry";
 	} else if cur == lexer.VarKeyword || cur == lexer.SetKeyword {
 		statement = prs.parseVariableDeclaration()
-
+		// if ( ... ) { ... }
 	} else if cur == lexer.IfKeyword {
 		statement = prs.parseIfStatement()
-
+		// return ...
 	} else if cur == lexer.ReturnKeyword {
 		statement = prs.parseReturnStatement()
-
+		// for (... , ... , ...) { ... }
 	} else if cur == lexer.ForKeyword {
 		statement = prs.parseForStatement()
-
+		// while ( ... ) { ... }
 	} else if cur == lexer.WhileKeyword {
 		statement = prs.parseWhileStatement()
-
+		// break; (stops a loop)
 	} else if cur == lexer.BreakKeyword {
 		statement = prs.parseBreakStatement()
-
+		// continue; (skips to the next iteration of a loop)
 	} else if cur == lexer.ContinueKeyword {
 		statement = prs.parseContinueStatement()
-
+		// from ( ... ) to ... { ... }
 	} else if cur == lexer.FromKeyword {
 		statement = prs.parseFromToStatement()
 
@@ -204,7 +234,7 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 		// moved the error message to parsePrimaryExpression()
 	}
 
-	// if theres a semicolon -> a b s o r b    i t
+	// if there's a semicolon -> a b s o r b    i t
 	if prs.current().Kind == lexer.Semicolon {
 		prs.consume(lexer.Semicolon)
 	}
