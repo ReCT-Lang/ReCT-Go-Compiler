@@ -53,3 +53,8 @@ func PrintCF(color string, message string, slotins ...interface{}) {
 func WriteC(color string, message string) {
 	fmt.Printf(color, message)
 }
+
+func WriteCF(color string, message string, slotins ...interface{}) {
+	text := fmt.Sprintf(message, slotins...)
+	fmt.Printf(color, text)
+}

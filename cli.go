@@ -117,16 +117,33 @@ func RunTests() {
 
 // Help shows help message (pretty standard nothing special)
 func Help() {
-	fmt.Println("--------------\nReCT Go Compiler\n--------------")
+	header := "ReCT Go Compiler v" + currentVersion
+	lines := strings.Repeat("-", len(header))
+
+	fmt.Println(lines)
+	fmt.Println(header)
+	fmt.Println(lines)
+
 	fmt.Print("\nUsage: ")
 	print.PrintC(print.Green, "rgoc <file> [options]\n")
 	fmt.Println("<file> can be the path to any ReCT file (.rct)")
 	fmt.Println("\n[Options]")
-	fmt.Printf("Help : %s -h : disabled (default) : Shows this help message!\n", executableName)
-	fmt.Printf("Interpret : %s -i : enabled (default) : Enables interpreter mode, source code will be interpreted instead of compiled.\n", executableName)
-	fmt.Printf("File logging : %s -l : disabled (default) : Logs process information in a log file\n", executableName)
-	fmt.Printf("Debug : %s -xx : disabled (default) : Shows brief process information in the command line\n\n", executableName)
-	fmt.Printf("Still having troubles? Get help on the offical Discord server: %s!\n", discordInvite)
+
+	helpSegments := []HelpSegment{
+		{"Help", executableName + " -h", "disabled (default)", "Shows this help message!"},
+		{"Interpret", executableName + " -i", "enabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
+		{"File logging", executableName + " -l", "disabled (default)", "Logs process information in a log file"},
+		{"Debug", executableName + " -xx", "disabled (default)", "Shows brief process information in the command line"},
+	}
+
+	p0, p1, p2, p3 := findPaddings(helpSegments)
+
+	for _, segment := range helpSegments {
+		segment.Print(p0, p1, p2, p3)
+	}
+
+	fmt.Println("")
+	print.PrintCF(print.Gray, "Still having troubles? Get help on the offical Discord server: %s!\n", discordInvite)
 }
 
 // Version Shows the current compiler version
@@ -135,4 +152,46 @@ func Version() {
 	fmt.Print("ReCT version: ")
 	print.PrintC(print.Blue, currentVersion)
 	fmt.Printf("\nFor more informatin, why not join the discord? %s\n\n", discordInvite)
+}
+
+type HelpSegment struct {
+	Command      string
+	Example      string
+	DefaultValue string
+	Explaination string
+}
+
+func (seg *HelpSegment) Print(p0 int, p1 int, p2 int, p3 int) {
+	print.WriteCF(print.Cyan, "%-*s", p0, seg.Command)
+	print.WriteC(print.DarkGray, ":")
+	print.WriteCF(print.Blue, " %-*s", p1, seg.Example)
+	print.WriteC(print.DarkGray, ":")
+	print.WriteCF(print.Yellow, " %-*s", p2, seg.DefaultValue)
+	print.WriteC(print.DarkGray, ":")
+	print.WriteCF(print.Green, " %-*s", p3, seg.Explaination)
+	fmt.Println("")
+}
+
+func findPaddings(segments []HelpSegment) (int, int, int, int) {
+	p0 := 0
+	p1 := 0
+	p2 := 0
+	p3 := 0
+
+	for _, segment := range segments {
+		if len(segment.Command) > p0 {
+			p0 = len(segment.Command)
+		}
+		if len(segment.Example) > p1 {
+			p1 = len(segment.Example)
+		}
+		if len(segment.DefaultValue) > p2 {
+			p2 = len(segment.DefaultValue)
+		}
+		if len(segment.Explaination) > p3 {
+			p3 = len(segment.Explaination)
+		}
+	}
+
+	return p0 + 1, p1 + 1, p2 + 1, p3 + 1
 }

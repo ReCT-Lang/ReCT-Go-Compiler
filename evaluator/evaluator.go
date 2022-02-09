@@ -3,7 +3,6 @@ package evaluator
 import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/info"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
@@ -456,7 +455,7 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 		return nil
 
 	} else if expr.Function.Fingerprint() == builtins.Version.Fingerprint() {
-		return info.RECT_VERSION
+		return "1.1"
 	}
 
 	locals := make(map[string]interface{})
