@@ -8,7 +8,8 @@ import (
 	"ReCT-Go-Compiler/print"
 	"flag"
 	"fmt"
-	"os"
+	"io/ioutil"
+	"strings"
 )
 
 /* cli.go handles flags and command line arguments for the project
@@ -25,6 +26,7 @@ var interpretFlag bool // true  -i
 var showVersion bool   // false -v
 var fileLog bool       // false -l
 var debug bool         // -xx
+var tests bool         // Just for running test file like test.rct ( -t )
 var files []string
 
 // Constants that are used throughout code
@@ -33,39 +35,47 @@ const executableName string = "rgoc"                         // in case we chang
 const discordInvite string = "https://discord.gg/kk9MsnABdF" // infinite link
 const currentVersion string = "1.1"
 
-// init initializes and processes (parses) compiler flags
-func init() {
+// Init initializes and processes (parses) compiler flags
+func Init() {
 	flag.BoolVar(&helpFlag, "h", false, "Shows this help message")
 	flag.BoolVar(&interpretFlag, "i", true, "Enables interpreter mode, source code will be interpreted instead of compiled.")
 	flag.BoolVar(&showVersion, "v", false, "Shows current ReCT version the compiler supports")
 	flag.BoolVar(&fileLog, "l", false, "Logs process information in a log file")
 	flag.BoolVar(&debug, "xx", false, "Shows brief process information in the command line")
+	// Test (-t) will not be in the help message as it's only really going ot be used for testing compiler features.
+	flag.BoolVar(&tests, "t", false, "For compiler test files (developers only)")
 	files = flag.Args() // Other arguments like executable name or files
 	flag.Parse()
 }
 
-// processFlags goes through each flag and decides how they have an effect on the output of the compiler
-func processFlags() {
+// ProcessFlags goes through each flag and decides how they have an effect on the output of the compiler
+func ProcessFlags() {
+	// Mmm test has the highest priority
+	if tests {
+		RunTests()
+		return // returns to main
+	}
+
 	// Show version has higher priority than help menu
 	if showVersion {
-		version()
-		os.Exit(0)
+		Version()
+		return // returns to main
 	}
 	// If they use "-h" or only enter the executable name "rgoc"
 	// Show the help menu because they're obviously insane.
 	if helpFlag || len(files) <= 1 {
-		help()
-		os.Exit(0)
+		Help()
+		return // returns to main
 	}
 	if interpretFlag {
-		interpretFiles()
+		InterpretFile(files[1])
 	}
 }
 
-// interpretFiles runs everything to interpret the files, currently only supports up to one file
-func interpretFiles() {
+// InterpretFile runs everything to interpret the files, currently only supports up to one file
+func InterpretFile(file string) {
 	print.WriteC(print.Green, "-> Lexing...  ")
-	tokens := lexer.Lex(files[1])
+	tokens := lexer.Lex(file)
 	print.PrintC(print.Green, "Done!")
 
 	print.WriteC(print.Yellow, "-> Parsing... ")
@@ -81,10 +91,34 @@ func interpretFiles() {
 	evaluator.Evaluate(boundProgram)
 }
 
-// help shows help message (pretty standard nothing special)
-func help() {
+// RunTests runs all the test files in /tests/
+func RunTests() {
+	files, err := ioutil.ReadDir("tests")
+	if err != nil {
+		// better error later
+		print.PrintC(print.DarkRed, "ERROR: failed reading /tests/ directory!")
+	}
+	tests := make([]string, 0)
+	for _, file := range files {
+		if !file.IsDir() && strings.Contains(file.Name(), ".rct") {
+			tests = append(tests, file.Name())
+		}
+	}
+	for _, test := range tests {
+		print.PrintC(
+			print.Cyan,
+			fmt.Sprintf("\nTesting test file \"%s\":", test),
+		)
+		// forgot to actually run the file lol
+		go InterpretFile("tests/" + test)
+
+	}
+}
+
+// Help shows help message (pretty standard nothing special)
+func Help() {
 	fmt.Println("--------------\nReCT Go Compiler\n--------------")
-	fmt.Print("Usage: ")
+	fmt.Print("\nUsage: ")
 	print.PrintC(print.Green, "rgoc <file> [options]\n")
 	fmt.Println("<file> can be the path to any ReCT file (.rct)")
 	fmt.Println("\n[Options]")
@@ -95,8 +129,8 @@ func help() {
 	fmt.Printf("Still having troubles? Get help on the offical Discord server: %s!\n", discordInvite)
 }
 
-// version Shows the current compiler version
-func version() {
+// Version Shows the current compiler version
+func Version() {
 	fmt.Println("ReCT Go Compiler")
 	fmt.Print("ReCT version: ")
 	print.PrintC(print.Blue, currentVersion)
