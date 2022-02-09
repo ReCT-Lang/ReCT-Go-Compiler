@@ -66,7 +66,7 @@ func ProcessFlags() {
 	}
 	// If they use "-h" or only enter the executable name "rgoc"
 	// Show the help menu because they're obviously insane.
-	if helpFlag || len(files) <= 1 {
+	if helpFlag || len(files) <= 0 {
 		Help()
 		return // returns to main
 	}
@@ -147,7 +147,7 @@ func Help() {
 
 	helpSegments := []HelpSegment{
 		{"Help", executableName + " -h", "disabled (default)", "Shows this help message!"},
-		{"Interpret", executableName + " -i", "enabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
+		{"Interpret", executableName + " -i", "disabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
 		{"File logging", executableName + " -l", "disabled (default)", "Logs process information in a log file"},
 		{"Debug", executableName + " -xx", "disabled (default)", "Shows brief process information in the command line"},
 	}
