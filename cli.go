@@ -2,6 +2,7 @@ package main
 
 import (
 	"ReCT-Go-Compiler/binder"
+	"ReCT-Go-Compiler/emitter"
 	"ReCT-Go-Compiler/evaluator"
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/parser"
@@ -50,6 +51,10 @@ func Init() {
 
 // ProcessFlags goes through each flag and decides how they have an effect on the output of the compiler
 func ProcessFlags() {
+	for _, file := range files {
+		fmt.Println(file)
+	}
+
 	// Mmm test has the highest priority
 	if tests {
 		RunTests()
@@ -69,11 +74,26 @@ func ProcessFlags() {
 	}
 	if interpretFlag {
 		InterpretFile(files[1])
+	} else {
+		CompileFile(files[1])
 	}
 }
 
 // InterpretFile runs everything to interpret the files, currently only supports up to one file
 func InterpretFile(file string) {
+	boundProgram := Prepare(file)
+	print.PrintC(print.Cyan, "-> Evaluating!")
+	evaluator.Evaluate(boundProgram)
+}
+
+// CompileFile compiles everything and outputs an LLVM file, currently only supports up to one file as well
+func CompileFile(file string) {
+	boundProgram := Prepare(file)
+	print.PrintC(print.Cyan, "-> Emitting!")
+	emitter.Emit(boundProgram, true)
+}
+
+func Prepare(file string) binder.BoundProgram {
 	print.WriteC(print.Green, "-> Lexing...  ")
 	tokens := lexer.Lex(file)
 	print.PrintC(print.Green, "Done!")
@@ -85,10 +105,8 @@ func InterpretFile(file string) {
 	print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
 	print.PrintC(print.Green, "Done!")
-	//boundProgram.Print()
 
-	print.PrintC(print.Cyan, "-> Evaluating!")
-	evaluator.Evaluate(boundProgram)
+	return boundProgram
 }
 
 // RunTests runs all the test files in /tests/
