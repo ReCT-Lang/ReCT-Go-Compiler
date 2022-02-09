@@ -38,13 +38,7 @@ It has a lot more features that can be explored! You can check them out in the [
 
 If you whant to try Rect, the first thing you should do is to install it localy.
 
-### Package manager
-
-{TODO}
-
-### From source
-
-{TODO}
+**note**: Project is in early development, no definitive build instructions are available yet.
 
 ## Usage
 
