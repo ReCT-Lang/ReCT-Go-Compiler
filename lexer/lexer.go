@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"ReCT-Go-Compiler/print"
 	"errors"
 	"fmt"
 	"os"
@@ -245,12 +246,20 @@ func (lxr *Lexer) getOperator() {
 		}
 
 	default:
-		fmt.Printf(
+		print.Error(
+			"LEXER",
+			print.UnexpectedCharacterError,
+			lxr.Line,
+			lxr.Column,
+			"Unexpected character \"%s\"!\n",
+			string(lxr.Code[lxr.Index]),
+		)
+		/*fmt.Printf(
 			"ERROR(%d, %d): Unexpected character \"%s\"!\n",
 			lxr.Line,
 			lxr.Column,
 			string(lxr.Code[lxr.Index]),
-		)
+		)*/
 		_token = BadToken
 	}
 	// AssignToken is 2 characters long while every other operator is 1 character.
@@ -284,6 +293,9 @@ func handleFileOpen(filename string) []byte {
 		fmt.Printf("ERROR: unable to open file \"%s\" for unknown reasons!", filename)
 		os.Exit(1)
 	}
+	// Offload a copy of contents for error handling
+	// Also split at new lines because that makes referencing easier
+	print.CodeReference = strings.Split(string(contents), "\n")
 	return contents
 }
 
