@@ -45,16 +45,14 @@ func Init() {
 	flag.BoolVar(&debug, "xx", false, "Shows brief process information in the command line")
 	// Test (-t) will not be in the help message as it's only really going ot be used for testing compiler features.
 	flag.BoolVar(&tests, "t", false, "For compiler test files (developers only)")
-	files = flag.Args() // Other arguments like executable name or files
 	flag.Parse()
+
+	// needs to be called after flag.Parse() or itll be empty lol
+	files = flag.Args() // Other arguments like executable name or files
 }
 
 // ProcessFlags goes through each flag and decides how they have an effect on the output of the compiler
 func ProcessFlags() {
-	for _, file := range files {
-		fmt.Println(file)
-	}
-
 	// Mmm test has the highest priority
 	if tests {
 		RunTests()
@@ -73,9 +71,9 @@ func ProcessFlags() {
 		return // returns to main
 	}
 	if interpretFlag {
-		InterpretFile(files[1])
+		InterpretFile(files[0])
 	} else {
-		CompileFile(files[1])
+		CompileFile(files[0])
 	}
 }
 
