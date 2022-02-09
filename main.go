@@ -13,9 +13,7 @@ func main() {
 	// all these functions can be found in cli.go
 
 	// Init defines all the flags and initializes them
-	//Init()
+	Init()
 	// ProcessFlags does as it says, takes the flags from Init and uses them to run parts of the compiler
-	//ProcessFlags()
-
-	CompileFile("./tests/test0.1.rct")
+	ProcessFlags()
 }

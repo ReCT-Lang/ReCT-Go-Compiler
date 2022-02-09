@@ -39,7 +39,7 @@ const currentVersion string = "1.1"
 // Init initializes and processes (parses) compiler flags
 func Init() {
 	flag.BoolVar(&helpFlag, "h", false, "Shows this help message")
-	flag.BoolVar(&interpretFlag, "i", true, "Enables interpreter mode, source code will be interpreted instead of compiled.")
+	flag.BoolVar(&interpretFlag, "i", false, "Enables interpreter mode, source code will be interpreted instead of compiled.")
 	flag.BoolVar(&showVersion, "v", false, "Shows current ReCT version the compiler supports")
 	flag.BoolVar(&fileLog, "l", false, "Logs process information in a log file")
 	flag.BoolVar(&debug, "xx", false, "Shows brief process information in the command line")
@@ -92,6 +92,7 @@ func CompileFile(file string) {
 	fmt.Println(module)
 }
 
+// Prepare runs the lexer, parser, binder, and lowerer. This is used before evaluation or emitting.
 func Prepare(file string) binder.BoundProgram {
 	print.WriteC(print.Green, "-> Lexing...  ")
 	tokens := lexer.Lex(file)

@@ -1,8 +1,8 @@
 var name <- "Jerry";
 set age <- 11409830;
-var ali@ve <- true; // supposed to fail btw
+//var alive <- true; // supposed to fail btw
 
-if(alive) {
+if(true) {
     Print("Jerry is alive")
 } else {
     Print("Oh no! Jerry is dead!")
