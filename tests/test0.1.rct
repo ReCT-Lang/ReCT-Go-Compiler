@@ -1,10 +1,10 @@
-from (i <- 0) to 100
-{
-	from (ii <- 0) to 100
-	{
-		var a <- 0;
-		continue;
-	}
+var someVar <- 0;
 
-	continue;
+if (true)
+{
+	var trueVar <- 0;
+}
+else 
+{
+	var falseVar <- 0;
 }

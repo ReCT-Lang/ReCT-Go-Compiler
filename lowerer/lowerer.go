@@ -114,14 +114,19 @@ func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundSt
 		//
 		// <- gets lowered into: ->
 		//
-		// gotoFalse <condition> end
-		// <then>
+		// condGoto <condition> then, end
+		// then:
+		// 	<then>
+		// goto end
 		// end:
+		thenLabel := GenerateLabel()
 		endLabel := GenerateLabel()
-		gotoFalse := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, endLabel, false)
+		condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, endLabel)
+		thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel)
 		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel)
+		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel)
 		result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
-			gotoFalse, stmt.ThenStatement, endLabelStatement,
+			condGoto, thenLabelStatement, stmt.ThenStatement, gotoEnd, endLabelStatement,
 		})
 		return RewriteStatement(result)
 
@@ -131,22 +136,26 @@ func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundSt
 		//
 		// <- gets lowered into: ->
 		//
-		// gotoFalse <condition> else
-		// <then>
+		// condGoto <condition> then, else
+		// then:
+		// 	<then>
 		// goto end
 		// else:
-		// <else>
+		// 	<else>
+		// goto end
 		// end:
 
+		thenLabel := GenerateLabel()
 		elseLabel := GenerateLabel()
 		endLabel := GenerateLabel()
 
-		gotoFalse := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, elseLabel, false)
+		condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, elseLabel)
 		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel)
+		thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel)
 		elseLabelStatement := boundnodes.CreateBoundLabelStatementNode(elseLabel)
 		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel)
 		result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
-			gotoFalse, stmt.ThenStatement, gotoEnd, elseLabelStatement, stmt.ElseStatement, endLabelStatement,
+			condGoto, thenLabelStatement, stmt.ThenStatement, gotoEnd, elseLabelStatement, stmt.ElseStatement, gotoEnd, endLabelStatement,
 		})
 		return RewriteStatement(result)
 	}
@@ -160,19 +169,20 @@ func RewriteWhileStatement(stmt boundnodes.BoundWhileStatementNode) boundnodes.B
 	// goto continue
 	// body:
 	// <body>
+	// goto continue
 	// continue:
-	// gotoTrue <condition> body
+	// condGoto <condition> body
 	// break:
 	bodyLabel := GenerateLabel()
 
 	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel)
 	bodyLabelStatement := boundnodes.CreateBoundLabelStatementNode(bodyLabel)
 	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel)
-	gotoTrue := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, bodyLabel, true)
+	condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, bodyLabel, stmt.BreakLabel)
 	breakLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.BreakLabel)
 
 	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
-		gotoContinue, bodyLabelStatement, stmt.Body, continueLabelStatement, gotoTrue, breakLabelStatement,
+		gotoContinue, bodyLabelStatement, stmt.Body, gotoContinue, continueLabelStatement, condGoto, breakLabelStatement,
 	})
 	return RewriteStatement(result)
 }
@@ -244,7 +254,7 @@ func RewriteGotoStatement(stmt boundnodes.BoundGotoStatementNode) boundnodes.Bou
 
 func RewriteConditionalGotoStatement(stmt boundnodes.BoundConditionalGotoStatementNode) boundnodes.BoundConditionalGotoStatementNode {
 	condition := RewriteExpression(stmt.Condition)
-	return boundnodes.CreateBoundConditionalGotoStatementNode(condition, stmt.Label, stmt.JumpIfTrue)
+	return boundnodes.CreateBoundConditionalGotoStatementNode(condition, stmt.IfLabel, stmt.ElseLabel)
 }
 
 func RewriteReturnStatement(stmt boundnodes.BoundReturnStatementNode) boundnodes.BoundReturnStatementNode {

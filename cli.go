@@ -88,7 +88,8 @@ func InterpretFile(file string) {
 func CompileFile(file string) {
 	boundProgram := Prepare(file)
 	print.PrintC(print.Cyan, "-> Emitting!")
-	emitter.Emit(boundProgram, true)
+	module := emitter.Emit(boundProgram, false)
+	fmt.Println(module)
 }
 
 func Prepare(file string) binder.BoundProgram {
@@ -103,6 +104,7 @@ func Prepare(file string) binder.BoundProgram {
 	print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
 	print.PrintC(print.Green, "Done!")
+	//boundProgram.Print()
 
 	return boundProgram
 }

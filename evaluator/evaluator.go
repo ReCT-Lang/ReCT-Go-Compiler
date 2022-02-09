@@ -130,10 +130,10 @@ func (evl *Evaluator) EvaluateStatement(body boundnodes.BoundBlockStatementNode)
 			gotoStatement := stmt.(boundnodes.BoundConditionalGotoStatementNode)
 			condition := evl.EvaluateExpression(gotoStatement.Condition)
 
-			if condition == gotoStatement.JumpIfTrue {
-				index = labelIndexes[gotoStatement.Label]
+			if condition.(bool) {
+				index = labelIndexes[gotoStatement.IfLabel]
 			} else {
-				index++
+				index = labelIndexes[gotoStatement.ElseLabel]
 			}
 
 		case boundnodes.BoundLabelStatement:
