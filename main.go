@@ -2,10 +2,11 @@ package main
 
 import (
 	"ReCT-Go-Compiler/binder"
-	"ReCT-Go-Compiler/evaluator"
+	"ReCT-Go-Compiler/emitter"
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/print"
+	"fmt"
 )
 
 func main() {
@@ -14,7 +15,7 @@ func main() {
 	//return
 
 	print.WriteC(print.Green, "-> Lexing...  ")
-	tokens := lexer.Lex("tests/coolishtest.rct")
+	tokens := lexer.Lex("tests/test3.rct")
 	print.PrintC(print.Green, "Done!")
 
 	print.WriteC(print.Yellow, "-> Parsing... ")
@@ -26,7 +27,12 @@ func main() {
 	print.PrintC(print.Green, "Done!")
 	//boundProgram.Print()
 
-	print.PrintC(print.Cyan, "-> Evaluating!")
-	evaluator.Evaluate(boundProgram)
+	//print.PrintC(print.Cyan, "-> Evaluating!")
+	//evaluator.Evaluate(boundProgram)
 
+	print.WriteC(print.Cyan, "-> Emitting... ")
+	module := emitter.Emit(boundProgram, false)
+	print.PrintC(print.Green, "Done!")
+
+	fmt.Println(module)
 }
