@@ -1,6 +1,9 @@
 package print
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 /* Error messages!
  * ---------------
@@ -103,9 +106,6 @@ import "strings"
 // Global variable :gentleman:
 var CodeReference []string
 
-/* Everything is in place, I'll write the rest tonight, I'm going out to eat - Tokorv */
-// Also I write a lot of docs lol
-
 type ErrorCode int
 
 const (
@@ -132,12 +132,28 @@ const (
 )
 
 func Error(area string, _type ErrorType, line int, column int, message string, fargs ...interface{}) {
-	WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
+	PrintCodeSnippet(line, column)
+	WriteCF(Cyan, "\n[%s] ", strings.ToUpper(area))
 	WriteC(DarkCyan, string(_type))
 	WriteCF(Red, " Error(%d, %d): ", line, column)
 	WriteCF(DarkYellow, message, fargs...)
 	code := ErrorTypeToCode(_type)
-	WriteCF(Green, "[> Error look up code: %d (use: rgoc lookup %d, for more information)])", code, code)
+	WriteC(DarkYellow, "[> Error look up code: ")
+	WriteCF(Cyan, "%d", code)
+	WriteC(DarkYellow, " (use: ")
+	WriteC(Yellow, "rgoc lookup ")
+	WriteCF(Cyan, "%d", code)
+	PrintC(DarkYellow, ", for more information)]\n")
+}
+
+func PrintCodeSnippet(line int, column int) {
+	PrintCF(White, "\n%d |  %s", line, CodeReference[line-1])
+	if column > 3 {
+		WriteC(Gray, strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line))))
+		PrintC(Red, "^^^^^^^")
+	} else {
+		PrintC(Red, "^^^^^^^")
+	}
 }
 
 func ErrorTypeToCode(e ErrorType) ErrorCode {
