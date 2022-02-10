@@ -12,3 +12,5 @@ function factorialFormular(num int)
 			PrintfI32("%d * ", i);
 	}
 }
+
+Print(string(1));

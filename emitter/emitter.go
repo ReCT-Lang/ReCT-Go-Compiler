@@ -213,6 +213,8 @@ func (emt *Emitter) EmitExpression(blk *ir.Block, expr boundnodes.BoundExpressio
 	case boundnodes.BoundTypeCallExpression:
 		return emt.EmitTypeCallExpression(blk, expr.(boundnodes.BoundTypeCallExpressionNode))
 
+	case boundnodes.BoundConversionExpression:
+		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -457,6 +459,14 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundTypeCallExpressionNode) value.Value {
 
 	print.PrintC(print.Red, "type calls arent implemented yet!")
+	os.Exit(-1)
+
+	return nil
+}
+
+func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.BoundConversionExpressionNode) value.Value {
+
+	print.PrintC(print.Red, "conversions arent implemented yet!")
 	os.Exit(-1)
 
 	return nil
