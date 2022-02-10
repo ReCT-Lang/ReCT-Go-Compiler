@@ -19,8 +19,10 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 	// output functions
 	emptyFormat := emt.Module.NewGlobalDef(".str.efmt", constant.NewCharArrayFromString("%s\x00"))
 	emptyFormat.Immutable = true
+	newlineFormat := emt.Module.NewGlobalDef(".str.nlfmt", constant.NewCharArrayFromString("%s\n\x00"))
+	newlineFormat.Immutable = true
 
-	emt.EmitPrint(emptyFormat)
+	emt.EmitPrint(newlineFormat)
 	emt.EmitWrite(emptyFormat)
 
 	// input functions
@@ -58,10 +60,7 @@ func (emt *Emitter) EmitCLibReferences() {
 	emt.CFunctions["free"] = free
 }
 
-func (emt *Emitter) EmitPrint(emptyFormat *ir.Global) {
-	// newline constant
-	newline := emt.Module.NewGlobalDef(".str.nl", constant.NewCharArrayFromString("\n\x00"))
-	newline.Immutable = true
+func (emt *Emitter) EmitPrint(newlineFormat *ir.Global) {
 
 	// figure out what name to use (name / fingerprint)
 	PrintName := tern(emt.UseFingerprints, builtins.Print.Fingerprint(), builtins.Print.Name)
@@ -70,27 +69,10 @@ func (emt *Emitter) EmitPrint(emptyFormat *ir.Global) {
 	emt.Functions[PrintName] = Function{IRFunction: Print, BoundFunction: binder.BoundFunction{Symbol: builtins.Print}}
 	body := Print.NewBlock("")
 
-	// allocate a new string
-	newStr := body.NewCall(emt.CFunctions["malloc"],
-		// with a size of strlen(str) + 1
-		body.NewAdd(
-			body.NewCall(emt.CFunctions["strlen"], Print.Params[0]),
-			CI32(1),
-		),
-	)
+	// our newline format
+	newlineFormatPointer := body.NewGetElementPtr(types.NewArray(4, types.I8), newlineFormat, CI32(0), CI32(0))
 
-	// our newline
-	newlinePointer := body.NewGetElementPtr(types.NewArray(2, types.I8), newline, CI32(0), CI32(0))
-
-	// our empty format
-	emptyFormatPointer := body.NewGetElementPtr(types.NewArray(3, types.I8), emptyFormat, CI32(0), CI32(0))
-
-	// copy over the string
-	body.NewCall(emt.CFunctions["strcpy"], newStr, Print.Params[0])
-	body.NewCall(emt.CFunctions["strcat"], newStr, newlinePointer)
-
-	body.NewCall(emt.CFunctions["printf"], emptyFormatPointer, newStr)
-	body.NewCall(emt.CFunctions["free"], newStr)
+	body.NewCall(emt.CFunctions["printf"], newlineFormatPointer, Print.Params[0])
 	body.NewRet(nil)
 }
 
