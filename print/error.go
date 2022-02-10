@@ -116,7 +116,7 @@ func Error(area string, _type ErrorType, line int, column int, message string, f
 	WriteC(DarkYellow, "[> Error look up code: ")
 	WriteCF(Cyan, "%d", code)
 	WriteC(DarkYellow, " (use: ")
-	WriteC(Yellow, "rgoc lookup ")
+	WriteC(Yellow, "rgoc -lookup ")
 	WriteCF(Cyan, "%d", code)
 	PrintC(DarkYellow, ", for more information)]\n")
 }

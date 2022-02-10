@@ -1,3 +1,8 @@
 # executables
 rgoc
 ReCT-Go-Compiler
+
+# annoy configs
+.replit
+.gitpod
+*.toml

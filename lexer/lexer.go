@@ -3,7 +3,6 @@ package lexer
 import (
 	"ReCT-Go-Compiler/print"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -25,7 +24,7 @@ func Lex(filename string) []Token {
 	// It then creates a lexer pointer using the byte array and a few default values.
 	scanner := &Lexer{handleFileOpen(filename), 1, 1, 0, make([]Token, 0)}
 
-	// Scanning for all the juicy tokens mmmmmmmmmmmmmmmmm
+	// Scanning for all the juicy tokens
 	for scanner.Index < len(scanner.Code) {
 		c := scanner.Code[scanner.Index]
 
@@ -71,7 +70,14 @@ func (lxr *Lexer) getNumber() {
 		// float real value
 		realValueBuffer, err := strconv.ParseFloat(buffer, 32)
 		if err != nil {
-			fmt.Printf("ERROR: value \"%s\" could not be converted to real value [float] (NumberToken)!", buffer)
+			print.Error(
+				"LEXER",
+				print.RealValueConversionError,
+				lxr.Line,
+				lxr.Column,
+				"value \"%s\" could not be converted to real value [float] (NumberToken)!",
+				buffer,
+			)
 		}
 		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, float32(realValueBuffer), NumberToken, lxr.Line, lxr.Column))
 
@@ -79,7 +85,14 @@ func (lxr *Lexer) getNumber() {
 		// int real value
 		realValueBuffer, err := strconv.Atoi(buffer)
 		if err != nil {
-			fmt.Printf("ERROR: value \"%s\" could not be converted to real value [int] (NumberToken)!", buffer)
+			print.Error(
+				"LEXER",
+				print.RealValueConversionError,
+				lxr.Line,
+				lxr.Column,
+				"value \"%s\" could not be converted to real value [int] (NumberToken)!",
+				buffer,
+			)
 		}
 		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.Line, lxr.Column))
 	}
@@ -105,6 +118,9 @@ func (lxr *Lexer) getString() {
 func (lxr *Lexer) getComment() {
 	// We could just skip the line? Maybe future optimisation?
 	// You don't need to keep track of the column because it gets reset after a new line anyway :/
+
+	// Never-mind, you have to update the index... I wonder if there's a way you can skip to the next \n without
+	// processing each character though - Tokorv
 
 	// just increment until we're at the end of file or and of a line
 	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '\n' {
@@ -251,15 +267,9 @@ func (lxr *Lexer) getOperator() {
 			print.UnexpectedCharacterError,
 			lxr.Line,
 			lxr.Column,
-			"Unexpected character \"%s\"!\n",
+			"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)\n",
 			string(lxr.Code[lxr.Index]),
 		)
-		/*fmt.Printf(
-			"ERROR(%d, %d): Unexpected character \"%s\"!\n",
-			lxr.Line,
-			lxr.Column,
-			string(lxr.Code[lxr.Index]),
-		)*/
 		_token = BadToken
 	}
 	// AssignToken is 2 characters long while every other operator is 1 character.
@@ -284,13 +294,34 @@ func (lxr *Lexer) getOperator() {
 func handleFileOpen(filename string) []byte {
 	contents, err := os.ReadFile(filename)
 	if errors.Is(err, os.ErrNotExist) {
-		fmt.Printf("ERROR: file \"%s\" does not exist!\n", filename)
+		print.Error(
+			"LEXER",
+			print.FileDoesNotExitError,
+			0,
+			0,
+			"file \"%s\" does not exit! Maybe you spelt it wrong?!",
+			filename,
+		)
 		os.Exit(1)
 	} else if errors.Is(err, os.ErrPermission) {
-		fmt.Printf("ERROR: do not have permission to open file \"%s\"!\n", filename)
+		print.Error(
+			"LEXER",
+			print.FilePermissionError,
+			0,
+			0,
+			"do not have permissions to open file \"%s\"!",
+			filename,
+		)
 		os.Exit(1)
 	} else if err != nil {
-		fmt.Printf("ERROR: unable to open file \"%s\" for unknown reasons!", filename)
+		print.Error(
+			"LEXER",
+			print.FileVoidError,
+			0,
+			0,
+			"an unexpected error occurred when reading file \"%s\"!",
+			filename,
+		)
 		os.Exit(1)
 	}
 	// Offload a copy of contents for error handling

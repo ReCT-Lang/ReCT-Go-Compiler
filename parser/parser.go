@@ -3,8 +3,8 @@ package parser
 import (
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/nodes"
+	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/rules"
-	"fmt"
 	"os"
 )
 
@@ -42,11 +42,18 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 		// so we might need a separate name array for them
 
 		// Switched the TokenKind constants to strings and now added the error message you wanted <3
-		fmt.Printf(
-			"ERROR(%d, %d): Unexpected Token \"%s\"! Expected \"%s\".\n",
+
+		// Added this additionalInfo section to help users know why a parser error occurred
+		additionalInfo := ""
+		if prs.current().Kind == lexer.BadToken {
+			additionalInfo = "(may be caused by previous \"UnexpectedCharacterError\" which produced a BadToken)"
+		}
+		print.Error(
+			"PARSER",
+			print.UnexpectedTokenError,
 			prs.current().Line,
 			prs.current().Column,
-			prs.current().Kind,
+			"unexpected Token \"%s\"! Expected \"%s\"!"+additionalInfo,
 			expected,
 		)
 		os.Exit(-1) // die(-1);
@@ -561,7 +568,14 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 
 	// No proper keyword is found
 	// Since ExpressionNode is nil the program will crash anyway, at least we exit safely
-	fmt.Printf("ERROR: Unexpected Token \"%s\" found! ExpressionNode nil -> forced exit.", prs.current().Kind)
+	print.Error(
+		"PARSER",
+		print.UnexpectedTokenError,
+		prs.current().Line,
+		prs.current().Column,
+		"unexpected Token \"%s\"! Fatal error -> forced exit!",
+		prs.current().Kind,
+	)
 	os.Exit(1)
 
 	return nil

@@ -86,7 +86,16 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 		// check if we've registered this param name before
 		for _, p := range boundParameters {
 			if p.Name == pName {
-				print.PrintC(print.Red, "A parameter with the name '"+pName+"' has already been defined for function '"+mem.Identifier.Value+"'!")
+				print.Error(
+					"BINDER",
+					print.DuplicateParameterError,
+					param.Identifier.Line,
+					param.Identifier.Column,
+					// Kind of a hacky way of getting the values and positions needed for the error
+					"a parameter with the name \"%s\" already exists for function \"%s\"!",
+					pName,
+					mem.Identifier.Value,
+				)
 				os.Exit(-1)
 			}
 		}
@@ -102,6 +111,15 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem)
 	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
 		print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
+		print.Error(
+			"BINDER",
+			print.DuplicateFunctionError,
+			mem.Identifier.Line,
+			mem.Identifier.Column,
+			"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
+			functionSymbol.Name,
+			functionSymbol.Name,
+		)
 		os.Exit(-1)
 	}
 }
@@ -121,6 +139,15 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 
 		if !allowed {
 			print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
+			/*print.Error(
+				"BINDER",
+				print.UnexpectedExpressionStatementError,
+				mem.Identifier.Line,
+				mem.Identifier.Column,
+				"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
+				functionSymbol.Name,
+				functionSymbol.Name,
+			)*/
 			os.Exit(-1)
 		}
 	}

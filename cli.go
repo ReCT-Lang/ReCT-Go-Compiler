@@ -23,12 +23,13 @@ import (
 // These are the default values of all flags
 // The values are set using the flag library, but they are also commented below
 var helpFlag bool      // false -h
-var interpretFlag bool // true  -i
+var interpretFlag bool // false  -i
 var showVersion bool   // false -v
 var fileLog bool       // false -l
 var debug bool         // -xx
 var tests bool         // Just for running test file like test.rct ( -t )
 var files []string
+var lookup int // For looking up error details
 
 // Constants that are used throughout code
 // Should be updated when necessary
@@ -45,9 +46,10 @@ func Init() {
 	flag.BoolVar(&debug, "xx", false, "Shows brief process information in the command line")
 	// Test (-t) will not be in the help message as it's only really going ot be used for testing compiler features.
 	flag.BoolVar(&tests, "t", false, "For compiler test files (developers only)")
+	flag.IntVar(&lookup, "lookup", 0, "Displays further detail and examples of Errors")
 	flag.Parse()
 
-	// needs to be called after flag.Parse() or itll be empty lol
+	// needs to be called after flag.Parse() or it'll be empty lol
 	files = flag.Args() // Other arguments like executable name or files
 }
 
@@ -56,24 +58,25 @@ func ProcessFlags() {
 	// Mmm test has the highest priority
 	if tests {
 		RunTests()
-		return // returns to main
-	}
 
-	// Show version has higher priority than help menu
-	if showVersion {
+	} else if showVersion { // Show version has higher priority than help menu
 		Version()
-		return // returns to main
-	}
-	// If they use "-h" or only enter the executable name "rgoc"
-	// Show the help menu because they're obviously insane.
-	if helpFlag || len(files) <= 0 {
+
+	} else if helpFlag || len(files) <= 0 {
+		// If they use "-h" or only enter the executable name "rgoc"
+		// Show the help menu because they're obviously insane.
 		Help()
-		return // returns to main
-	}
-	if interpretFlag {
-		InterpretFile(files[0])
-	} else {
-		CompileFile(files[0])
+
+	} else if lookup != 0 { // 0 = No look up (default value)
+		// If you use requests error code look up
+		return // Do nothing for now
+
+	} else { // When you remember else if statements exist
+		if interpretFlag {
+			InterpretFile(files[0])
+		} else {
+			CompileFile(files[0])
+		}
 	}
 }
 
@@ -153,6 +156,7 @@ func Help() {
 		{"Interpret", executableName + " -i", "disabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
 		{"File logging", executableName + " -l", "disabled (default)", "Logs process information in a log file"},
 		{"Debug", executableName + " -xx", "disabled (default)", "Shows brief process information in the command line"},
+		{"Look up", executableName + "-lookup", "no code (default)", "Shows further detail about errors you may have encountered"},
 	}
 
 	p0, p1, p2, p3 := findPaddings(helpSegments)
@@ -162,7 +166,8 @@ func Help() {
 	}
 
 	fmt.Println("")
-	print.PrintCF(print.Gray, "Still having troubles? Get help on the offical Discord server: %s!\n", discordInvite)
+	print.WriteC(print.Gray, "Still having troubles? Get help on the offical Discord server: ")
+	print.WriteCF(print.DarkBlue, "%s!\n", discordInvite) // Moved so link is now blue
 }
 
 // Version Shows the current compiler version
