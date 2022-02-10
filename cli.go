@@ -84,14 +84,14 @@ func ProcessFlags() {
 // InterpretFile runs everything to interpret the files, currently only supports up to one file
 func InterpretFile(file string) {
 	boundProgram := Prepare(file)
-	print.PrintC(print.Cyan, "-> Evaluating!")
+	//print.PrintC(print.Cyan, "-> Evaluating!")
 	evaluator.Evaluate(boundProgram)
 }
 
 // CompileFile compiles everything and outputs an LLVM file, currently only supports up to one file as well
 func CompileFile(file string) {
 	boundProgram := Prepare(file)
-	print.PrintC(print.Cyan, "-> Emitting!")
+	//print.PrintC(print.Cyan, "-> Emitting!")
 	module := emitter.Emit(boundProgram, false)
 	fmt.Println(module)
 	os.WriteFile("./out.ll", []byte(module.String()), 0644)
@@ -99,17 +99,17 @@ func CompileFile(file string) {
 
 // Prepare runs the lexer, parser, binder, and lowerer. This is used before evaluation or emitting.
 func Prepare(file string) binder.BoundProgram {
-	print.WriteC(print.Green, "-> Lexing...  ")
+	//print.WriteC(print.Green, "-> Lexing...  ")
 	tokens := lexer.Lex(file)
-	print.PrintC(print.Green, "Done!")
+	//print.PrintC(print.Green, "Done!")
 
-	print.WriteC(print.Yellow, "-> Parsing... ")
+	//print.WriteC(print.Yellow, "-> Parsing... ")
 	members := parser.Parse(tokens)
-	print.PrintC(print.Green, "Done!")
+	//print.PrintC(print.Green, "Done!")
 
-	print.WriteC(print.Red, "-> Binding... ")
+	//print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
-	print.PrintC(print.Green, "Done!")
+	//print.PrintC(print.Green, "Done!")
 	//boundProgram.Print()
 
 	return boundProgram

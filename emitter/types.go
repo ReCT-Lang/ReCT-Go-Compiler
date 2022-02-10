@@ -7,6 +7,7 @@ import (
 
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
+	"github.com/llir/llvm/ir/value"
 )
 
 // this file is just keeping track of how ReCT types map to LLVM types
@@ -26,7 +27,7 @@ type Global struct {
 }
 
 type Local struct {
-	IRLocal *ir.InstAlloca
+	IRLocal value.Value
 	IRBlock *ir.Block
 	Type    symbols.TypeSymbol
 }

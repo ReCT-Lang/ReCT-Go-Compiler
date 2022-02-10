@@ -152,7 +152,7 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 		blk.NewStore(emt.EmitExpression(blk, stmt.Initializer), global)
 	} else {
 		// create local variable
-		local := ir.NewAlloca(IRTypes[stmt.Variable.VarType().Fingerprint()])
+		local := blk.NewAlloca(IRTypes[stmt.Variable.VarType().Fingerprint()])
 		local.SetName(varName)
 
 		// save it for referencing later
@@ -204,6 +204,9 @@ func (emt *Emitter) EmitExpression(blk *ir.Block, expr boundnodes.BoundExpressio
 	case boundnodes.BoundUnaryExpression:
 		return emt.EmitUnaryExpression(blk, expr.(boundnodes.BoundUnaryExpressionNode))
 
+	case boundnodes.BoundBinaryExpression:
+		return emt.EmitBinaryExpression(blk, expr.(boundnodes.BoundBinaryExpressionNode))
+
 	case boundnodes.BoundCallExpression:
 		return emt.EmitCallExpression(blk, expr.(boundnodes.BoundCallExpressionNode))
 
@@ -225,9 +228,9 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, float64(expr.Value.(float32)))
 	case builtins.String.Fingerprint():
-		str := expr.Value.(string)
+		str := expr.Value.(string) + "\x00"
 		global := emt.Module.NewGlobalDef(fmt.Sprintf(".str.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
-		global.IsConstant()
+		global.Immutable = true
 		emt.StrNameCounter++
 		return blk.NewGetElementPtr(types.NewArray(uint64(len(str)), types.I8), global, CI32(0), CI32(0))
 	}
@@ -288,6 +291,153 @@ func (emt *Emitter) EmitUnaryExpression(blk *ir.Block, expr boundnodes.BoundUnar
 		xor := blk.NewXor(cmp, CB1(true))
 		return xor
 	}
+
+	return nil
+}
+
+func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBinaryExpressionNode) value.Value {
+	left := emt.EmitExpression(blk, expr.Left)
+	right := emt.EmitExpression(blk, expr.Right)
+
+	switch expr.Op.OperatorKind {
+	case boundnodes.Addition:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewAdd(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFAdd(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// TODO: string concat
+		}
+
+	case boundnodes.Subtraction:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewSub(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFSub(left, right)
+		}
+
+	case boundnodes.Multiplication:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewMul(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFMul(left, right)
+		}
+
+	case boundnodes.Division:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewSDiv(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFDiv(left, right)
+		}
+
+	case boundnodes.Modulus:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewSRem(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFRem(left, right)
+		}
+
+	case boundnodes.BitwiseAnd:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewAnd(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return blk.NewAnd(left, right)
+		}
+
+	case boundnodes.BitwiseOr:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewOr(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return blk.NewOr(left, right)
+		}
+
+	case boundnodes.BitwiseXor:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewXor(left, right)
+		}
+
+	case boundnodes.Equals:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredEQ, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFCmp(enum.FPredOEQ, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return blk.NewICmp(enum.IPredEQ, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// TODO: string equality
+		}
+
+	case boundnodes.NotEquals:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredNE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFCmp(enum.FPredONE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return blk.NewICmp(enum.IPredNE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// TODO: string inequality
+		}
+
+	case boundnodes.Greater:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredSGT, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFCmp(enum.FPredOGT, left, right)
+		}
+
+	case boundnodes.GreaterOrEquals:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredSGE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFCmp(enum.FPredOGE, left, right)
+		}
+
+	case boundnodes.Less:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredSLT, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFCmp(enum.FPredOLT, left, right)
+		}
+
+	case boundnodes.LessOrEquals:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredSLE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			return blk.NewFCmp(enum.FPredOLE, left, right)
+		}
+
+	case boundnodes.LogicalAnd:
+		if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return blk.NewAnd(left, right)
+		}
+
+	case boundnodes.LogicalOr:
+		if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
+			return blk.NewOr(left, right)
+		}
+
+	}
+
+	print.PrintCF(print.Red, "UNIMPLEMENTED BINARY EXPRESSION: %s : %s => %s", expr.Left, expr.Right, expr.Op.OperatorKind)
+	os.Exit(-1)
 
 	return nil
 }

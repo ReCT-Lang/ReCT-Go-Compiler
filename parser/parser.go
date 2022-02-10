@@ -55,6 +55,7 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 			prs.current().Column,
 			5,
 			"unexpected Token \"%s\"! Expected \"%s\"!"+additionalInfo,
+			prs.current().Kind,
 			expected,
 		)
 		os.Exit(-1) // die(-1);

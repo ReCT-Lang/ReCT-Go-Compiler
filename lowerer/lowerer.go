@@ -191,8 +191,9 @@ func RewriteForStatement(stmt boundnodes.BoundForStatementNode) boundnodes.Bound
 	condition := RewriteExpression(stmt.Condition)
 	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel)
 
+	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel)
 	whileBody := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
-		stmt.Body, continueLabelStatement, stmt.Action,
+		stmt.Body, gotoContinue, continueLabelStatement, stmt.Action,
 	})
 	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel())
 
@@ -230,8 +231,10 @@ func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes
 		),
 	)
 
+	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel)
 	whileBody := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 		stmt.Body,
+		gotoContinue,
 		continueLabelStatement,
 		increment,
 	})

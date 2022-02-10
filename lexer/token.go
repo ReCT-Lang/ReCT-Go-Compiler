@@ -31,35 +31,35 @@ const (
 	NumberToken TokenKind = "Number"
 
 	// Symbol Tokens
-	PlusToken          TokenKind = "Plus(+)"
-	ModulusToken       TokenKind = "Modulus(%)"
-	MinusToken         TokenKind = "Minus(-)"
-	StarToken          TokenKind = "Star(*)"
-	SlashToken         TokenKind = "Slash(/)"
-	EqualsToken        TokenKind = "Equals(=)"
-	NotToken           TokenKind = "Not(!)"
-	NotEqualsToken     TokenKind = "Not Equals(!=)"
-	CommaToken         TokenKind = "Comma(,)"
-	GreaterThanToken   TokenKind = "GreaterThanToken(>)"
-	LessThanToken      TokenKind = "LessThanToken(<)"
-	GreaterEqualsToken TokenKind = "GreaterEqualsToken(>=)"
-	LessEqualsToken    TokenKind = "LessEqualsToken(<=)"
-	AmpersandToken     TokenKind = "AmpersandToken(&)"
-	AmpersandsToken    TokenKind = "AmpersandsToken(&&)"
-	PipeToken          TokenKind = "PipeToken(|)"
-	PipesToken         TokenKind = "PipesToken(||)"
-	HatToken           TokenKind = "HatToken(^)"
-	AssignToken        TokenKind = "AssignToken(<-)"
-	AccessToken        TokenKind = "AccessToken(->)"
+	PlusToken          TokenKind = "Plus '+'"
+	ModulusToken       TokenKind = "Modulus '%'"
+	MinusToken         TokenKind = "Minus '-'"
+	StarToken          TokenKind = "Star '*'"
+	SlashToken         TokenKind = "Slash '/'"
+	EqualsToken        TokenKind = "Equals '='"
+	NotToken           TokenKind = "Not '!'"
+	NotEqualsToken     TokenKind = "Not Equals '!='"
+	CommaToken         TokenKind = "Comma ','"
+	GreaterThanToken   TokenKind = "GreaterThanToken '>'"
+	LessThanToken      TokenKind = "LessThanToken '<'"
+	GreaterEqualsToken TokenKind = "GreaterEqualsToken '>='"
+	LessEqualsToken    TokenKind = "LessEqualsToken '<='"
+	AmpersandToken     TokenKind = "AmpersandToken '&'"
+	AmpersandsToken    TokenKind = "AmpersandsToken '&&'"
+	PipeToken          TokenKind = "PipeToken '|'"
+	PipesToken         TokenKind = "PipesToken '||'"
+	HatToken           TokenKind = "HatToken '^'"
+	AssignToken        TokenKind = "AssignToken '<-'"
+	AccessToken        TokenKind = "AccessToken '->'"
 
-	OpenBraceToken        TokenKind = "OpenBrace({)"
-	CloseBraceToken       TokenKind = "Closebrace(})"
-	OpenParenthesisToken  TokenKind = "OpenParenthesis"
-	CloseParenthesisToken TokenKind = "CloseParenthesis"
+	OpenBraceToken        TokenKind = "OpenBrace '{'"
+	CloseBraceToken       TokenKind = "Closebrace '}'"
+	OpenParenthesisToken  TokenKind = "OpenParenthesis '('"
+	CloseParenthesisToken TokenKind = "CloseParenthesis ')'"
 
 	BadToken TokenKind = "Token Error (BadToken)" // Naughty ;)
 
-	Semicolon TokenKind = "Semicolon ;" // Used to separate statements (for now... )
+	Semicolon TokenKind = "Semicolon ';'" // Used to separate statements (for now... )
 )
 
 // Token stores information about lexical structures in the text
