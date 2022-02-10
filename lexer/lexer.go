@@ -75,6 +75,7 @@ func (lxr *Lexer) getNumber() {
 				print.RealValueConversionError,
 				lxr.Line,
 				lxr.Column,
+				0,
 				"value \"%s\" could not be converted to real value [float] (NumberToken)!",
 				buffer,
 			)
@@ -90,6 +91,7 @@ func (lxr *Lexer) getNumber() {
 				print.RealValueConversionError,
 				lxr.Line,
 				lxr.Column,
+				0,
 				"value \"%s\" could not be converted to real value [int] (NumberToken)!",
 				buffer,
 			)
@@ -276,7 +278,8 @@ func (lxr *Lexer) getOperator() {
 			print.UnexpectedCharacterError,
 			lxr.Line,
 			lxr.Column,
-			"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)\n",
+			5,
+			"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)",
 			string(lxr.Code[lxr.Index]),
 		)
 		_token = BadToken
@@ -309,6 +312,7 @@ func handleFileOpen(filename string) []byte {
 			print.FileDoesNotExitError,
 			0,
 			0,
+			0,
 			"file \"%s\" does not exit! Maybe you spelt it wrong?!",
 			filename,
 		)
@@ -317,6 +321,7 @@ func handleFileOpen(filename string) []byte {
 		print.Error(
 			"LEXER",
 			print.FilePermissionError,
+			0,
 			0,
 			0,
 			"do not have permissions to open file \"%s\"!",
@@ -329,6 +334,7 @@ func handleFileOpen(filename string) []byte {
 			print.FileVoidError,
 			0,
 			0,
+			5,
 			"an unexpected error occurred when reading file \"%s\"!",
 			filename,
 		)

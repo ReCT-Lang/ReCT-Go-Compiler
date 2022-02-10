@@ -111,12 +111,12 @@ var CodeReference []string
 // Error prints custom error message and code snippet to terminal/console
 func Error(area string, _type ErrorType, line, column, length int, message string, fargs ...interface{}) {
 	PrintCodeSnippet(line, column, length)
-	WriteCF(Cyan, "\n[%s] ", strings.ToUpper(area))
+	WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
 	WriteC(DarkCyan, string(_type))
 	WriteCF(Red, " Error(%d, %d): ", line, column)
 	WriteCF(DarkYellow, message, fargs...)
 	code := ErrorTypeToCode(_type)
-	WriteC(DarkYellow, "[> Error look up code: ")
+	WriteC(DarkYellow, "\n[> Error look up code: ")
 	WriteCF(Cyan, "%d", code)
 	WriteC(DarkYellow, " (use: ")
 	WriteC(Yellow, "rgoc -lookup ")
