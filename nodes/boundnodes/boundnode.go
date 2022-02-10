@@ -26,33 +26,33 @@ type BoundExpressionNode interface {
 }
 
 // enum for all our node types
-type BoundType int
+type BoundType string
 
 const (
 	// based off of rect 1.0 source
 	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Binding
 
 	// Statements
-	BoundBlockStatement BoundType = iota
-	BoundVariableDeclaration
-	BoundIfStatement
-	BoundWhileStatement
-	BoundForStatement
-	BoundFromToStatement
-	BoundLabelStatement
-	BoundGotoStatement
-	BoundConditionalGotoStatement
-	BoundReturnStatement
-	BoundExpressionStatement
+	BoundBlockStatement           BoundType = "BoundBlockStatement"
+	BoundVariableDeclaration      BoundType = "BoundVariableDeclaration"
+	BoundIfStatement              BoundType = "BoundIfStatement"
+	BoundWhileStatement           BoundType = "BoundWhileStatement"
+	BoundForStatement             BoundType = "BoundForStatement"
+	BoundFromToStatement          BoundType = "BoundFromToStatement"
+	BoundLabelStatement           BoundType = "BoundLabelStatement"
+	BoundGotoStatement            BoundType = "BoundGotoStatement"
+	BoundConditionalGotoStatement BoundType = "BoundConditionalGotoStatement"
+	BoundReturnStatement          BoundType = "BoundReturnStatement"
+	BoundExpressionStatement      BoundType = "BoundExpressionStatement"
 
 	// Expressions
-	BoundErrorExpression
-	BoundLiteralExpression
-	BoundVariableExpression
-	BoundAssignmentExpression
-	BoundUnaryExpression
-	BoundBinaryExpression
-	BoundCallExpression
-	BoundConversionExpression
-	BoundTypeCallExpression
+	BoundErrorExpression      BoundType = "BoundErrorExpression"
+	BoundLiteralExpression    BoundType = "BoundLiteralExpression"
+	BoundVariableExpression   BoundType = "BoundVariableExpression"
+	BoundAssignmentExpression BoundType = "BoundAssignmentExpression"
+	BoundUnaryExpression      BoundType = "BoundUnaryExpression"
+	BoundBinaryExpression     BoundType = "BoundBinaryExpression"
+	BoundCallExpression       BoundType = "BoundCallExpression"
+	BoundConversionExpression BoundType = "BoundConversionExpression"
+	BoundTypeCallExpression   BoundType = "BoundTypeCallExpression"
 )

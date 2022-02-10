@@ -64,17 +64,34 @@ const (
 
 // Token stores information about lexical structures in the text
 type Token struct {
-	Value     string
-	RealValue interface{}
-	Kind      TokenKind
-	Line      int
-	Column    int
+	Value      string
+	RealValue  interface{}
+	Kind       TokenKind
+	Line       int
+	Column     int
+	SpaceAfter bool
 }
 
 // CreateToken returns a Token created from the arguments provided
 func CreateToken(value string, kind TokenKind, line int, column int) Token {
 	return Token{
-		value, nil, kind, line, column,
+		Value:     value,
+		RealValue: nil,
+		Kind:      kind,
+		Line:      line,
+		Column:    column,
+	}
+}
+
+// just another constructor to not have to include the spaced bool every time
+func CreateTokenSpaced(value string, kind TokenKind, line int, column int, spaced bool) Token {
+	return Token{
+		Value:      value,
+		RealValue:  nil,
+		Kind:       kind,
+		Line:       line,
+		Column:     column,
+		SpaceAfter: spaced,
 	}
 }
 
@@ -84,7 +101,11 @@ func CreateToken(value string, kind TokenKind, line int, column int) Token {
 // converted type (so NumberToken actually stores a number).
 func CreateTokenReal(buffer string, real interface{}, kind TokenKind, line, column int) Token {
 	return Token{
-		buffer, real, kind, line, column,
+		Value:     buffer,
+		RealValue: real,
+		Kind:      kind,
+		Line:      line,
+		Column:    column,
 	}
 }
 

@@ -45,7 +45,7 @@ var UnaryOperators []BoundUnaryOperator = []BoundUnaryOperator{
 	/* - */ CreateBoundUnaryOperator(lexer.MinusToken, Negation, builtins.Float, builtins.Float),
 
 	// bool operations
-	/* ! */ CreateBoundUnaryOperator(lexer.NotToken, Negation, builtins.Bool, builtins.Bool),
+	/* ! */ CreateBoundUnaryOperator(lexer.NotToken, LogicalNegation, builtins.Bool, builtins.Bool),
 }
 
 func BindUnaryOperator(tokenKind lexer.TokenKind, operandType symbols.TypeSymbol) BoundUnaryOperator {

@@ -97,6 +97,7 @@ func BindRootScope() Scope {
 	scope := CreateScope(nil)
 
 	scope.TryDeclareSymbol(builtins.Print)
+	scope.TryDeclareSymbol(builtins.PrintfI32)
 	scope.TryDeclareSymbol(builtins.Write)
 	scope.TryDeclareSymbol(builtins.Input)
 	scope.TryDeclareSymbol(builtins.InputKey)

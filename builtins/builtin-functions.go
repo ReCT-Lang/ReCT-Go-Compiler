@@ -15,6 +15,16 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
+	PrintfI32 = symbols.CreateBuiltInFunctionSymbol(
+		"PrintfI32",
+		[]symbols.ParameterSymbol{
+			symbols.CreateParameterSymbol("text", 0, String),
+			symbols.CreateParameterSymbol("text", 1, Int),
+		},
+		Void,
+		nodes.FunctionDeclarationMember{},
+	)
+
 	Write = symbols.CreateBuiltInFunctionSymbol(
 		"Write",
 		[]symbols.ParameterSymbol{
