@@ -16,6 +16,13 @@ type ContinueStatementNode struct {
 // NodeType Copy + Paste
 func (ContinueStatementNode) NodeType() NodeType { return ContinueStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node ContinueStatementNode) Position() (int, int, int) {
+	return node.Keyword.Line, node.Keyword.Column, len(node.Keyword.Value)
+}
+
 // Print Prints beautiful stuff in console
 func (node ContinueStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ ReturnStatementNode")

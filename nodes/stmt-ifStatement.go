@@ -19,6 +19,17 @@ type IfStatementNode struct {
 // implement node type from interface
 func (IfStatementNode) NodeType() NodeType { return IfStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+// IfStatementNode we don't do the Statement because it can be super long (i.e., a block statement)
+func (node IfStatementNode) Position() (int, int, int) {
+	length := len(node.IfKeyword.Value)
+	_, _, conditionLength := node.Condition.Position()
+
+	return node.IfKeyword.Line, node.IfKeyword.Column, length + conditionLength
+}
+
 // node print function
 func (node IfStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ IfStatementNode")

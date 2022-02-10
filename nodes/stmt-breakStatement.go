@@ -16,6 +16,13 @@ type BreakStatementNode struct {
 // NodeType Copy + Paste
 func (BreakStatementNode) NodeType() NodeType { return BreakStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node BreakStatementNode) Position() (int, int, int) {
+	return node.Keyword.Line, node.Keyword.Column, len(node.Keyword.Value)
+}
+
 // Print Prints beautiful stuff in console
 func (node BreakStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ BreakStatement")

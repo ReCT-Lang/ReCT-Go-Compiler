@@ -18,6 +18,17 @@ type WhileStatementNode struct {
 // NodeType Copy + Paste again
 func (WhileStatementNode) NodeType() NodeType { return WhileStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+// We don't process the statement for WhileStatementNode because it do be chonky
+func (node WhileStatementNode) Position() (int, int, int) {
+	length := len(node.Keyword.Value) + 2 // +2 for parentheses
+	_, _, conditionLength := node.Condition.Position()
+
+	return node.Keyword.Line, node.Keyword.Column, length + conditionLength
+}
+
 // Print Prints beautiful stuff in console
 func (node WhileStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ WhileStatementNode")

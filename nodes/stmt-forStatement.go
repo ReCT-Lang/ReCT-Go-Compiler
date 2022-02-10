@@ -20,6 +20,20 @@ type ForStatementNode struct {
 // NodeType Copy + Paste
 func (ForStatementNode) NodeType() NodeType { return ForStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+// ForStatementNode we don't do the Statement because it can be super long (i.e., a block statement)
+func (node ForStatementNode) Position() (int, int, int) {
+	length := len(node.Keyword.Value)
+	_, _, initLength := node.Initaliser.Position()
+	_, _, condLength := node.Condition.Position()
+	_, _, UpdaLength := node.Updation.Position()
+	length += initLength + condLength + UpdaLength
+
+	return node.Keyword.Line, node.Keyword.Column, length
+}
+
 // Print Prints beautiful stuff in console
 func (node ForStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ ForStatementNode")

@@ -15,6 +15,13 @@ type ExpressionStatementNode struct {
 // implement node type from interface
 func (ExpressionStatementNode) NodeType() NodeType { return ExpressionStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node ExpressionStatementNode) Position() (int, int, int) {
+	return node.Expression.Position()
+}
+
 // node print function
 func (node ExpressionStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ ExpressionStatementNode")

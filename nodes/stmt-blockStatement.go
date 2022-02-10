@@ -18,6 +18,20 @@ type BlockStatementNode struct {
 // implement node type from interface
 func (BlockStatementNode) NodeType() NodeType { return BlockStatement }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+// BlockStatementNode is a bit weird because it gets the length of all the statements...
+// Oh well, I'm sure nothing wacky can happen from this! - tokorv
+func (node BlockStatementNode) Position() (int, int, int) {
+	length := 2 // OpenBrace + CloseBrace
+	for _, s := range node.Statements {
+		_, _, stmtLength := s.Position()
+		length += stmtLength
+	}
+	return node.OpenBrace.Line, node.OpenBrace.Column, length
+}
+
 // node print function
 func (node BlockStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ BlockStatementNode")

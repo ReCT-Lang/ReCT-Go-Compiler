@@ -20,6 +20,17 @@ type VariableDeclarationStatementNode struct {
 // implement node type from interface
 func (VariableDeclarationStatementNode) NodeType() NodeType { return VariableDeclaration }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node VariableDeclarationStatementNode) Position() (int, int, int) {
+	length := len(node.Keyword.Value) + len(node.Identifier.Value) + len(node.AssignToken.Value)
+	_, _, typeLength := node.TypeClause.Position()
+	_, _, initLength := node.Initializer.Position()
+
+	return node.Keyword.Line, node.Keyword.Column, length + typeLength + initLength
+}
+
 // node print function
 func (node VariableDeclarationStatementNode) Print(indent string) {
 	print.PrintC(print.Green, indent+"└ VariableDeclarationStatementNode")

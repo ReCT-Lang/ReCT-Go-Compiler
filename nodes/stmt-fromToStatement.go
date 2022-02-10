@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// WhileStatementNode joke comments get old after awhile
+// FromToStatementNode joke comments get old after awhile
 type FromToStatementNode struct {
 	StatementNode
 
@@ -19,6 +19,18 @@ type FromToStatementNode struct {
 
 // NodeType Copy + Paste again
 func (FromToStatementNode) NodeType() NodeType { return FromToStatement }
+
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+// FromToStatementNode we don't do the Statement because it can be super long (i.e., a block statement)
+func (node FromToStatementNode) Position() (int, int, int) {
+	length := len(node.Keyword.Value) + len(node.Identifier.Value)
+	_, _, upperLength := node.UpperBound.Position()
+	_, _, lowerLength := node.LowerBound.Position()
+
+	return node.Keyword.Line, node.Keyword.Column, length + upperLength + lowerLength
+}
 
 // Print Prints beautiful stuff in console
 func (node FromToStatementNode) Print(indent string) {
