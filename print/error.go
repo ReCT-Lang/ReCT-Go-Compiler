@@ -106,31 +106,6 @@ import (
 // Global variable :gentleman:
 var CodeReference []string
 
-type ErrorCode int
-
-const (
-	// Developer ErrorCodes (start at 9000)
-	NotImplementedErrorCode ErrorCode = 9000
-	IDKErrorCode                      = 9001
-
-	// Lexer ErrorCodes (start at 1000)
-	UnexpectedCharacterErrorCode = 1000
-	FileDoesNotExitErrorCode     = 1001
-	FilePermissionErrorCode      = 1002
-	FileVoidErrorCode            = 1003
-	RealValueConversion          = 1004
-)
-
-type ErrorType string
-
-const (
-	UnexpectedCharacterError ErrorType = "UnexpectedCharacter"
-	FileDoesNotExitError               = "FileDoesNotExit"
-	FilePermissionError                = "FilePermission"
-	FileVoidError                      = "FileVoid"
-	RealValueConversionError           = "RealValueConversionError"
-)
-
 func Error(area string, _type ErrorType, line int, column int, message string, fargs ...interface{}) {
 	PrintCodeSnippet(line, column)
 	WriteCF(Cyan, "\n[%s] ", strings.ToUpper(area))
@@ -156,11 +131,147 @@ func PrintCodeSnippet(line int, column int) {
 	}
 }
 
+// ErrorCode the numerical representation of an Error, this allows it to be "looked up"
+// using the Error lookup system. Each ErrorCode increments by 1 per declaration.
+// ErrorCodes are also given additional values depending on the section they come from.
+// For example, Errors from the binder have a default value of 3000, this value it added
+// onto the iota increment to produce the specific ErrorCode.
+type ErrorCode int
+
+const (
+	// Developer ErrorCodes (start at 9000) (Why? Fuck logic that's why).
+	NotImplementedErrorCode ErrorCode = iota + 9000
+	IDKErrorCode                      = iota + 9000
+	NULLErrorCode                     = -1 + 9000
+
+	// Lexer ErrorCodes (start at 1000)
+	UnexpectedCharacterErrorCode = iota + 1000
+	FileDoesNotExitErrorCode     = iota + 1000
+	FilePermissionErrorCode      = iota + 1000
+	FileVoidErrorCode            = iota + 1000
+	RealValueConversionErrorCode = iota + 1000
+
+	// Parser ErrorCodes (start at 2000)
+	UnexpectedTokenErrorCode = iota + 2000
+
+	// Binder ErrorCodes (start at 3000) (Chonk warning)
+	DuplicateParameterErrorCode            = iota + 3000
+	DuplicateFunctionErrorCode             = iota + 3000
+	DuplicateVariableDeclarationErrorCode  = iota + 3000
+	UndefinedVariableReferenceErrorCode    = iota + 3000
+	TypeFunctionDoesNotExitErrorCode       = iota + 3000
+	ConversionErrorCode                    = iota + 3000
+	ExplicitConversionErrorCode            = iota + 3000
+	UnexpectedExpressionStatementErrorCode = iota + 3000
+	OutsideReturnErrorCode                 = iota + 3000
+	VoidReturnErrorCode                    = iota + 3000
+	OutsideBreakErrorCode                  = iota + 3000
+	UnexpectedNonIntegerValueErrorCode     = iota + 3000
+	OutsideContinueErrorCode               = iota + 3000
+	BinaryOperatorTypeErrorCode            = iota + 3000
+	IncorrectTypeFunctionCallErrorCode     = iota + 3000
+	BadNumberOfParametersErrorCode         = iota + 3000
+	UndefinedFunctionCallErrorCode         = iota + 3000
+	UnaryOperatorTypeErrorCode             = iota + 3000
+	UnknownDataTypeErrorCode               = iota + 3000
+)
+
+type ErrorType string
+
+const (
+	// Developer Error
+	NotImplementedError ErrorType = "NotImplemented"
+	IDK                           = "IDK(cringe)"
+
+	// Lexer Errors
+	UnexpectedCharacterError = "UnexpectedCharacter"
+	FileDoesNotExitError     = "FileDoesNotExit"
+	FilePermissionError      = "FilePermission"
+	FileVoidError            = "FileVoid"
+	RealValueConversionError = "RealValueConversionError"
+
+	// Parser Errors
+	UnexpectedTokenError = "UnexpectedTokenError"
+
+	// Binder Errors
+	DuplicateParameterError            = "DuplicateParameter"
+	DuplicateFunctionError             = "DuplicateFunction"
+	DuplicateVariableDeclarationError  = "DuplicateVariableDeclaration"
+	UndefinedVariableReferenceError    = "UndefinedVariableReference"
+	TypeFunctionDoesNotExitError       = "TypeFunctionDoesNotExist"
+	ConversionError                    = "Conversion"
+	ExplicitConversionError            = "ExplicitConversion"
+	UnexpectedExpressionStatementError = "UnexpectedExpressionStatement"
+	OutsideReturnError                 = "OutsideReturn"
+	VoidReturnError                    = "VoidReturn"
+	OutsideBreakError                  = "OutsideBreak"
+	UnexpectedNonIntegerValueError     = "UnexpectedNonIntegerValue"
+	OutsideContinueError               = "OutsideContinue"
+	BinaryOperatorTypeError            = "BinaryOperatorType"
+	IncorrectTypeFunctionCallError     = "IncorrectTypeFunctionCall"
+	BadNumberOfParametersError         = "BadNumberOfParameters"
+	UndefinedFunctionCallError         = "UndefinedFunctionCall"
+	UnaryOperatorTypeError             = "UnaryOperatorType"
+	UnknownDataTypeError               = "UnknownDataType"
+)
+
 func ErrorTypeToCode(e ErrorType) ErrorCode {
 	switch e {
 	case UnexpectedCharacterError:
 		return UnexpectedCharacterErrorCode
+	case DuplicateFunctionError:
+		return DuplicateFunctionErrorCode
+	case DuplicateVariableDeclarationError:
+		return DuplicateVariableDeclarationErrorCode
+	case UndefinedVariableReferenceError:
+		return UndefinedVariableReferenceErrorCode
+	case DuplicateParameterError:
+		return DuplicateParameterErrorCode
+	case TypeFunctionDoesNotExitError:
+		return TypeFunctionDoesNotExitErrorCode
+	case ConversionError:
+		return ConversionErrorCode
+	case ExplicitConversionError:
+		return ExplicitConversionErrorCode
+	case UnexpectedExpressionStatementError:
+		return UnexpectedExpressionStatementErrorCode
+	case OutsideReturnError:
+		return OutsideReturnErrorCode
+	case VoidReturnError:
+		return VoidReturnErrorCode
+	case OutsideBreakError:
+		return OutsideBreakErrorCode
+	case UnexpectedNonIntegerValueError:
+		return UnexpectedNonIntegerValueErrorCode
+	case OutsideContinueError:
+		return OutsideContinueErrorCode
+	case BinaryOperatorTypeError:
+		return BinaryOperatorTypeErrorCode
+	case IncorrectTypeFunctionCallError:
+		return IncorrectTypeFunctionCallErrorCode
+	case BadNumberOfParametersError:
+		return BadNumberOfParametersErrorCode
+	case UndefinedFunctionCallError:
+		return UndefinedFunctionCallErrorCode
+	case UnaryOperatorTypeError:
+		return UnaryOperatorTypeErrorCode
+	case UnknownDataTypeError:
+		return UnknownDataTypeErrorCode
+	case NotImplementedError:
+		return NotImplementedErrorCode
+	case IDK:
+		return IDKErrorCode
+	case UnexpectedTokenError:
+		return UnexpectedTokenErrorCode
+	case FileDoesNotExitError:
+		return FileDoesNotExitErrorCode
+	case FilePermissionError:
+		return FilePermissionErrorCode
+	case FileVoidError:
+		return FileVoidErrorCode
+	case RealValueConversionError:
+		return RealValueConversionErrorCode
 	default:
-		return -1
+		return NULLErrorCode
 	}
 }
