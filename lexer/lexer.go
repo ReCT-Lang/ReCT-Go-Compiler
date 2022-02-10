@@ -105,6 +105,15 @@ func (lxr *Lexer) getString() {
 	lxr.Increment()
 
 	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '"' {
+		if lxr.Code[lxr.Index] == '\\' {
+			if lxr.Code[lxr.Index+1] == 'n' {
+				lxr.Increment()
+				lxr.Increment()
+				buffer += "\n"
+				continue
+			}
+		}
+
 		buffer += string(lxr.Code[lxr.Index])
 		lxr.Increment()
 	}
@@ -278,11 +287,12 @@ func (lxr *Lexer) getOperator() {
 	// Generalised this a little because we now got a few multi-char operators - Red, thanks - Tokorv xD
 	lxr.Tokens = append(
 		lxr.Tokens,
-		CreateToken(
+		CreateTokenSpaced(
 			string(lxr.Code)[startIndex:lxr.Index+1],
 			_token,
 			line,
 			column,
+			peek(1) == ' ',
 		),
 	)
 

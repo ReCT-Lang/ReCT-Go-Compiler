@@ -481,6 +481,7 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// variable editors
 	if prs.current().Kind == lexer.IdToken &&
 		prs.peek(1).Kind == lexer.AssignToken &&
+		!prs.peek(1).SpaceAfter &&
 		rules.GetBinaryOperatorPrecedence(prs.peek(2)) != 0 {
 		// if <-+ <-- <-/ <-* : (for the uneducated these are the equivalents of += -= /= *= in ReCT.
 		return prs.parseVariableEditorExpression()

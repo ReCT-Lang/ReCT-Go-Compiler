@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -93,6 +94,7 @@ func CompileFile(file string) {
 	print.PrintC(print.Cyan, "-> Emitting!")
 	module := emitter.Emit(boundProgram, false)
 	fmt.Println(module)
+	os.WriteFile("./out.ll", []byte(module.String()), 0644)
 }
 
 // Prepare runs the lexer, parser, binder, and lowerer. This is used before evaluation or emitting.
