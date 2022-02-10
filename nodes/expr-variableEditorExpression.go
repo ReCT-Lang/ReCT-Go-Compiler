@@ -18,6 +18,16 @@ type VariableEditorExpressionNode struct {
 // implement node type from interface
 func (VariableEditorExpressionNode) NodeType() NodeType { return VariableEditorExpression }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node VariableEditorExpressionNode) Position() (int, int, int) {
+	length := len(node.Operator.Value) + len(node.Operator.Value) + 2 // +2 for spaces and stuff
+	_, _, exprLength := node.Expression.Position()
+	length += exprLength
+	return node.Identifier.Line, node.Identifier.Column, length
+}
+
 // node print function
 func (node VariableEditorExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ VariableEditorExpressionNode")

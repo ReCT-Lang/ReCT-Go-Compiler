@@ -4,6 +4,7 @@ import (
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/print"
 	"fmt"
+	"strings"
 )
 
 // basic global statement member
@@ -18,6 +19,22 @@ type FunctionDeclarationMember struct {
 
 // implement node type from interface
 func (FunctionDeclarationMember) NodeType() NodeType { return FunctionDeclaration }
+
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+// For FunctionDeclarationMember we don't get the length of the body, only the keyword, name, parameters, and type
+func (node FunctionDeclarationMember) Position() (int, int, int) {
+	length := len(strings.Split(string(lexer.FunctionKeyword), " ")[0])
+	length += len(node.Identifier.Value)
+	_, _, typeLength := node.TypeClause.Position()
+	length += typeLength
+	for _, arg := range node.Parameters {
+		_, _, argLength := arg.Position()
+		length += argLength + 2 // +2 for spaces and commas
+	}
+	return node.Identifier.Line, node.Identifier.Column, length
+}
 
 // node print function
 func (node FunctionDeclarationMember) Print(indent string) {

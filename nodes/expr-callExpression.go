@@ -16,6 +16,15 @@ type CallExpressionNode struct {
 // implement node type from interface
 func (CallExpressionNode) NodeType() NodeType { return CallExpression }
 
+func (node CallExpressionNode) Position() (int, int, int) {
+	length := len(node.Identifier.Value) + 2
+	for _, arg := range node.Arguments {
+		_, _, argLength := arg.Position()
+		length += argLength + 2
+	}
+	return node.Identifier.Line, node.Identifier.Column, length
+}
+
 // node print function
 func (node CallExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ CallExpressionNode")

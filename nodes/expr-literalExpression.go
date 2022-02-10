@@ -17,6 +17,14 @@ type LiteralExpressionNode struct {
 // implement node type from interface
 func (LiteralExpressionNode) NodeType() NodeType { return LiteralExpression }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node LiteralExpressionNode) Position() (int, int, int) {
+	length := node.LiteralToken.Column + len(node.LiteralValue.(string))
+	return node.LiteralToken.Line, node.LiteralToken.Column, length
+}
+
 // node print function
 func (node LiteralExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ LiteralExpressionNode")

@@ -84,13 +84,16 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 		pType, _ := bin.BindTypeClause(param.TypeClause)
 
 		// check if we've registered this param name before
-		for _, p := range boundParameters {
+		for i, p := range boundParameters {
 			if p.Name == pName {
+				// I haven't done bound nodes yet so I just get the syntax node parameter using the same index
+				line, column, length := mem.Parameters[i].Position() // Very hacky :/
 				print.Error(
 					"BINDER",
 					print.DuplicateParameterError,
-					param.Identifier.Line,
-					param.Identifier.Column,
+					line,
+					column,
+					length,
 					// Kind of a hacky way of getting the values and positions needed for the error
 					"a parameter with the name \"%s\" already exists for function \"%s\"!",
 					pName,
@@ -111,11 +114,13 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem)
 	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
 		print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
+		line, column, length := mem.Position()
 		print.Error(
 			"BINDER",
 			print.DuplicateFunctionError,
-			mem.Identifier.Line,
-			mem.Identifier.Column,
+			line,
+			column,
+			length,
 			"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
 			functionSymbol.Name,
 			functionSymbol.Name,
@@ -138,16 +143,17 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression
 
 		if !allowed {
-			print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
-			/*print.Error(
+			//print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
+			line, column, length := stmt.Position()
+			print.Error(
 				"BINDER",
 				print.UnexpectedExpressionStatementError,
-				mem.Identifier.Line,
-				mem.Identifier.Column,
-				"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
-				functionSymbol.Name,
-				functionSymbol.Name,
-			)*/
+				line,
+				column,
+				length,
+				"cannot use \"%s\" as statement, only call and assignment expressions can be used as statements!",
+				exprStmt,
+			)
 			os.Exit(-1)
 		}
 	}
@@ -179,7 +185,16 @@ func (bin *Binder) BindStatementInternal(stmt nodes.StatementNode) boundnodes.Bo
 		return bin.BindExpressionStatement(stmt.(nodes.ExpressionStatementNode))
 	}
 
-	print.PrintC(print.Red, "Unexpected statement node! Got: '"+string(stmt.NodeType())+"'")
+	// print.PrintC(print.Red, "Unexpected statement node! Got: '"+string(stmt.NodeType())+"'")
+	line, column, length := stmt.Position()
+	print.Error(
+		"Parser",
+		print.UnknownStatementError,
+		line,
+		column,
+		length,
+		"\"%s\" Statement found. This was unexpected!",
+	)
 	os.Exit(-1)
 	return nil
 }

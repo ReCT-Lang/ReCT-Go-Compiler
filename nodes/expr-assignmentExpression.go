@@ -16,6 +16,15 @@ type AssignmentExpressionNode struct {
 // implement node type from interface
 func (AssignmentExpressionNode) NodeType() NodeType { return AssignmentExpression }
 
+// Position returns the starting line and column, and the total length of the statement
+// The starting line and column aren't always the absolute beginning of the statement just what's most
+// convenient.
+func (node AssignmentExpressionNode) Position() (int, int, int) {
+	_, _, exprLength := node.Expression.Position()
+	length := len(node.Identifier.Value) + exprLength
+	return node.Identifier.Line, node.Identifier.Column, length
+}
+
 // node print function
 func (node AssignmentExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ AssignmentExpressionNode")

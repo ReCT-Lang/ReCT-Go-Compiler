@@ -106,8 +106,9 @@ import (
 // Global variable :gentleman:
 var CodeReference []string
 
-func Error(area string, _type ErrorType, line int, column int, message string, fargs ...interface{}) {
-	PrintCodeSnippet(line, column)
+// Error prints custom error message and code snippet to terminal/console
+func Error(area string, _type ErrorType, line, column, length int, message string, fargs ...interface{}) {
+	PrintCodeSnippet(line, column, length)
 	WriteCF(Cyan, "\n[%s] ", strings.ToUpper(area))
 	WriteC(DarkCyan, string(_type))
 	WriteCF(Red, " Error(%d, %d): ", line, column)
@@ -121,13 +122,13 @@ func Error(area string, _type ErrorType, line int, column int, message string, f
 	PrintC(DarkYellow, ", for more information)]\n")
 }
 
-func PrintCodeSnippet(line int, column int) {
+func PrintCodeSnippet(line, column, length int) {
 	PrintCF(White, "\n%d |  %s", line, CodeReference[line-1])
 	if column > 3 {
 		WriteC(Gray, strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line))))
-		PrintC(Red, "^^^^^^^")
+		PrintC(Red, strings.Repeat("^", length))
 	} else {
-		PrintC(Red, "^^^^^^^")
+		PrintC(Red, strings.Repeat("^", length))
 	}
 }
 
@@ -174,6 +175,7 @@ const (
 	UndefinedFunctionCallErrorCode         = iota + 3000
 	UnaryOperatorTypeErrorCode             = iota + 3000
 	UnknownDataTypeErrorCode               = iota + 3000
+	UnknownStatementErrorCode              = iota + 3000
 )
 
 type ErrorType string
@@ -213,6 +215,7 @@ const (
 	UndefinedFunctionCallError         = "UndefinedFunctionCall"
 	UnaryOperatorTypeError             = "UnaryOperatorType"
 	UnknownDataTypeError               = "UnknownDataType"
+	UnknownStatementError              = "UnknownStatement"
 )
 
 func ErrorTypeToCode(e ErrorType) ErrorCode {
@@ -271,6 +274,8 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 		return FileVoidErrorCode
 	case RealValueConversionError:
 		return RealValueConversionErrorCode
+	case UnknownStatementError:
+		return UnknownStatementErrorCode
 	default:
 		return NULLErrorCode
 	}
