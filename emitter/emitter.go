@@ -21,6 +21,9 @@ type Emitter struct {
 	Module          *ir.Module
 	UseFingerprints bool
 
+	// referenced C functions
+	CFunctions map[string]*ir.Func
+
 	// global variables
 	Globals        map[string]Global
 	Functions      map[string]Function
@@ -39,6 +42,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		UseFingerprints: useFingerprints,
 		Globals:         make(map[string]Global),
 		Functions:       make(map[string]Function),
+		CFunctions:      make(map[string]*ir.Func),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -473,25 +477,6 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 }
 
 // </EXPRESSIONS>--------------------------------------------------------------
-// <BUILTINS>------------------------------------------------------------------
-
-func (emt *Emitter) EmitBuiltInFunctions() {
-	// printf link
-	printf := emt.Module.NewFunc("printf", types.I32, ir.NewParam("format", types.I8Ptr))
-	printf.Sig.Variadic = true
-
-	// PrintfI32 -------------
-	PrintfI32Name := tern(emt.UseFingerprints, builtins.PrintfI32.Fingerprint(), builtins.PrintfI32.Name)
-	PrintfI32 := emt.Module.NewFunc(PrintfI32Name, types.Void, ir.NewParam("message", types.I8Ptr), ir.NewParam("slotin", types.I32))
-
-	emt.Functions[PrintfI32Name] = Function{IRFunction: PrintfI32, BoundFunction: binder.BoundFunction{Symbol: builtins.PrintfI32}}
-	printfI32Body := PrintfI32.NewBlock("")
-
-	printfI32Body.NewCall(printf, PrintfI32.Params[0], PrintfI32.Params[1])
-	printfI32Body.NewRet(nil)
-}
-
-// </BUILTINS>-----------------------------------------------------------------
 
 // yes
 func tern(cond bool, str1 string, str2 string) string {

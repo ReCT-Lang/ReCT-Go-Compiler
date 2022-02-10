@@ -1,16 +1,6 @@
-factorialFormular(5);
-
-function factorialFormular(num int) 
-{
-	PrintfI32("%d! represents:\n", num);
-
-	for (var i <- num; i >= 1; i--)
-	{
-		if (i = 1)
-			PrintfI32("%d\n", i);
-		else 
-			PrintfI32("%d * ", i);
-	}
-}
-
-Print(string(1));
+Write(Input());
+Write(Input());
+Write(Input());
+Write(Input());
+Write(Input());
+Write(Input());
