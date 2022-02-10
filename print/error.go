@@ -106,6 +106,8 @@ import (
 // Global variable :gentleman:
 var CodeReference []string
 
+// When no data can be found for line, length or column
+
 // Error prints custom error message and code snippet to terminal/console
 func Error(area string, _type ErrorType, line, column, length int, message string, fargs ...interface{}) {
 	PrintCodeSnippet(line, column, length)
@@ -160,7 +162,7 @@ const (
 	DuplicateFunctionErrorCode             = iota + 3000
 	DuplicateVariableDeclarationErrorCode  = iota + 3000
 	UndefinedVariableReferenceErrorCode    = iota + 3000
-	TypeFunctionDoesNotExitErrorCode       = iota + 3000
+	TypeFunctionDoesNotExistErrorCode      = iota + 3000
 	ConversionErrorCode                    = iota + 3000
 	ExplicitConversionErrorCode            = iota + 3000
 	UnexpectedExpressionStatementErrorCode = iota + 3000
@@ -200,7 +202,7 @@ const (
 	DuplicateFunctionError             = "DuplicateFunction"
 	DuplicateVariableDeclarationError  = "DuplicateVariableDeclaration"
 	UndefinedVariableReferenceError    = "UndefinedVariableReference"
-	TypeFunctionDoesNotExitError       = "TypeFunctionDoesNotExist"
+	TypeFunctionDoesNotExistError      = "TypeFunctionDoesNotExist"
 	ConversionError                    = "Conversion"
 	ExplicitConversionError            = "ExplicitConversion"
 	UnexpectedExpressionStatementError = "UnexpectedExpressionStatement"
@@ -230,8 +232,8 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 		return UndefinedVariableReferenceErrorCode
 	case DuplicateParameterError:
 		return DuplicateParameterErrorCode
-	case TypeFunctionDoesNotExitError:
-		return TypeFunctionDoesNotExitErrorCode
+	case TypeFunctionDoesNotExistError:
+		return TypeFunctionDoesNotExistErrorCode
 	case ConversionError:
 		return ConversionErrorCode
 	case ExplicitConversionError:

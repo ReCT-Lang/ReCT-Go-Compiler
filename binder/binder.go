@@ -255,15 +255,35 @@ func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnode
 
 	// if we're not in any function
 	if !bin.FunctionSymbol.Exists {
-		print.PrintC(print.Red, "Cannot return when outside of a function!")
+		//print.PrintC(print.Red, "Cannot return when outside of a function!")
+		line, column, length := stmt.Position()
+		print.Error(
+			"BINDER",
+			print.OutsideReturnError,
+			line,
+			column,
+			length,
+			"cannot use \"%s\" outside of a function!",
+			stmt.Keyword.Value,
+		)
 		os.Exit(-1)
 	}
 
-	// if we are in a function but the return type is void and we are trying to return smth
+	// if we are in a function but the return type is void, and we are trying to return something
 	if bin.FunctionSymbol.Exists &&
 		bin.FunctionSymbol.Type.Fingerprint() == builtins.Void.Fingerprint() &&
 		expression != nil {
-		print.PrintC(print.Red, "Cannot return a value inside a void function!")
+		//print.PrintC(print.Red, "Cannot return a value inside a void function!")
+		line, column, length := stmt.Position()
+		print.Error(
+			"BINDER",
+			print.VoidReturnError,
+			line,
+			column,
+			length,
+			"cannot use \"%s\" inside of a void function!",
+			stmt.Keyword.Value,
+		)
 		os.Exit(-1)
 	}
 
@@ -319,9 +339,29 @@ func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnode
 	lowerBound := bin.BindExpression(stmt.LowerBound)
 	upperBound := bin.BindExpression(stmt.UpperBound)
 
-	if lowerBound.Type().Fingerprint() != builtins.Int.Fingerprint() ||
-		upperBound.Type().Fingerprint() != builtins.Int.Fingerprint() {
-		print.PrintC(print.Red, "FromTo statement only allows for integer values!")
+	if lowerBound.Type().Fingerprint() != builtins.Int.Fingerprint() {
+		line, column, length := stmt.LowerBound.Position()
+		print.Error(
+			"BINDER",
+			print.UnexpectedNonIntegerValueError,
+			line,
+			column,
+			length,
+			"FromTo statement was expecting an integer value but instead got \"%s\"!\n",
+			lowerBound.Type().Name,
+		)
+		os.Exit(-1)
+	} else if upperBound.Type().Fingerprint() != builtins.Int.Fingerprint() {
+		line, column, length := stmt.UpperBound.Position()
+		print.Error(
+			"BINDER",
+			print.UnexpectedNonIntegerValueError,
+			line,
+			column,
+			length,
+			"FromTo statement was expecting an integer value but instead got \"%s\"!\n",
+			upperBound.Type().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -334,7 +374,17 @@ func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnode
 func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.BoundGotoStatementNode {
 	// if we're not in any loop
 	if len(bin.BreakLabels) == 0 {
-		print.PrintC(print.Red, "Cannot use break statement outside of a loop!")
+		//print.PrintC(print.Red, "Cannot use break statement outside a loop!")
+		line, column, length := stmt.Position()
+		print.Error(
+			"BINDER",
+			print.OutsideBreakError,
+			line,
+			column,
+			length,
+			"cannot use \"%s\" outside of a loop!",
+			stmt.Keyword.Value,
+		)
 		os.Exit(-1)
 	}
 
@@ -345,7 +395,17 @@ func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.
 func (bin *Binder) BindContinueStatement(stmt nodes.ContinueStatementNode) boundnodes.BoundGotoStatementNode {
 	// if we're not in any loop
 	if len(bin.BreakLabels) == 0 {
-		print.PrintC(print.Red, "Cannot use continue statement outside of a loop!")
+		//print.PrintC(print.Red, "Cannot use continue statement outside a loop!")
+		line, column, length := stmt.Position()
+		print.Error(
+			"BINDER",
+			print.OutsideContinueError,
+			line,
+			column,
+			length,
+			"cannot use \"%s\" outside of a loop!",
+			stmt.Keyword.Value,
+		)
 		os.Exit(-1)
 	}
 
@@ -382,7 +442,17 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 	case nodes.BinaryExpression:
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
 	default:
-		print.PrintC(print.Red, "Not implemented!")
+		//print.PrintC(print.Red, "Not implemented!")
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.NotImplementedError,
+			line,
+			column,
+			length,
+			"\"%s\" is not implemented yet! (cringe)",
+			expr.NodeType(),
+		)
 		os.Exit(-1)
 		return nil
 	}
@@ -410,7 +480,7 @@ func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode)
 }
 
 func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpressionNode) boundnodes.BoundAssignmentExpressionNode {
-	// bind the variabke
+	// bind the variable
 	variable := bin.BindVariableReference(expr.Identifier.Value)
 
 	// create a placeholder expression of value 1
@@ -426,7 +496,19 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 
 	// check if the operator is valid
 	if !operator.Exists {
-		print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+variable.VarType().Name+"' and '"+expression.Type().Name+"'!")
+		//print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+variable.VarType().Name+"' and '"+expression.Type().Name+"'!")
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BinaryOperatorTypeError,
+			line,
+			column,
+			length,
+			"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
+			expr.Operator.Value,
+			variable.VarType().Name,
+			expression.Type().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -447,13 +529,16 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 	// I've replaced it with CallIdentifier.Value which seems to do the trick.
 	function := bin.LookupTypeFunction(expr.CallIdentifier.Value) // Should be a string anyway
 	if function.OriginType.Name != variable.VarType().Name {
-		print.PrintC(
-			print.Red,
-			fmt.Sprintf(
-				"ERROR: builtin function call \"%s\" cannot be called on a %s datatype!",
-				function.Name,
-				variable.VarType().Name,
-			),
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.IncorrectTypeFunctionCallError,
+			line,
+			column,
+			length,
+			"the use of builtin function \"%s\" on \"%s\" datatype is undefined!",
+			function.Name,
+			variable.VarType().Name,
 		)
 		os.Exit(-1)
 	}
@@ -467,7 +552,18 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 
 	// make sure we got the right number of arguments
 	if len(boundArguments) != len(function.Parameters) {
-		print.PrintCF(print.Red, "Typefunction '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
+		//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"type function \"%s\" expects %d arguments but got %d!",
+			function.Name,
+			variable.VarType().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -503,7 +599,19 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 
 	functionSymbol := symbol.(symbols.FunctionSymbol)
 	if len(boundArguments) != len(functionSymbol.Parameters) {
-		fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
+		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"type function \"%s\" expects %d arguments but got %d!",
+			expr.Identifier,
+			len(functionSymbol.Parameters),
+			len(expr.Arguments),
+		)
 		os.Exit(-1)
 	}
 
@@ -519,7 +627,18 @@ func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnode
 	op := boundnodes.BindUnaryOperator(expr.Operator.Kind, operand.Type())
 
 	if !op.Exists {
-		print.PrintC(print.Red, "Unary operator '"+expr.Operator.Value+"' is not defined for type '"+operand.Type().Name+"'!")
+		//print.PrintC(print.Red, "Unary operator '"+expr.Operator.Value+"' is not defined for type '"+operand.Type().Name+"'!")
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.UnaryOperatorTypeError,
+			line,
+			column,
+			length,
+			"the use of unary operator \"%s\" with type \"%s\" is undefined!",
+			expr.Operator.Value,
+			operand.Type().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -532,7 +651,19 @@ func (bin *Binder) BindBinaryExpression(expr nodes.BinaryExpressionNode) boundno
 	op := boundnodes.BindBinaryOperator(expr.Operator.Kind, left.Type(), right.Type())
 
 	if !op.Exists {
-		print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+left.Type().Name+"' and '"+right.Type().Name+"'!")
+		//print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+left.Type().Name+"' and '"+right.Type().Name+"'!")
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BinaryOperatorTypeError,
+			line,
+			column,
+			length,
+			"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
+			expr.Operator.Value,
+			left.Type().Name,
+			right.Type().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -552,7 +683,16 @@ func (bin *Binder) BindVariableCreation(id lexer.Token, isReadOnly bool, isGloba
 	}
 
 	if !bin.ActiveScope.TryDeclareSymbol(variable) {
-		print.PrintC(print.Red, "Couldn't declare variable '"+id.Value+"'! Seems like a variable with this name has already been declared!")
+		//print.PrintC(print.Red, "Couldn't declare variable '"+id.Value+"'! Seems like a variable with this name has already been declared!")
+		print.Error(
+			"BINDER",
+			print.DuplicateVariableDeclarationError,
+			id.Line,
+			id.Column,
+			len(id.Value)+3+2+len(variable.VarType().Name), // Probably wrong, but it works - that's the tokorv guarantee
+			"Variable \"%s\" could not be declared! Variable with this name has already been declared!",
+			id.Value,
+		)
 		os.Exit(-1)
 	}
 
@@ -566,7 +706,16 @@ func (bin *Binder) BindVariableReference(name string) symbols.VariableSymbol {
 		!(variable.SymbolType() == symbols.GlobalVariable ||
 			variable.SymbolType() == symbols.LocalVariable ||
 			variable.SymbolType() == symbols.Parameter) {
-		print.PrintC(print.Red, "Could not find variable '"+name+"'!")
+		//print.PrintC(print.Red, "Could not find variable '"+name+"'!")
+		print.Error(
+			"BINDER",
+			print.UndefinedVariableReferenceError,
+			0,
+			0, // We have no data for where this variable reference is?
+			0,
+			"Could not find variable \"%s\"! Are you sure it exists?",
+			name,
+		)
 		os.Exit(-1)
 	}
 
@@ -593,9 +742,18 @@ func (bin *Binder) LookupTypeFunction(name string) symbols.TypeFunctionSymbol {
 	case "Substring":
 		return builtins.Substring
 	default:
-		print.PrintC(
+		/*print.PrintC(
 			print.Red,
 			fmt.Sprintf("Could not find builtin TypeFunctionSymbol \"%s\"!", name),
+		)*/
+		print.Error(
+			"BINDER",
+			print.TypeFunctionDoesNotExistError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Could not find builtin TypeFunctionSymbol \"%s\"!",
+			name,
 		)
 		os.Exit(-1)
 	}
@@ -609,13 +767,33 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 	conversionType := ClassifyConversion(expr.Type(), to)
 
 	if !conversionType.Exists {
-		print.PrintC(print.Red, "Cannot convert type '"+expr.Type().Name+"' to '"+to.Name+"'!")
+		//print.PrintC(print.Red, "Cannot convert type '"+expr.Type().Name+"' to '"+to.Name+"'!")
+		print.Error(
+			"BINDER",
+			print.ConversionError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Cannot convert type \"%s\" to \"%s\"!",
+			expr.Type().Name,
+			to.Name,
+		)
 		os.Exit(-1)
 		return boundnodes.BoundErrorExpressionNode{}
 	}
 
 	if conversionType.IsExplicit && !allowExplicit {
-		print.PrintC(print.Red, "Cannot convert type '"+expr.Type().Name+"' to '"+to.Name+"'! (An explicit conversion exists. Are you missing a cast?)")
+		//print.PrintC(print.Red, "Cannot convert type '"+expr.Type().Name+"' to '"+to.Name+"'! (An explicit conversion exists. Are you missing a cast?)")
+		print.Error(
+			"BINDER",
+			print.ExplicitConversionError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Cannot convert type \"%s\" to \"%s\"! (An explicit conversion exists. Are you missing a cast?)",
+			expr.Type().Name,
+			to.Name,
+		)
 		os.Exit(-1)
 		return boundnodes.BoundErrorExpressionNode{}
 	}
@@ -643,7 +821,16 @@ func LookupType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 		return builtins.Any, true
 	default:
 		if !canFail {
-			print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+			//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+			print.Error(
+				"BINDER",
+				print.ExplicitConversionError,
+				0,
+				0, // needs extra data added and passed into the function
+				0, // Probably wrong, but it works - that's the tokorv guarantee
+				"Couldn't find datatype \"%s\"! Are you sure it exists?",
+				name,
+			)
 			os.Exit(-1)
 		}
 
