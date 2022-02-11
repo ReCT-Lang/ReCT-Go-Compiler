@@ -38,7 +38,12 @@ It has a lot more features that can be explored! You can check them out in the [
 
 If you whant to try Rect, the first thing you should do is to install it localy.
 
-**note**: Project is in early development, no definitive build instructions are available yet.
+1. Clone the repository using `git clone git@github.com:ReCT-Lang/ReCT-Go-Compiler.git` or `git clone https://github.com/ReCT-Lang/ReCT-Go-Compiler.git`
+2. Go into the project directory
+3. Run `go build -v -a -o "rgoc"` . (requires go to be installed btw)
+4. An executable file called `rgoc` will be produced. Move this into an installation directory or anywhere really...
+5. If on Windows add as an environmental variable, if on Linux add the executable to your PATH variable.
+6. Run the help menu via `rgoc -h`
 
 ## Usage
 
@@ -78,7 +83,6 @@ Don't forget to give the project a star! Thanks again!
 ## License
 
 Distributed under the GNU.3 License. See `LICENSE` for more information.
-
 
 <!-- LINKS -->
 ## Links
