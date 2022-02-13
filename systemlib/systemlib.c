@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define BUFFER 1042
+
 bool isCursorVisible = true;
 
 void rct_Print(const char* text)
