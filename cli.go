@@ -93,7 +93,7 @@ func CompileFile(file string) {
 	boundProgram := Prepare(file)
 	//print.PrintC(print.Cyan, "-> Emitting!")
 	module := emitter.Emit(boundProgram, false)
-	fmt.Println(module)
+	//fmt.Println(module)
 	os.WriteFile("./out.ll", []byte(module.String()), 0644)
 }
 

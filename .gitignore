@@ -1,7 +1,11 @@
 # executables
-out.ll
 rgoc
 ReCT-Go-Compiler
+
+# compilation files
+out.bc
+out.ll
+program.bc
 
 # annoy configs
 .replit

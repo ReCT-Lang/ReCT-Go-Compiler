@@ -5,7 +5,6 @@ import (
 	"ReCT-Go-Compiler/builtins"
 
 	"github.com/llir/llvm/ir"
-	"github.com/llir/llvm/ir/constant"
 	"github.com/llir/llvm/ir/types"
 )
 
@@ -15,18 +14,7 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 	emt.EmitCLibReferences()
 
 	// emit our built-ins
-
-	// output functions
-	emptyFormat := emt.Module.NewGlobalDef(".str.efmt", constant.NewCharArrayFromString("%s\x00"))
-	emptyFormat.Immutable = true
-	newlineFormat := emt.Module.NewGlobalDef(".str.nlfmt", constant.NewCharArrayFromString("%s\n\x00"))
-	newlineFormat.Immutable = true
-
-	emt.EmitPrint(newlineFormat)
-	emt.EmitWrite(emptyFormat)
-
-	// input functions
-	emt.EmitInput()
+	emt.EmitSystemFuncReferences()
 
 }
 
@@ -60,74 +48,40 @@ func (emt *Emitter) EmitCLibReferences() {
 	emt.CFunctions["free"] = free
 }
 
-func (emt *Emitter) EmitPrint(newlineFormat *ir.Global) {
+func (emt *Emitter) EmitSystemFuncReferences() {
+	Print := emt.Module.NewFunc("rct_Print", types.Void, ir.NewParam("text", types.I8Ptr))
+	Print.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.Print.Fingerprint(), builtins.Print.Name)] = Function{IRFunction: Print, BoundFunction: binder.BoundFunction{Symbol: builtins.Print}}
 
-	// figure out what name to use (name / fingerprint)
-	PrintName := tern(emt.UseFingerprints, builtins.Print.Fingerprint(), builtins.Print.Name)
-	Print := emt.Module.NewFunc(PrintName, types.Void, ir.NewParam("message", types.I8Ptr))
+	Write := emt.Module.NewFunc("rct_Write", types.Void, ir.NewParam("text", types.I8Ptr))
+	Write.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.Write.Fingerprint(), builtins.Write.Name)] = Function{IRFunction: Write, BoundFunction: binder.BoundFunction{Symbol: builtins.Write}}
 
-	emt.Functions[PrintName] = Function{IRFunction: Print, BoundFunction: binder.BoundFunction{Symbol: builtins.Print}}
-	body := Print.NewBlock("")
+	Input := emt.Module.NewFunc("rct_Input", types.I8Ptr)
+	Input.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.Input.Fingerprint(), builtins.Input.Name)] = Function{IRFunction: Input, BoundFunction: binder.BoundFunction{Symbol: builtins.Input}}
 
-	// our newline format
-	newlineFormatPointer := body.NewGetElementPtr(types.NewArray(4, types.I8), newlineFormat, CI32(0), CI32(0))
+	Clear := emt.Module.NewFunc("rct_Clear", types.Void)
+	Clear.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.Clear.Fingerprint(), builtins.Clear.Name)] = Function{IRFunction: Clear, BoundFunction: binder.BoundFunction{Symbol: builtins.Clear}}
 
-	body.NewCall(emt.CFunctions["printf"], newlineFormatPointer, Print.Params[0])
-	body.NewRet(nil)
-}
+	SetCursor := emt.Module.NewFunc("rct_SetCursor", types.Void, ir.NewParam("x", types.I32), ir.NewParam("y", types.I32))
+	SetCursor.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.SetCursor.Fingerprint(), builtins.SetCursor.Name)] = Function{IRFunction: SetCursor, BoundFunction: binder.BoundFunction{Symbol: builtins.SetCursor}}
 
-func (emt *Emitter) EmitWrite(emptyFormat *ir.Global) {
+	SetCursorVisible := emt.Module.NewFunc("rct_SetCursorVisible", types.Void, ir.NewParam("x", types.I1))
+	SetCursorVisible.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.SetCursorVisible.Fingerprint(), builtins.SetCursorVisible.Name)] = Function{IRFunction: SetCursorVisible, BoundFunction: binder.BoundFunction{Symbol: builtins.SetCursorVisible}}
 
-	// figure out what name to use (name / fingerprint)
-	WriteName := tern(emt.UseFingerprints, builtins.Write.Fingerprint(), builtins.Write.Name)
-	Write := emt.Module.NewFunc(WriteName, types.Void, ir.NewParam("message", types.I8Ptr))
+	GetCursorVisible := emt.Module.NewFunc("rct_GetCursorVisible", types.I1)
+	GetCursorVisible.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.GetCursorVisible.Fingerprint(), builtins.GetCursorVisible.Name)] = Function{IRFunction: GetCursorVisible, BoundFunction: binder.BoundFunction{Symbol: builtins.GetCursorVisible}}
 
-	emt.Functions[WriteName] = Function{IRFunction: Write, BoundFunction: binder.BoundFunction{Symbol: builtins.Write}}
-	body := Write.NewBlock("")
+	Random := emt.Module.NewFunc("rct_Random", types.I32, ir.NewParam("maxValue", types.I32))
+	Random.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.Random.Fingerprint(), builtins.Random.Name)] = Function{IRFunction: Random, BoundFunction: binder.BoundFunction{Symbol: builtins.Random}}
 
-	// our empty format
-	emptyFormatPointer := body.NewGetElementPtr(types.NewArray(3, types.I8), emptyFormat, CI32(0), CI32(0))
-
-	// print out the string
-	body.NewCall(emt.CFunctions["printf"], emptyFormatPointer, Write.Params[0])
-	body.NewRet(nil)
-}
-
-func (emt *Emitter) EmitInput() {
-	// input format constant
-	inputFormat := emt.Module.NewGlobalDef(".str.ifmt", constant.NewCharArrayFromString("%1023[^\n]\x00"))
-	inputFormat.Immutable = true
-
-	// figure out what name to use (name / fingerprint)
-	InputName := tern(emt.UseFingerprints, builtins.Input.Fingerprint(), builtins.Input.Name)
-	Input := emt.Module.NewFunc(InputName, types.I8Ptr)
-
-	emt.Functions[InputName] = Function{IRFunction: Input, BoundFunction: binder.BoundFunction{Symbol: builtins.Input}}
-	body := Input.NewBlock("")
-
-	// our input format
-	inputFormatPointer := body.NewGetElementPtr(types.NewArray(10, types.I8), inputFormat, CI32(0), CI32(0))
-
-	// input buffer (limited to 1024 characters)
-	buffer := body.NewCall(emt.CFunctions["malloc"], CI32(1024))
-
-	// use scanf to read in a line (again limited to 1024 characters)
-	body.NewCall(emt.CFunctions["scanf"], inputFormatPointer, buffer)
-
-	// copy the input over to another buffer
-	// (so we dont use any more space than we need to)
-	newStr := body.NewCall(emt.CFunctions["malloc"],
-		// with a size of strlen(str) + 1
-		body.NewAdd(
-			body.NewCall(emt.CFunctions["strlen"], buffer),
-			CI32(1),
-		),
-	)
-	body.NewCall(emt.CFunctions["strcpy"], newStr, buffer)
-
-	// free the buffer
-	body.NewCall(emt.CFunctions["free"], buffer)
-
-	// print out the string
-	body.NewRet(newStr)
+	Sleep := emt.Module.NewFunc("rct_Sleep", types.Void, ir.NewParam("ms", types.I32))
+	Sleep.Sig.Variadic = true
+	emt.Functions[tern(emt.UseFingerprints, builtins.Sleep.Fingerprint(), builtins.Sleep.Name)] = Function{IRFunction: Sleep, BoundFunction: binder.BoundFunction{Symbol: builtins.Sleep}}
 }
