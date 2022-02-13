@@ -87,4 +87,8 @@ func (emt *Emitter) EmitSystemFuncReferences() {
 	stringCopy := emt.Module.NewFunc("util_copy_string", types.I8Ptr, ir.NewParam("source", types.I8Ptr))
 	stringCopy.Sig.Variadic = true
 	emt.CFunctions["uStringCopy"] = stringCopy
+
+	freeIfNotNull := emt.Module.NewFunc("util_free_string_if_not_null", types.I8Ptr, ir.NewParam("source", types.I8Ptr))
+	freeIfNotNull.Sig.Variadic = true
+	emt.CFunctions["uFreeIfNotNull"] = freeIfNotNull
 }

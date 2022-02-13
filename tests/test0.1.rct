@@ -1,5 +1,13 @@
-function test() string
+while(true)
 {
-	var s <- "abc";
-	return s;
+	DoSomeBogus();
+	Sleep(500);
+}
+
+function DoSomeBogus()
+{
+	// allocate some random memory
+	var coolishString <- "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam";
+
+	Write("random memory has been allocated |");
 }

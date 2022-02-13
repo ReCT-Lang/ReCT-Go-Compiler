@@ -27,7 +27,6 @@ type Emitter struct {
 	// global variables
 	Globals        map[string]Global
 	Functions      map[string]Function
-	FunctionLocals map[string]map[string]Local
 	StrNameCounter int
 
 	// local things for this current function
@@ -44,7 +43,6 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		Globals:         make(map[string]Global),
 		Functions:       make(map[string]Function),
 		CFunctions:      make(map[string]*ir.Func),
-		FunctionLocals:  make(map[string]map[string]Local),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -88,40 +86,18 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	// create an IR function definition
 	function := emt.Module.NewFunc(functionName, returnType, params...)
 
-	// create a root block
-	rootBlock := function.NewBlock("")
-
-	// create the function's local variable map and create all variables we'll need
-	locals := make(map[string]Local)
-	for _, stmt := range body.Statements {
-		if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
-			declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
-			varName := tern(emt.UseFingerprints, declStatement.Variable.Fingerprint(), declStatement.Variable.SymbolName())
-
-			// create local variable
-			local := rootBlock.NewAlloca(IRTypes[declStatement.Variable.VarType().Fingerprint()])
-			local.SetName(varName)
-
-			// save it for referencing later
-			locals[varName] = Local{IRLocal: local, IRBlock: rootBlock, Type: declStatement.Variable.VarType()}
-		}
-	}
-
-	// store these locals
-	emt.FunctionLocals[functionName] = locals
-
 	return function
 }
 
 func (emt *Emitter) EmitBlockStatement(fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
 	// set up our environment
 	emt.Function = fnc
-	emt.Locals = emt.FunctionLocals[fnc.Name()]
+	emt.Locals = make(map[string]Local)
 	emt.Labels = make(map[string]*ir.Block)
 
-	// get the root block
+	// create a root block
 	// each label statement will create a new block and store it in this variable
-	currentBlock := fnc.Blocks[0]
+	currentBlock := fnc.NewBlock("")
 
 	// go through the body and register all label blocks
 	for _, stmt := range body.Statements {
@@ -188,8 +164,15 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 		// emit its assignment
 		blk.NewStore(expression, global)
 	} else {
+		// create local variable
+		local := blk.NewAlloca(IRTypes[stmt.Variable.VarType().Fingerprint()])
+		local.SetName(varName)
+
+		// save it for referencing later
+		emt.Locals[varName] = Local{IRLocal: local, IRBlock: blk, Type: stmt.Variable.VarType()}
+
 		// emit its assignemnt
-		blk.NewStore(expression, emt.Locals[varName].IRLocal)
+		blk.NewStore(expression, local)
 	}
 }
 
@@ -210,6 +193,16 @@ func (emt *Emitter) EmitBoundExpressionStatement(blk *ir.Block, stmt boundnodes.
 }
 
 func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundReturnStatementNode) {
+	// --< state of the art garbage collecting >---------------------------
+	// 1. go through all locals created up to this point
+	// 2. check if they need freeing
+	// 3. if they do, free them
+	for _, local := range emt.Locals {
+		if local.Type.Fingerprint() == builtins.String.Fingerprint() {
+			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[local.Type.Fingerprint()], local.IRLocal))
+		}
+	}
+
 	if stmt.Expression != nil {
 		expression := emt.EmitExpression(blk, stmt.Expression)
 
@@ -531,12 +524,12 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 // <UTILS>---------------------------------------------------------------------
 
 func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source boundnodes.BoundExpressionNode) value.Value {
-
 	// copy over the string
 	newStr := blk.NewCall(emt.CFunctions["uStringCopy"], expression)
 
 	// if this isnt another variable, free the old buffer
-	if source.NodeType() != boundnodes.BoundVariableExpression {
+	if source.NodeType() != boundnodes.BoundVariableExpression &&
+		source.NodeType() != boundnodes.BoundLiteralExpression {
 		blk.NewCall(emt.CFunctions["free"], expression)
 	}
 

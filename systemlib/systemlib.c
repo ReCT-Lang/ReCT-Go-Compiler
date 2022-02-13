@@ -77,7 +77,7 @@ void rct_Sleep(int ms)
     #ifdef _WIN32
 	Sleep(ms);
     #else
-	sleep(ms);
+	sleep(ms / 1000);
     #endif
 }
 
@@ -87,4 +87,12 @@ const char* util_copy_string(const char* source)
 	strcpy(newStr, source);
 
 	return newStr;
+}
+
+void util_free_string_if_not_null(char* source)
+{
+	if (source != NULL)
+	{
+		free(source);
+	}
 }
