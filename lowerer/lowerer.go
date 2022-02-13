@@ -24,27 +24,53 @@ func Flatten(functionSymbol symbols.FunctionSymbol, stmt boundnodes.BoundStateme
 	statements := make([]boundnodes.BoundStatementNode, 0)
 	stack := make([]boundnodes.BoundStatementNode, 0)
 
-	push := func(stmt boundnodes.BoundStatementNode) {
-		stack = append(stack, stmt)
+	pushTo := func(stck *[]boundnodes.BoundStatementNode, stmt boundnodes.BoundStatementNode) {
+		*stck = append(*stck, stmt)
 	}
 
-	pop := func() boundnodes.BoundStatementNode {
-		element := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+	transferTo := func(stck *[]boundnodes.BoundStatementNode, stmt []boundnodes.BoundStatementNode) {
+		*stck = append(*stck, stmt...)
+	}
+
+	popFrom := func(stck *[]boundnodes.BoundStatementNode) boundnodes.BoundStatementNode {
+		element := (*stck)[len(*stck)-1]
+		*stck = (*stck)[:len(*stck)-1]
 		return element
 	}
 
-	push(stmt)
+	pushTo(&stack, stmt)
 
 	for len(stack) > 0 {
-		current := pop()
+		current := popFrom(&stack)
 
 		if current.NodeType() == boundnodes.BoundBlockStatement {
-			// push all elements onto the stack in reverse order
+			// create a new local stack for this block
+			// this is so we can insert nodes before these if we need to
+			localStack := make([]boundnodes.BoundStatementNode, 0)
+
+			// keep track of any variable declarations made in this block
+			variables := make([]symbols.VariableSymbol, 0)
+
+			// push all elements onto the stack in reverse order (bc yk stacks are like that)
 			currentBlock := current.(boundnodes.BoundBlockStatementNode)
 			for i := len(currentBlock.Statements) - 1; i >= 0; i-- {
-				push(currentBlock.Statements[i])
+				stmt := currentBlock.Statements[i]
+
+				pushTo(&localStack, stmt)
+
+				// if this is a variable declaration, keep track of its variable!
+				if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
+					variables = append(variables, stmt.(boundnodes.BoundVariableDeclarationStatementNode).Variable)
+				}
 			}
+
+			// if we have any variables in here, add a GC call
+			if len(variables) != 0 {
+				pushTo(&stack, boundnodes.CreateBoundGarbageCollectionStatementNode(variables))
+			}
+
+			// transfer elements from out local stack over to the main one
+			transferTo(&stack, localStack)
 		} else {
 			statements = append(statements, current)
 		}

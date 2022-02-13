@@ -111,6 +111,7 @@ func Prepare(file string) binder.BoundProgram {
 	boundProgram := binder.BindProgram(members)
 	//print.PrintC(print.Green, "Done!")
 	//boundProgram.Print()
+	boundProgram.PrintStatements()
 
 	return boundProgram
 }

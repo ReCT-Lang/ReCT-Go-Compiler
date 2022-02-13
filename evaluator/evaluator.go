@@ -139,6 +139,10 @@ func (evl *Evaluator) EvaluateStatement(body boundnodes.BoundBlockStatementNode)
 		case boundnodes.BoundLabelStatement:
 			index++
 
+		case boundnodes.BoundGarbageCollectionStatement:
+			// do nothing, the go GC will take care of everything
+			index++
+
 		case boundnodes.BoundReturnStatement:
 			returnStatement := stmt.(boundnodes.BoundReturnStatementNode)
 

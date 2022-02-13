@@ -33,17 +33,18 @@ const (
 	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Binding
 
 	// Statements
-	BoundBlockStatement           BoundType = "BoundBlockStatement"
-	BoundVariableDeclaration      BoundType = "BoundVariableDeclaration"
-	BoundIfStatement              BoundType = "BoundIfStatement"
-	BoundWhileStatement           BoundType = "BoundWhileStatement"
-	BoundForStatement             BoundType = "BoundForStatement"
-	BoundFromToStatement          BoundType = "BoundFromToStatement"
-	BoundLabelStatement           BoundType = "BoundLabelStatement"
-	BoundGotoStatement            BoundType = "BoundGotoStatement"
-	BoundConditionalGotoStatement BoundType = "BoundConditionalGotoStatement"
-	BoundReturnStatement          BoundType = "BoundReturnStatement"
-	BoundExpressionStatement      BoundType = "BoundExpressionStatement"
+	BoundBlockStatement             BoundType = "BoundBlockStatement"
+	BoundVariableDeclaration        BoundType = "BoundVariableDeclaration"
+	BoundIfStatement                BoundType = "BoundIfStatement"
+	BoundWhileStatement             BoundType = "BoundWhileStatement"
+	BoundForStatement               BoundType = "BoundForStatement"
+	BoundFromToStatement            BoundType = "BoundFromToStatement"
+	BoundLabelStatement             BoundType = "BoundLabelStatement"
+	BoundGotoStatement              BoundType = "BoundGotoStatement"
+	BoundConditionalGotoStatement   BoundType = "BoundConditionalGotoStatement"
+	BoundReturnStatement            BoundType = "BoundReturnStatement"
+	BoundExpressionStatement        BoundType = "BoundExpressionStatement"
+	BoundGarbageCollectionStatement BoundType = "BoundGarbageCollectionStatement"
 
 	// Expressions
 	BoundErrorExpression      BoundType = "BoundErrorExpression"

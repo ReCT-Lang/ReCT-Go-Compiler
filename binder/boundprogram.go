@@ -63,3 +63,24 @@ func (b *BoundProgram) Print() {
 		}
 	}
 }
+
+func (b *BoundProgram) PrintStatements() {
+	print.PrintC(print.Red, ":Main Function")
+	b.MainFunction.Print("  ")
+
+	print.PrintC(print.Red, ":Functions")
+	for _, fnc := range b.Functions {
+		fnc.Symbol.Print("  ")
+		if !fnc.Symbol.BuiltIn {
+			fmt.Println("  └ Function Body:")
+
+			for _, stmt := range fnc.Body.Statements {
+				if stmt.NodeType() == boundnodes.BoundGarbageCollectionStatement {
+					stmt.Print("    ")
+				} else {
+					fmt.Println("    └ " + stmt.NodeType())
+				}
+			}
+		}
+	}
+}

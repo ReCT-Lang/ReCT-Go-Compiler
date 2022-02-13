@@ -1,2 +1,5 @@
-from (i <- 0) to 400
-	Write("test ");
+function test() string
+{
+	var s <- "a" + "b";
+	return s;
+}
