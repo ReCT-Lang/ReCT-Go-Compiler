@@ -1,0 +1,234 @@
+{
+  "9000": {
+    "name": "NotImplementedError",
+    "area": "Developer",
+    "explanation": "This error is used as a place market for features that are not fully developed yet. Since the feature it not fully developed, it will not have a specific error code or type for you to check out.",
+    "example": "",
+    "additional": ""
+  },
+
+  "9001": {
+    "name": "IDK(cringe)",
+    "area": "Developer",
+    "explanation": "This error is depreciated. It may be used as an alternative for a \"NotImplementedError\", please use: rgoc -lookup 9000, for more information.",
+    "example": "",
+    "additional": ""
+  },
+
+  "8999": {
+    "name": "NULL Error Code",
+    "area": "Developer",
+    "explanation": "Do later",
+    "example": "",
+    "additional": ""
+  },
+
+  "1003": {
+    "name": "UnexpectedCharacter",
+    "area": "Lexer",
+    "explanation": "An UnexpectedCharacter Error occurs when the Lexer/scanner of the compiler encounters a character that the compiler does not know how to process. Since the compiler does not know how to process this character, it cannot proceed and instead outputs an UnexpectedCharacter Error so the developer of the program can correct the issues and either remove or replace the unexpected character.",
+    "example": "1 | var Je@rryNameVariable <- \"Jerry\";\n         ^^^^^\n[LEXER] UnexpectedCharacter Error(1, 7): character \"@\" was not expected! Compiler does not know how to process this character!\n[> Error look up code: 101 (use: rgoc lookup 101, for more information)]",
+    "additional": "This error will generate a \"BadToken\" that is handled in the parser. This is so the code is still parsed and processed even though there was a lexical error."
+  },
+
+  "1004": {
+    "name": "FileDoesNotExit",
+    "area": "Lexer",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "1005": {
+    "name": "FilePermission",
+    "area": "Lexer",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "1006": {
+    "name": "FileVoid",
+    "area": "Lexer",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "1007": {
+    "name": "RealValueConversion",
+    "area": "Lexer",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "2008": {
+    "name": "UnexpectedTokenErrorCode",
+    "area": "Parser",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3009": {
+    "name": "DuplicateParameter",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3010": {
+    "name": "DuplicateFunction",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3011": {
+    "name": "DuplicateVariableDeclaration",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3012": {
+    "name": "UndefinedVariableReference",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3013": {
+    "name": "TypeFunctionDoesNotExist",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3014": {
+    "name": "Conversion",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3015": {
+    "name": "ExplicitConversion",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3016": {
+    "name": "UnexpectedExpressionStatement",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3017": {
+    "name": "OutsideReturn",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3018": {
+    "name": "VoidReturn",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3019": {
+    "name": "OutsideBreak",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3020": {
+    "name": "UnexpectedNonIntegerValue",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3021": {
+    "name": "OutsideContinue",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3022": {
+    "name": "BinaryOperatorType",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3023": {
+    "name": "IncorrectTypeFunctionCall",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3024": {
+    "name": "BadNumberOfParameters",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3025": {
+    "name": "UndefinedFunctionCall",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3026": {
+    "name": "UnaryOperatorType",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3027": {
+    "name": "UnknownDataType",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+  "3028": {
+    "name": "UnknownStatement",
+    "area": "Binder",
+    "explanation": "",
+    "example": "",
+    "additional": ""
+  },
+
+}

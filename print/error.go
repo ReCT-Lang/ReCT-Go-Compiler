@@ -1,7 +1,11 @@
 package print
 
 import (
+	"encoding/json"
+	_ "encoding/json" // I know JSON is a data interchange but imma use it for storing the error lookup data anyway - tokorv :)))
 	"fmt"
+	"io/ioutil"
+	"log"
 	"strings"
 )
 
@@ -134,6 +138,33 @@ func PrintCodeSnippet(line, column, length int) {
 	}
 }
 
+type LookUpError struct {
+	Name        string
+	Area        string
+	Explanation string
+	Example     string
+	Additional  string
+}
+
+// Still working wonky
+func LookUp(code ErrorCode) {
+	// Relative path is not good, maybe it's time for the compiler to have some kind of config?
+	data, err := ioutil.ReadFile("print/errors.json")
+	if err != nil {
+		log.Fatal(err)
+		//fmt.Println("An undocumented error occurred trying to access our error library!")
+		//os.Exit(1) // bad
+	}
+	var jsonData LookUpError
+	_ = json.Unmarshal([]byte(data), &jsonData)
+	fmt.Printf("| ReCT Go Compiler - Error Lookup %d |\n\n", code)
+	fmt.Printf("Name: \t\t%s\n", jsonData.Name)
+	fmt.Printf("Found in: \t\t%s\n\n", jsonData.Area)
+	fmt.Printf("%s\n\n", jsonData.Explanation)
+	fmt.Printf("%s\n\n", jsonData.Example)
+	fmt.Printf("%s\n", jsonData.Additional)
+}
+
 // ErrorCode the numerical representation of an Error, this allows it to be "looked up"
 // using the Error lookup system. Each ErrorCode increments by 1 per declaration.
 // ErrorCodes are also given additional values depending on the section they come from.
@@ -144,21 +175,21 @@ type ErrorCode int
 const (
 	// Developer ErrorCodes (start at 9000) (Why? Fuck logic that's why).
 	NotImplementedErrorCode ErrorCode = iota + 9000
-	IDKErrorCode                      = iota + 9000
+	IDKErrorCode                      = iota + 9000 // Depreciated
 	NULLErrorCode                     = -1 + 9000
 
 	// Lexer ErrorCodes (start at 1000)
-	UnexpectedCharacterErrorCode = iota + 1000
-	FileDoesNotExitErrorCode     = iota + 1000
-	FilePermissionErrorCode      = iota + 1000
-	FileVoidErrorCode            = iota + 1000
-	RealValueConversionErrorCode = iota + 1000
+	UnexpectedCharacterErrorCode = iota + 1000 // 1003
+	FileDoesNotExitErrorCode     = iota + 1000 // 1004
+	FilePermissionErrorCode      = iota + 1000 // 1005
+	FileVoidErrorCode            = iota + 1000 // 1006
+	RealValueConversionErrorCode = iota + 1000 // 1007
 
 	// Parser ErrorCodes (start at 2000)
 	UnexpectedTokenErrorCode = iota + 2000
 
 	// Binder ErrorCodes (start at 3000) (Chonk warning)
-	DuplicateParameterErrorCode            = iota + 3000
+	DuplicateParameterErrorCode            = iota + 3000 // 3009
 	DuplicateFunctionErrorCode             = iota + 3000
 	DuplicateVariableDeclarationErrorCode  = iota + 3000
 	UndefinedVariableReferenceErrorCode    = iota + 3000
@@ -177,7 +208,7 @@ const (
 	UndefinedFunctionCallErrorCode         = iota + 3000
 	UnaryOperatorTypeErrorCode             = iota + 3000
 	UnknownDataTypeErrorCode               = iota + 3000
-	UnknownStatementErrorCode              = iota + 3000
+	UnknownStatementErrorCode              = iota + 3000 // 3028
 )
 
 type ErrorType string
@@ -185,17 +216,17 @@ type ErrorType string
 const (
 	// Developer Error
 	NotImplementedError ErrorType = "NotImplemented"
-	IDK                           = "IDK(cringe)"
+	IDK                           = "IDK(cringe)" // Depreciated (because it's kind of dumb)
 
 	// Lexer Errors
 	UnexpectedCharacterError = "UnexpectedCharacter"
 	FileDoesNotExitError     = "FileDoesNotExit"
 	FilePermissionError      = "FilePermission"
 	FileVoidError            = "FileVoid"
-	RealValueConversionError = "RealValueConversionError"
+	RealValueConversionError = "RealValueConversion"
 
 	// Parser Errors
-	UnexpectedTokenError = "UnexpectedTokenError"
+	UnexpectedTokenError = "UnexpectedToken"
 
 	// Binder Errors
 	DuplicateParameterError            = "DuplicateParameter"

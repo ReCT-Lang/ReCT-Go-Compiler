@@ -63,18 +63,25 @@ func ProcessFlags() {
 	} else if showVersion { // Show version has higher priority than help menu
 		Version()
 
-	} else if helpFlag || len(files) <= 0 {
+	} else if helpFlag {
 		// If they use "-h" or only enter the executable name "rgoc"
 		// Show the help menu because they're obviously insane.
 		Help()
 
 	} else if lookup != 0 { // 0 = No look up (default value)
 		// If you use requests error code look up
-		return // Do nothing for now
+		print.LookUp(print.ErrorCode(lookup))
 
-	} else { // When you remember else if statements exist
-		if interpretFlag {
+	} else {
+
+		// this is handled here now
+		if len(files) <= 0 {
+			Help()
+			return
+
+		} else if interpretFlag {
 			InterpretFile(files[0])
+
 		} else {
 			CompileFile(files[0])
 		}
@@ -159,7 +166,7 @@ func Help() {
 		{"Interpret", executableName + " -i", "disabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
 		{"File logging", executableName + " -l", "disabled (default)", "Logs process information in a log file"},
 		{"Debug", executableName + " -xx", "disabled (default)", "Shows brief process information in the command line"},
-		{"Look up", executableName + "-lookup", "no code (default)", "Shows further detail about errors you may have encountered"},
+		{"Look up", executableName + " -lookup", "no code (default)", "Shows further detail about errors you may have encountered"},
 	}
 
 	p0, p1, p2, p3 := findPaddings(helpSegments)
@@ -178,7 +185,8 @@ func Version() {
 	fmt.Println("ReCT Go Compiler")
 	fmt.Print("ReCT version: ")
 	print.PrintC(print.Blue, currentVersion)
-	fmt.Printf("\nFor more informatin, why not join the discord? %s\n\n", discordInvite)
+	print.WriteC(print.Gray, "\nStill having troubles? Get help on the offical Discord server: ")
+	print.WriteCF(print.DarkBlue, "%s!\n", discordInvite) // Moved so link is now blue
 }
 
 type HelpSegment struct {
