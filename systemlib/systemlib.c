@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define BUFFER 1042
+
 bool isCursorVisible = true;
 
 void rct_Print(const char* text)
@@ -19,11 +21,22 @@ void rct_Write(const char* text)
     printf("%s", text);
 }
 
-char* rct_Input()
+const char* rct_Input()
 {
-    char *input = (char*)malloc(1024);
-    scanf("%1023[^\n]", input);
-    return input;
+    char *str = malloc(sizeof(char) * BUFFER), *err;
+    int pos;
+    for(pos = 0; str != NULL && (str[pos] = getchar()) != '\n'; pos++)
+    {
+        if(pos % BUFFER == BUFFER - 1)
+        {
+            if((err = realloc(str, sizeof(char) * (BUFFER + pos + 1))) == NULL)
+                free(str);
+            str = err;
+        }
+    }
+    if(str != NULL)
+        str[pos] = '\0';
+    return str;
 }
 
 void rct_Clear()
@@ -38,16 +51,14 @@ void rct_SetCursor(int x, int y)
 
 void rct_SetCursorVisible(bool state)
 {
-    if (state)
-	{
-        printf("\e[?25l");
-        isCursorVisible = true;
-	}
-	else
-	{
-		printf("\e[?25h");
-        isCursorVisible = false;
-	}
+    isCursorVisible = state;
+
+    if (state) {
+        printf("\e[?251]");
+        return;
+    }
+
+    printf("\e[?251]");
 }
 
 bool rct_GetCursorVisible()
