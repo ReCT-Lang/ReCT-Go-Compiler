@@ -15,7 +15,6 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 
 	// emit our built-ins
 	emt.EmitSystemFuncReferences()
-
 }
 
 func (emt *Emitter) EmitCLibReferences() {
@@ -84,4 +83,8 @@ func (emt *Emitter) EmitSystemFuncReferences() {
 	Sleep := emt.Module.NewFunc("rct_Sleep", types.Void, ir.NewParam("ms", types.I32))
 	Sleep.Sig.Variadic = true
 	emt.Functions[tern(emt.UseFingerprints, builtins.Sleep.Fingerprint(), builtins.Sleep.Name)] = Function{IRFunction: Sleep, BoundFunction: binder.BoundFunction{Symbol: builtins.Sleep}}
+
+	stringCopy := emt.Module.NewFunc("util_copy_string", types.I8Ptr, ir.NewParam("source", types.I8Ptr))
+	stringCopy.Sig.Variadic = true
+	emt.CFunctions["uStringCopy"] = stringCopy
 }

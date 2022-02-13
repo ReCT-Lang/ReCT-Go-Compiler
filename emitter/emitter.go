@@ -27,6 +27,7 @@ type Emitter struct {
 	// global variables
 	Globals        map[string]Global
 	Functions      map[string]Function
+	FunctionLocals map[string]map[string]Local
 	StrNameCounter int
 
 	// local things for this current function
@@ -43,6 +44,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		Globals:         make(map[string]Global),
 		Functions:       make(map[string]Function),
 		CFunctions:      make(map[string]*ir.Func),
+		FunctionLocals:  make(map[string]map[string]Local),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -86,18 +88,40 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	// create an IR function definition
 	function := emt.Module.NewFunc(functionName, returnType, params...)
 
+	// create a root block
+	rootBlock := function.NewBlock("")
+
+	// create the function's local variable map and create all variables we'll need
+	locals := make(map[string]Local)
+	for _, stmt := range body.Statements {
+		if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
+			declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
+			varName := tern(emt.UseFingerprints, declStatement.Variable.Fingerprint(), declStatement.Variable.SymbolName())
+
+			// create local variable
+			local := rootBlock.NewAlloca(IRTypes[declStatement.Variable.VarType().Fingerprint()])
+			local.SetName(varName)
+
+			// save it for referencing later
+			locals[varName] = Local{IRLocal: local, IRBlock: rootBlock, Type: declStatement.Variable.VarType()}
+		}
+	}
+
+	// store these locals
+	emt.FunctionLocals[functionName] = locals
+
 	return function
 }
 
 func (emt *Emitter) EmitBlockStatement(fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
 	// set up our environment
 	emt.Function = fnc
-	emt.Locals = make(map[string]Local)
+	emt.Locals = emt.FunctionLocals[fnc.Name()]
 	emt.Labels = make(map[string]*ir.Block)
 
-	// create a root block
+	// get the root block
 	// each label statement will create a new block and store it in this variable
-	currentBlock := fnc.NewBlock("")
+	currentBlock := fnc.Blocks[0]
 
 	// go through the body and register all label blocks
 	for _, stmt := range body.Statements {
@@ -136,6 +160,9 @@ func (emt *Emitter) EmitStatement(blk *ir.Block, stmt boundnodes.BoundStatementN
 
 	case boundnodes.BoundReturnStatement:
 		emt.EmitReturnStatement(blk, stmt.(boundnodes.BoundReturnStatementNode))
+
+	case boundnodes.BoundGarbageCollectionStatement:
+		emt.EmitGarbageCollectionStatement(blk, stmt.(boundnodes.BoundGarbageCollectionStatementNode))
 	}
 }
 
@@ -144,6 +171,12 @@ func (emt *Emitter) EmitStatement(blk *ir.Block, stmt boundnodes.BoundStatementN
 
 func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundnodes.BoundVariableDeclarationStatementNode) {
 	varName := tern(emt.UseFingerprints, stmt.Variable.Fingerprint(), stmt.Variable.SymbolName())
+	expression := emt.EmitExpression(blk, stmt.Initializer)
+
+	// if the value is a string, copy it (dont just pass the pointer)
+	if stmt.Initializer.Type().Fingerprint() == builtins.String.Fingerprint() {
+		expression = emt.CopyString(blk, expression, stmt.Initializer)
+	}
 
 	if stmt.Variable.IsGlobal() {
 		// create a new global
@@ -153,17 +186,10 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 		emt.Globals[varName] = Global{IRGlobal: global, Type: stmt.Variable.VarType()}
 
 		// emit its assignment
-		blk.NewStore(emt.EmitExpression(blk, stmt.Initializer), global)
+		blk.NewStore(expression, global)
 	} else {
-		// create local variable
-		local := blk.NewAlloca(IRTypes[stmt.Variable.VarType().Fingerprint()])
-		local.SetName(varName)
-
-		// save it for referencing later
-		emt.Locals[varName] = Local{IRLocal: local, IRBlock: blk, Type: stmt.Variable.VarType()}
-
 		// emit its assignemnt
-		blk.NewStore(emt.EmitExpression(blk, stmt.Initializer), local)
+		blk.NewStore(expression, emt.Locals[varName].IRLocal)
 	}
 }
 
@@ -185,9 +211,26 @@ func (emt *Emitter) EmitBoundExpressionStatement(blk *ir.Block, stmt boundnodes.
 
 func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundReturnStatementNode) {
 	if stmt.Expression != nil {
-		blk.NewRet(emt.EmitExpression(blk, stmt.Expression))
+		expression := emt.EmitExpression(blk, stmt.Expression)
+
+		// if the expression is a string, copy it to unlink it from any variable
+		if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+			expression = emt.CopyString(blk, expression, stmt.Expression)
+		}
+
+		blk.NewRet(expression)
 	} else {
 		blk.NewRet(nil)
+	}
+}
+
+func (emt *Emitter) EmitGarbageCollectionStatement(blk *ir.Block, stmt boundnodes.BoundGarbageCollectionStatementNode) {
+	for _, variable := range stmt.Variables {
+		// check if the variables type needs to be freed
+
+		if variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
+			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(types.I8Ptr, emt.Locals[variable.Fingerprint()].IRLocal))
+		}
 	}
 }
 
@@ -234,7 +277,10 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, float64(expr.Value.(float32)))
 	case builtins.String.Fingerprint():
+		// add a null byte at the end
 		str := expr.Value.(string) + "\x00"
+
+		// create a global to store our literal
 		global := emt.Module.NewGlobalDef(fmt.Sprintf(".str.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
 		global.Immutable = true
 		emt.StrNameCounter++
@@ -263,6 +309,11 @@ func (emt *Emitter) EmitVariableExpression(blk *ir.Block, expr boundnodes.BoundV
 func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.BoundAssignmentExpressionNode) value.Value {
 	varName := tern(emt.UseFingerprints, expr.Variable.Fingerprint(), expr.Variable.SymbolName())
 	expression := emt.EmitExpression(blk, expr.Expression)
+
+	// if the value is a string, copy it (dont just pass the pointer)
+	if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+		expression = emt.CopyString(blk, expression, expr.Expression)
+	}
 
 	if expr.Variable.IsGlobal() {
 		// assign the value to the global variable
@@ -477,6 +528,22 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 }
 
 // </EXPRESSIONS>--------------------------------------------------------------
+// <UTILS>---------------------------------------------------------------------
+
+func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source boundnodes.BoundExpressionNode) value.Value {
+
+	// copy over the string
+	newStr := blk.NewCall(emt.CFunctions["uStringCopy"], expression)
+
+	// if this isnt another variable, free the old buffer
+	if source.NodeType() != boundnodes.BoundVariableExpression {
+		blk.NewCall(emt.CFunctions["free"], expression)
+	}
+
+	return newStr
+}
+
+// </UTILS>--------------------------------------------------------------------
 
 // yes
 func tern(cond bool, str1 string, str2 string) string {

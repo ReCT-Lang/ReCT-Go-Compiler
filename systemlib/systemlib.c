@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define BUFFER 1042
 
@@ -78,4 +79,12 @@ void rct_Sleep(int ms)
     #else
 	sleep(ms);
     #endif
+}
+
+const char* util_copy_string(const char* source)
+{
+	char* newStr = malloc(strlen(source) + 1);
+	strcpy(newStr, source);
+
+	return newStr;
 }

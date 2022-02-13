@@ -1,5 +1,5 @@
 function test() string
 {
-	var s <- "a" + "b";
+	var s <- "abc";
 	return s;
 }

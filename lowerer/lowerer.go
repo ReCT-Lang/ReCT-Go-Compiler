@@ -40,6 +40,8 @@ func Flatten(functionSymbol symbols.FunctionSymbol, stmt boundnodes.BoundStateme
 
 	pushTo(&stack, stmt)
 
+	root := true
+
 	for len(stack) > 0 {
 		current := popFrom(&stack)
 
@@ -60,17 +62,22 @@ func Flatten(functionSymbol symbols.FunctionSymbol, stmt boundnodes.BoundStateme
 
 				// if this is a variable declaration, keep track of its variable!
 				if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
-					variables = append(variables, stmt.(boundnodes.BoundVariableDeclarationStatementNode).Variable)
+					declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
+
+					if !declStatement.Variable.IsGlobal() {
+						variables = append(variables, declStatement.Variable)
+					}
 				}
 			}
 
-			// if we have any variables in here, add a GC call
-			if len(variables) != 0 {
+			// if we have any variables in here and this isnt the function body itself, add a GC call
+			if len(variables) != 0 && !root {
 				pushTo(&stack, boundnodes.CreateBoundGarbageCollectionStatementNode(variables))
 			}
 
 			// transfer elements from out local stack over to the main one
 			transferTo(&stack, localStack)
+			root = false
 		} else {
 			statements = append(statements, current)
 		}
