@@ -107,18 +107,6 @@ import (
 // Global variable :gentleman:
 var CodeReference []string
 
-// errorData stores all of the lookup errorData
-var errorData = map[ErrorCode]map[string]string{
-	NotImplementedErrorCode: {
-		"name": "NotImplemented",
-		"area": "Developer",
-		"explanation": `This error is used as a place market for features that are not fully developed yet. 
-Since the feature it not fully developed, it will not have a specific error code or type for you to check out.`,
-		"example":    "",
-		"additional": "If you think a \"NotImplemented\" error is a mistake, please contact a main contributor to the project, or contribute the new error yourself.",
-	},
-}
-
 // When no data can be found for line, length or column
 
 // Error prints custom error message and code snippet to terminal/console
@@ -154,7 +142,16 @@ func PrintCodeSnippet(line, column, length int) {
 func LookUp(code ErrorCode) {
 	// Relative path is not good, maybe it's time for the compiler to have some kind of config?
 	if data := errorData[code]; data != nil {
-
+		fmt.Println(Format("ReCT-Go-Compiler v&c%s&c - Error Look up &c%d", White, "1.1", int(code)))
+		fmt.Println(Format("Name: &m%s", Gray, data["name"]))
+		fmt.Println(Format("Area: &b%s\n", Gray, data["area"]))
+		fmt.Println(Format(data["explanation"]+"\n", Gray))
+		if data["example"] != "" {
+			fmt.Println(Format(data["example"]+"\n", Gray))
+		}
+		if data["additional"] != "" {
+			fmt.Println(Format(data["additional"]+"\n", Gray))
+		}
 	}
 }
 
@@ -305,4 +302,16 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 	default:
 		return NULLErrorCode
 	}
+}
+
+// errorData stores all the lookup errorData
+var errorData = map[ErrorCode]map[string]string{
+	NotImplementedErrorCode: {
+		"name": "NotImplemented",
+		"area": "Developer",
+		"explanation": `This error is used as a place market for features that are not fully developed yet. 
+Since the feature it not fully developed, it will not have a specific error code or type for you to check out.`,
+		"example":    "",
+		"additional": "If you think a \"NotImplemented\" error is a mistake, please contact one of the main contributors of the project, or contribute the new error yourself.",
+	},
 }

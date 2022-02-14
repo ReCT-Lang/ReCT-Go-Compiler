@@ -65,7 +65,9 @@ func WriteCF(color string, message string, slotins ...interface{}) {
 // Format multiline coloring made easier!
 // use colour codes in the string like "&pHello gamers, %rHow are you doing today&dgr?"
 // and Format will colour code it for you.
-func Format(message string, defaultColour string) string {
+// the defaultColour will be the default colour of text if it is not coloured
+// also doing the same colour code will reset the colour e.g. "Hello, &rW&rorld!" only "W" will be red
+func Format(message string, defaultColour string, a ...interface{}) string {
 
 	var buffer string                 // Final buffer which is returned
 	var temp string                   // This stores the current coloured text like "Hello gamers, "
@@ -166,5 +168,5 @@ func Format(message string, defaultColour string) string {
 	}
 	// We need to append the final temp buffer
 	buffer += fmt.Sprintf(currentColour, temp)
-	return buffer // Epic we all done
+	return fmt.Sprintf(buffer, a...) // Epic we all done (also format any values)
 }
