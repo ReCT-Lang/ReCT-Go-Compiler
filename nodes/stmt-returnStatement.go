@@ -21,7 +21,11 @@ func (ReturnStatementNode) NodeType() NodeType { return ReturnStatement }
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 func (node ReturnStatementNode) Position() (int, int, int) {
-	_, _, exprLength := node.Expression.Position()
+	exprLength := 0
+	if node.Expression != nil {
+		_, _, eL := node.Expression.Position()
+		exprLength = eL
+	}
 	return node.Keyword.Line, node.Keyword.Column, len(node.Keyword.Value) + exprLength
 }
 

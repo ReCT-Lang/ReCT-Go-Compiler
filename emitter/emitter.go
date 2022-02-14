@@ -27,12 +27,15 @@ type Emitter struct {
 	// global variables
 	Globals        map[string]Global
 	Functions      map[string]Function
+	FunctionLocals map[string]map[string]Local
+	StrConstants   map[string]value.Value
 	StrNameCounter int
 
 	// local things for this current function
-	Function *ir.Func
-	Locals   map[string]Local
-	Labels   map[string]*ir.Block
+	Function    *ir.Func
+	FunctionSym symbols.FunctionSymbol
+	Locals      map[string]Local
+	Labels      map[string]*ir.Block
 }
 
 func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
@@ -43,6 +46,8 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		Globals:         make(map[string]Global),
 		Functions:       make(map[string]Function),
 		CFunctions:      make(map[string]*ir.Func),
+		FunctionLocals:  make(map[string]map[string]Local),
+		StrConstants:    make(map[string]value.Value),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -55,9 +60,15 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		}
 	}
 
+	// emit main function first
+	mainName := tern(emitter.UseFingerprints, program.MainFunction.Fingerprint(), program.MainFunction.Name)
+	emitter.FunctionSym = emitter.Functions[mainName].BoundFunction.Symbol
+	emitter.EmitBlockStatement(emitter.Functions[mainName].IRFunction, emitter.Functions[mainName].BoundFunction.Body)
+
 	// emit function bodies
 	for _, fnc := range emitter.Functions {
-		if !fnc.BoundFunction.Symbol.BuiltIn {
+		if !fnc.BoundFunction.Symbol.BuiltIn && fnc.BoundFunction.Symbol.Fingerprint() != program.MainFunction.Fingerprint() {
+			emitter.FunctionSym = fnc.BoundFunction.Symbol
 			emitter.EmitBlockStatement(fnc.IRFunction, fnc.BoundFunction.Body)
 		}
 	}
@@ -86,18 +97,47 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	// create an IR function definition
 	function := emt.Module.NewFunc(functionName, returnType, params...)
 
+	// create a root block
+	root := function.NewBlock("")
+
+	// create locals array
+	locals := make(map[string]Local)
+
+	// create all needed locals in the root block to GC can trash them anywhere
+	for _, stmt := range body.Statements {
+		if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
+			declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
+
+			if declStatement.Variable.IsGlobal() {
+				continue
+			}
+
+			varName := tern(emt.UseFingerprints, declStatement.Variable.Fingerprint(), declStatement.Variable.SymbolName())
+
+			// create local variable
+			local := root.NewAlloca(IRTypes[declStatement.Variable.VarType().Fingerprint()])
+			local.SetName(varName)
+
+			// save it for referencing later
+			locals[varName] = Local{IRLocal: local, IRBlock: root, Type: declStatement.Variable.VarType()}
+		}
+	}
+
+	// store this for later
+	emt.FunctionLocals[functionName] = locals
+
 	return function
 }
 
 func (emt *Emitter) EmitBlockStatement(fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
 	// set up our environment
 	emt.Function = fnc
-	emt.Locals = make(map[string]Local)
+	emt.Locals = emt.FunctionLocals[fnc.Name()]
 	emt.Labels = make(map[string]*ir.Block)
 
-	// create a root block
+	// load the root block
 	// each label statement will create a new block and store it in this variable
-	currentBlock := fnc.NewBlock("")
+	currentBlock := fnc.Blocks[0]
 
 	// go through the body and register all label blocks
 	for _, stmt := range body.Statements {
@@ -156,7 +196,7 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 
 	if stmt.Variable.IsGlobal() {
 		// create a new global
-		global := emt.Module.NewGlobal(varName, IRTypes[stmt.Variable.VarType().Fingerprint()])
+		global := emt.Module.NewGlobalDef(varName, emt.DefaultConstant(blk, stmt.Variable.VarType()))
 
 		// save it for referencing later
 		emt.Globals[varName] = Global{IRGlobal: global, Type: stmt.Variable.VarType()}
@@ -164,15 +204,12 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 		// emit its assignment
 		blk.NewStore(expression, global)
 	} else {
-		// create local variable
-		local := blk.NewAlloca(IRTypes[stmt.Variable.VarType().Fingerprint()])
-		local.SetName(varName)
-
-		// save it for referencing later
-		emt.Locals[varName] = Local{IRLocal: local, IRBlock: blk, Type: stmt.Variable.VarType()}
+		local := emt.Locals[varName]
+		local.IsSet = true
+		emt.Locals[varName] = local
 
 		// emit its assignemnt
-		blk.NewStore(expression, local)
+		blk.NewStore(expression, local.IRLocal)
 	}
 }
 
@@ -189,7 +226,13 @@ func (emt *Emitter) EmitConditionalGotoStatement(blk *ir.Block, stmt boundnodes.
 }
 
 func (emt *Emitter) EmitBoundExpressionStatement(blk *ir.Block, stmt boundnodes.BoundExpressionStatementNode) {
-	emt.EmitExpression(blk, stmt.Expression)
+	expr := emt.EmitExpression(blk, stmt.Expression)
+
+	// if the expressions value is a string is requires cleanup
+	if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+		blk.Insts = append(blk.Insts, NewComment("expression value unused -> cleanup required"))
+		blk.NewCall(emt.CFunctions["free"], expr)
+	}
 }
 
 func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundReturnStatementNode) {
@@ -197,11 +240,26 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 	// 1. go through all locals created up to this point
 	// 2. check if they need freeing
 	// 3. if they do, free them
-	for _, local := range emt.Locals {
+	blk.Insts = append(blk.Insts, NewComment("<ReturnGC>"))
+	for name, local := range emt.Locals {
+		if !local.IsSet {
+			continue
+		}
+
 		if local.Type.Fingerprint() == builtins.String.Fingerprint() {
+			blk.Insts = append(blk.Insts, NewComment(" -> utterly obliterating '%"+name+"'"))
 			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[local.Type.Fingerprint()], local.IRLocal))
 		}
 	}
+
+	// free any parameters as well
+	for _, param := range emt.FunctionSym.Parameters {
+		if param.Type.Fingerprint() == builtins.String.Fingerprint() {
+			blk.Insts = append(blk.Insts, NewComment(" -> utterly obliterating '%"+param.Name+"'"))
+			blk.NewCall(emt.CFunctions["free"], emt.Function.Params[param.Ordinal])
+		}
+	}
+	blk.Insts = append(blk.Insts, NewComment("</ReturnGC>"))
 
 	if stmt.Expression != nil {
 		expression := emt.EmitExpression(blk, stmt.Expression)
@@ -218,13 +276,19 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 }
 
 func (emt *Emitter) EmitGarbageCollectionStatement(blk *ir.Block, stmt boundnodes.BoundGarbageCollectionStatementNode) {
+	blk.Insts = append(blk.Insts, NewComment("<GC>"))
 	for _, variable := range stmt.Variables {
 		// check if the variables type needs to be freed
 
 		if variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
-			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(types.I8Ptr, emt.Locals[variable.Fingerprint()].IRLocal))
+			varName := tern(emt.UseFingerprints, variable.Fingerprint(), variable.SymbolName())
+			blk.Insts = append(blk.Insts, NewComment(" -> destroy variable '%"+varName+"'"))
+
+			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(types.I8Ptr, emt.Locals[varName].IRLocal))
+			blk.NewStore(constant.NewNull(types.I8Ptr), emt.Locals[varName].IRLocal)
 		}
 	}
+	blk.Insts = append(blk.Insts, NewComment("</GC>"))
 }
 
 // </STATEMENTS>---------------------------------------------------------------
@@ -270,14 +334,7 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, float64(expr.Value.(float32)))
 	case builtins.String.Fingerprint():
-		// add a null byte at the end
-		str := expr.Value.(string) + "\x00"
-
-		// create a global to store our literal
-		global := emt.Module.NewGlobalDef(fmt.Sprintf(".str.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
-		global.Immutable = true
-		emt.StrNameCounter++
-		return blk.NewGetElementPtr(types.NewArray(uint64(len(str)), types.I8), global, CI32(0), CI32(0))
+		return emt.GetStringConstant(blk, expr.Value.(string))
 	}
 
 	return nil
@@ -309,14 +366,30 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	}
 
 	if expr.Variable.IsGlobal() {
+		// if this variable already contained a string -> clean that one up
+		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
+			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[expr.Variable.VarType().Fingerprint()], emt.Globals[varName].IRGlobal))
+		}
+
 		// assign the value to the global variable
 		blk.NewStore(expression, emt.Globals[varName].IRGlobal)
+
 	} else {
+		// if this variable already contained a string -> clean that one up
+		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
+			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[expr.Variable.VarType().Fingerprint()], emt.Locals[varName].IRLocal))
+		}
+
 		// assign the value to the local variable
 		blk.NewStore(expression, emt.Locals[varName].IRLocal)
 	}
 
 	// also return the value as this can also be used as an expression
+	// if we're working with strings the value returned here needs to be a copy
+	if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
+		return emt.CopyString(blk, expression, expr.Expression)
+	}
+
 	return expression
 }
 
@@ -496,12 +569,31 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 	arguments := make([]value.Value, 0)
 
 	for _, arg := range expr.Arguments {
-		arguments = append(arguments, emt.EmitExpression(blk, arg))
+		expression := emt.EmitExpression(blk, arg)
+
+		// if this is a string, make a copy before handing it over
+		if arg.Type().Fingerprint() == builtins.String.Fingerprint() {
+			expression = emt.CopyString(blk, expression, arg)
+		}
+
+		arguments = append(arguments, expression)
 	}
 
 	functionName := tern(emt.UseFingerprints, expr.Function.Fingerprint(), expr.Function.Name)
 
-	return blk.NewCall(emt.Functions[functionName].IRFunction, arguments...)
+	call := blk.NewCall(emt.Functions[functionName].IRFunction, arguments...)
+
+	// if this is an external function it doesnt implement the garbage collector
+	// meaning we have to clean up its arguments outselves
+	if expr.Function.BuiltIn {
+		for i, arg := range arguments {
+			if expr.Arguments[i].Type().Fingerprint() == builtins.String.Fingerprint() {
+				blk.NewCall(emt.CFunctions["free"], arg)
+			}
+		}
+	}
+
+	return call
 }
 
 func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundTypeCallExpressionNode) value.Value {
@@ -534,6 +626,42 @@ func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source bou
 	}
 
 	return newStr
+}
+
+func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) constant.Constant {
+	switch typ.Fingerprint() {
+	case builtins.Bool.Fingerprint():
+		return constant.NewBool(false)
+	case builtins.Int.Fingerprint():
+		return constant.NewInt(types.I32, 0)
+	case builtins.Float.Fingerprint():
+		return constant.NewFloat(types.Float, 0)
+	case builtins.String.Fingerprint():
+		return constant.NewNull(types.I8Ptr)
+	}
+
+	return nil
+}
+
+func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value {
+	// check if this literal has already been created
+	val, ok := emt.StrConstants[literal]
+	if ok {
+		return val
+	}
+
+	// add a null byte at the end
+	str := literal + "\x00"
+
+	// create a global to store our literal
+	global := emt.Module.NewGlobalDef(fmt.Sprintf(".str.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
+	global.Immutable = true
+	emt.StrNameCounter++
+
+	pointer := blk.NewGetElementPtr(types.NewArray(uint64(len(str)), types.I8), global, CI32(0), CI32(0))
+	emt.StrConstants[literal] = pointer
+
+	return pointer
 }
 
 // </UTILS>--------------------------------------------------------------------

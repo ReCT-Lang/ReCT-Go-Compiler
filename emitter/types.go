@@ -30,6 +30,7 @@ type Local struct {
 	IRLocal value.Value
 	IRBlock *ir.Block
 	Type    symbols.TypeSymbol
+	IsSet   bool
 }
 
 type Function struct {
