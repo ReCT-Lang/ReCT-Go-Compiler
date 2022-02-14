@@ -38,6 +38,10 @@ func (emt *Emitter) EmitCLibReferences() {
 	strlen.Sig.Variadic = true
 	emt.CFunctions["strlen"] = strlen
 
+	strcmp := emt.Module.NewFunc("strcmp", types.I32, ir.NewParam("left", types.I8Ptr), ir.NewParam("right", types.I8Ptr))
+	strcmp.Sig.Variadic = true
+	emt.CFunctions["strcmp"] = strcmp
+
 	malloc := emt.Module.NewFunc("malloc", types.I8Ptr, ir.NewParam("len", types.I32))
 	malloc.Sig.Variadic = true
 	emt.CFunctions["malloc"] = malloc

@@ -523,7 +523,23 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewICmp(enum.IPredEQ, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			// TODO: string equality
+			// compare left and right using strcmp
+			result := blk.NewCall(emt.CFunctions["strcmp"], left, right)
+
+			// if left and right arent variables (meaning they are already memory managed)
+			// free() them
+			if expr.Left.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Left.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], left)
+			}
+
+			if expr.Right.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Right.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], right)
+			}
+
+			// to check if they are equal, check if the result is 0
+			return blk.NewICmp(enum.IPredEQ, result, CI32(0))
 		}
 
 	case boundnodes.NotEquals:
@@ -537,7 +553,23 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewICmp(enum.IPredNE, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			// TODO: string inequality
+			// compare left and right using strcmpint
+			result := blk.NewCall(emt.CFunctions["strcmp"], left, right)
+
+			// if left and right arent variables (meaning they are already memory managed)
+			// free() them
+			if expr.Left.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Left.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], left)
+			}
+
+			if expr.Right.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Right.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], right)
+			}
+
+			// to check if they are unequal, check if the result is not 0
+			return blk.NewICmp(enum.IPredNE, result, CI32(0))
 		}
 
 	case boundnodes.Greater:
