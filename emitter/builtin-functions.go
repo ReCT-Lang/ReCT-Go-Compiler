@@ -47,6 +47,12 @@ func (emt *Emitter) EmitCLibReferences() {
 	snprintf := emt.Module.NewFunc("snprintf", types.I32, ir.NewParam("dest", types.I8Ptr), ir.NewParam("len", types.I32), ir.NewParam("format", types.I8Ptr))
 	snprintf.Sig.Variadic = true
 	emt.CFunctions["snprintf"] = snprintf
+
+	atoi := emt.Module.NewFunc("atoi", types.I32, ir.NewParam("str", types.I8Ptr))
+	emt.CFunctions["atoi"] = atoi
+
+	atof := emt.Module.NewFunc("atof", types.Double, ir.NewParam("str", types.I8Ptr))
+	emt.CFunctions["atof"] = atof
 }
 
 func (emt *Emitter) EmitSystemFuncReferences() {

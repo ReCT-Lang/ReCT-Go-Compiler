@@ -705,45 +705,62 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			double := blk.NewFPExt(value, types.Double)
 
 			// find out how much space we need to allocate
-			len := blk.NewCall(emt.CFunctions["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%f"), double)
+			len := blk.NewCall(emt.CFunctions["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%g"), double)
 
 			// allocate space for the new string
 			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(len, CI32(1)))
 
 			// convert the float
-			blk.NewCall(emt.CFunctions["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%f"), double)
+			blk.NewCall(emt.CFunctions["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%g"), double)
 
 			return newStr
 		}
 
 		// string -> bool
-		//} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
-		//	switch value.(type) {
-		//	case string:
-		//		val, _ := strconv.ParseBool(value.(string))
-		//		return val
-		//	default:
-		//		print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
-		//		os.Exit(-1)
-		//	}
-		//} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
-		//	switch value.(type) {
-		//	case string:
-		//		val, _ := strconv.Atoi(value.(string))
-		//		return val
-		//	default:
-		//		print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
-		//		os.Exit(-1)
-		//	}
-		//} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
-		//	switch value.(type) {
-		//	case string:
-		//		val, _ := strconv.ParseFloat(value.(string), 32)
-		//		return val
-		//	default:
-		//		print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
-		//		os.Exit(-1)
-		//	}
+	} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
+		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// see if the string we got is equal to "true"
+			result := blk.NewCall(emt.CFunctions["strcmp"], value, emt.GetStringConstant(blk, "true"))
+
+			// if value isnt a variable (meaning its already memory managed)
+			// free() it
+			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], value)
+			}
+
+			// to check if they are equal, check if the result is 0
+			return blk.NewICmp(enum.IPredEQ, result, CI32(0))
+		}
+	} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
+		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+			result := blk.NewCall(emt.CFunctions["atoi"], value)
+
+			// if value isnt a variable (meaning its already memory managed)
+			// free() it
+			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], value)
+			}
+
+			return result
+		}
+	} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
+		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+			result := blk.NewCall(emt.CFunctions["atof"], value)
+
+			// convert the result from a double to a float
+			floatRes := blk.NewFPTrunc(result, types.Float)
+
+			// if value isnt a variable (meaning its already memory managed)
+			// free() it
+			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], value)
+			}
+
+			return floatRes
+		}
 	}
 
 	return nil
