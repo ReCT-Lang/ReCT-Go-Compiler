@@ -1,29 +1,6 @@
-set gaming <- "yes";
-test();
+var cringe <- "";
 
-function test()
-{
-	while(true)
-	{
-		var yes <- "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam"
-		var nah <- "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam"
-		var maybe <- "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam"
-		thing(yes);
-		thing(nah);
-		thing(maybe);
+from (i <- 0) to 10 
+	cringe <-+ "aaaAAA";
 
-		maybe <- "kek";
-		gaming <- "ur mom";
-
-		Sleep(500);
-	}
-}
-
-function thing(str string) string
-{
-	var hmmm <- "a"
-	Write(hmmm);
-	Print(str);
-
-	return "a"
-}
+Print(cringe);

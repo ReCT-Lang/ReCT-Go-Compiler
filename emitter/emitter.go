@@ -387,7 +387,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	// also return the value as this can also be used as an expression
 	// if we're working with strings the value returned here needs to be a copy
 	if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
-		return emt.CopyString(blk, expression, expr.Expression)
+		return emt.CopyStringNoFree(blk, expression)
 	}
 
 	return expression
@@ -431,7 +431,32 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewFAdd(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			// TODO: string concat
+			// figure out how long our left and right are
+			leftLen := blk.NewCall(emt.CFunctions["strlen"], left)
+			rightLen := blk.NewCall(emt.CFunctions["strlen"], right)
+
+			// allocate a new buffer for the concatination to go into
+			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(blk.NewAdd(leftLen, rightLen), CI32(1)))
+
+			// copy over the left string
+			blk.NewCall(emt.CFunctions["strcpy"], newStr, left)
+
+			// concat the other side into it
+			blk.NewCall(emt.CFunctions["strcat"], newStr, right)
+
+			// if left and right arent variables (meaning they are already memory managed)
+			// free() them
+			if expr.Left.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Left.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], left)
+			}
+
+			if expr.Right.NodeType() != boundnodes.BoundVariableExpression &&
+				expr.Right.NodeType() != boundnodes.BoundLiteralExpression {
+				blk.NewCall(emt.CFunctions["free"], right)
+			}
+
+			return newStr
 		}
 
 	case boundnodes.Subtraction:
@@ -625,6 +650,12 @@ func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source bou
 		blk.NewCall(emt.CFunctions["free"], expression)
 	}
 
+	return newStr
+}
+
+func (emt *Emitter) CopyStringNoFree(blk *ir.Block, expression value.Value) value.Value {
+	// copy over the string
+	newStr := blk.NewCall(emt.CFunctions["uStringCopy"], expression)
 	return newStr
 }
 

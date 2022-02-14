@@ -26,11 +26,11 @@ func (emt *Emitter) EmitCLibReferences() {
 	scanf.Sig.Variadic = true
 	emt.CFunctions["scanf"] = scanf
 
-	strcpy := emt.Module.NewFunc("strcpy", types.I8Ptr, ir.NewParam("dest", types.I8Ptr), ir.NewParam("src", types.I8Ptr))
+	strcpy := emt.Module.NewFunc("strcpy", types.Void, ir.NewParam("dest", types.I8Ptr), ir.NewParam("src", types.I8Ptr))
 	strcpy.Sig.Variadic = true
 	emt.CFunctions["strcpy"] = strcpy
 
-	strcat := emt.Module.NewFunc("strcat", types.I8Ptr, ir.NewParam("dest", types.I8Ptr), ir.NewParam("src", types.I8Ptr))
+	strcat := emt.Module.NewFunc("strcat", types.Void, ir.NewParam("dest", types.I8Ptr), ir.NewParam("src", types.I8Ptr))
 	strcat.Sig.Variadic = true
 	emt.CFunctions["strcat"] = strcat
 
