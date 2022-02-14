@@ -15,6 +15,14 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 
 	// emit our built-ins
 	emt.EmitSystemFuncReferences()
+
+	// Version()
+	Version := emt.Module.NewFunc("rct_Version", types.I8Ptr)
+	body := Version.NewBlock("")
+	body.NewRet(emt.CopyStringNoFree(body, emt.GetStringConstant(body, "1.1")))
+
+	emt.Functions[tern(emt.UseFingerprints, builtins.Version.Fingerprint(), builtins.Version.Name)] = Function{IRFunction: Version, BoundFunction: binder.BoundFunction{Symbol: builtins.Version}}
+
 }
 
 func (emt *Emitter) EmitCLibReferences() {
