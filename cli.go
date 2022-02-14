@@ -69,7 +69,7 @@ func ProcessFlags() {
 		Help()
 
 	} else if lookup != 0 { // 0 = No look up (default value)
-		// If you use requests error code look up
+		// If you user requests error code look up
 		print.LookUp(print.ErrorCode(lookup))
 
 	} else {
@@ -193,7 +193,7 @@ type HelpSegment struct {
 	Command      string
 	Example      string
 	DefaultValue string
-	Explaination string
+	Explanation  string
 }
 
 func (seg *HelpSegment) Print(p0 int, p1 int, p2 int, p3 int) {
@@ -203,7 +203,7 @@ func (seg *HelpSegment) Print(p0 int, p1 int, p2 int, p3 int) {
 	print.WriteC(print.DarkGray, ":")
 	print.WriteCF(print.Yellow, " %-*s", p2, seg.DefaultValue)
 	print.WriteC(print.DarkGray, ":")
-	print.WriteCF(print.Green, " %-*s", p3, seg.Explaination)
+	print.WriteCF(print.Green, " %-*s", p3, seg.Explanation)
 	fmt.Println("")
 }
 
@@ -223,8 +223,8 @@ func findPaddings(segments []HelpSegment) (int, int, int, int) {
 		if len(segment.DefaultValue) > p2 {
 			p2 = len(segment.DefaultValue)
 		}
-		if len(segment.Explaination) > p3 {
-			p3 = len(segment.Explaination)
+		if len(segment.Explanation) > p3 {
+			p3 = len(segment.Explanation)
 		}
 	}
 
