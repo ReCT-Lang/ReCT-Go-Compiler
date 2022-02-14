@@ -1,11 +1,8 @@
 package print
 
 import (
-	"encoding/json"
 	_ "encoding/json" // I know JSON is a data interchange but imma use it for storing the error lookup data anyway - tokorv :)))
 	"fmt"
-	"io/ioutil"
-	"log"
 	"strings"
 )
 
@@ -110,6 +107,18 @@ import (
 // Global variable :gentleman:
 var CodeReference []string
 
+// errorData stores all of the lookup errorData
+var errorData = map[ErrorCode]map[string]string{
+	NotImplementedErrorCode: {
+		"name": "NotImplemented",
+		"area": "Developer",
+		"explanation": `This error is used as a place market for features that are not fully developed yet. 
+Since the feature it not fully developed, it will not have a specific error code or type for you to check out.`,
+		"example":    "",
+		"additional": "If you think a \"NotImplemented\" error is a mistake, please contact a main contributor to the project, or contribute the new error yourself.",
+	},
+}
+
 // When no data can be found for line, length or column
 
 // Error prints custom error message and code snippet to terminal/console
@@ -129,6 +138,9 @@ func Error(area string, _type ErrorType, line, column, length int, message strin
 }
 
 func PrintCodeSnippet(line, column, length int) {
+	if line <= 0 || column <= 0 || length <= 0 {
+		return
+	}
 	PrintCF(White, "\n%d |  %s", line, CodeReference[line-1])
 	if column > 3 {
 		WriteC(Gray, strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line))))
@@ -138,31 +150,12 @@ func PrintCodeSnippet(line, column, length int) {
 	}
 }
 
-type LookUpError struct {
-	Name        string
-	Area        string
-	Explanation string
-	Example     string
-	Additional  string
-}
-
 // Still working wonky
 func LookUp(code ErrorCode) {
 	// Relative path is not good, maybe it's time for the compiler to have some kind of config?
-	data, err := ioutil.ReadFile("print/errors.json")
-	if err != nil {
-		log.Fatal(err)
-		//fmt.Println("An undocumented error occurred trying to access our error library!")
-		//os.Exit(1) // bad
+	if data := errorData[code]; data != nil {
+
 	}
-	var jsonData LookUpError
-	_ = json.Unmarshal([]byte(data), &jsonData)
-	fmt.Printf("| ReCT Go Compiler - Error Lookup %d |\n\n", code)
-	fmt.Printf("Name: \t\t%s\n", jsonData.Name)
-	fmt.Printf("Found in: \t\t%s\n\n", jsonData.Area)
-	fmt.Printf("%s\n\n", jsonData.Explanation)
-	fmt.Printf("%s\n\n", jsonData.Example)
-	fmt.Printf("%s\n", jsonData.Additional)
 }
 
 // ErrorCode the numerical representation of an Error, this allows it to be "looked up"
