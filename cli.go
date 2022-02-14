@@ -117,8 +117,8 @@ func Prepare(file string) binder.BoundProgram {
 	//print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
 	//print.PrintC(print.Green, "Done!")
-	//boundProgram.Print()
-	boundProgram.PrintStatements()
+	boundProgram.Print()
+	//boundProgram.PrintStatements()
 
 	return boundProgram
 }

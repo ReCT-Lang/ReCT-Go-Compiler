@@ -1,4 +1,4 @@
-set gamer <- "Jerry Jerry Jerry";
+set gamer <- "Jerry Jerry";
 
 add(gamer, gamer);
 
@@ -11,6 +11,8 @@ function add(x string, y string) string {
             Print(gamer);
             from (i <- 0) to 100 {
                 gamer <- gamer;
+				Write("assign ");
+				Sleep(50);
             }
             break
         }

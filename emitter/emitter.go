@@ -148,37 +148,44 @@ func (emt *Emitter) EmitBlockStatement(fnc *ir.Func, body boundnodes.BoundBlockS
 		}
 	}
 
+	skipToNextBlock := false
+
 	for _, stmt := range body.Statements {
 		if stmt.NodeType() == boundnodes.BoundLabelStatement {
 			// if we encounter a laber statement -> switch to the label's block
 			labelStatement := stmt.(boundnodes.BoundLabelStatementNode)
 			currentBlock = emt.Labels[string(labelStatement.Label)]
+			skipToNextBlock = false
+
 		} else {
-			emt.EmitStatement(currentBlock, stmt)
+			if skipToNextBlock {
+				continue
+			}
+
+			// emit a statement to the current block
+			switch stmt.NodeType() {
+			case boundnodes.BoundVariableDeclaration:
+				emt.EmitVariableDeclarationStatement(currentBlock, stmt.(boundnodes.BoundVariableDeclarationStatementNode))
+
+			case boundnodes.BoundGotoStatement:
+				emt.EmitGotoStatement(currentBlock, stmt.(boundnodes.BoundGotoStatementNode))
+				skipToNextBlock = true
+
+			case boundnodes.BoundConditionalGotoStatement:
+				emt.EmitConditionalGotoStatement(currentBlock, stmt.(boundnodes.BoundConditionalGotoStatementNode))
+
+			case boundnodes.BoundExpressionStatement:
+				emt.EmitBoundExpressionStatement(currentBlock, stmt.(boundnodes.BoundExpressionStatementNode))
+
+			case boundnodes.BoundReturnStatement:
+				emt.EmitReturnStatement(currentBlock, stmt.(boundnodes.BoundReturnStatementNode))
+				// skip forward until we either hit a new block or the end of the function
+				skipToNextBlock = true
+
+			case boundnodes.BoundGarbageCollectionStatement:
+				emt.EmitGarbageCollectionStatement(currentBlock, stmt.(boundnodes.BoundGarbageCollectionStatementNode))
+			}
 		}
-	}
-}
-
-func (emt *Emitter) EmitStatement(blk *ir.Block, stmt boundnodes.BoundStatementNode) {
-	// emit a statement to the current block
-	switch stmt.NodeType() {
-	case boundnodes.BoundVariableDeclaration:
-		emt.EmitVariableDeclarationStatement(blk, stmt.(boundnodes.BoundVariableDeclarationStatementNode))
-
-	case boundnodes.BoundGotoStatement:
-		emt.EmitGotoStatement(blk, stmt.(boundnodes.BoundGotoStatementNode))
-
-	case boundnodes.BoundConditionalGotoStatement:
-		emt.EmitConditionalGotoStatement(blk, stmt.(boundnodes.BoundConditionalGotoStatementNode))
-
-	case boundnodes.BoundExpressionStatement:
-		emt.EmitBoundExpressionStatement(blk, stmt.(boundnodes.BoundExpressionStatementNode))
-
-	case boundnodes.BoundReturnStatement:
-		emt.EmitReturnStatement(blk, stmt.(boundnodes.BoundReturnStatementNode))
-
-	case boundnodes.BoundGarbageCollectionStatement:
-		emt.EmitGarbageCollectionStatement(blk, stmt.(boundnodes.BoundGarbageCollectionStatementNode))
 	}
 }
 
@@ -236,6 +243,19 @@ func (emt *Emitter) EmitBoundExpressionStatement(blk *ir.Block, stmt boundnodes.
 }
 
 func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundReturnStatementNode) {
+	// return value
+	var expression value.Value
+
+	// calculate the return value first (so its not destroyed by the GC)
+	if stmt.Expression != nil {
+		expression = emt.EmitExpression(blk, stmt.Expression)
+
+		// if the expression is a string, copy it to unlink it from any variable
+		if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+			expression = emt.CopyString(blk, expression, stmt.Expression)
+		}
+	}
+
 	// --< state of the art garbage collecting >---------------------------
 	// 1. go through all locals created up to this point
 	// 2. check if they need freeing
@@ -262,13 +282,6 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 	blk.Insts = append(blk.Insts, NewComment("</ReturnGC>"))
 
 	if stmt.Expression != nil {
-		expression := emt.EmitExpression(blk, stmt.Expression)
-
-		// if the expression is a string, copy it to unlink it from any variable
-		if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
-			expression = emt.CopyString(blk, expression, stmt.Expression)
-		}
-
 		blk.NewRet(expression)
 	} else {
 		blk.NewRet(nil)
@@ -710,7 +723,7 @@ func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value
 	// check if this literal has already been created
 	val, ok := emt.StrConstants[literal]
 	if ok {
-		return val
+		return blk.NewGetElementPtr(types.NewArray(uint64(len(literal)+1), types.I8), val, CI32(0), CI32(0))
 	}
 
 	// add a null byte at the end
@@ -722,7 +735,7 @@ func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value
 	emt.StrNameCounter++
 
 	pointer := blk.NewGetElementPtr(types.NewArray(uint64(len(str)), types.I8), global, CI32(0), CI32(0))
-	emt.StrConstants[literal] = pointer
+	emt.StrConstants[literal] = global
 
 	return pointer
 }
