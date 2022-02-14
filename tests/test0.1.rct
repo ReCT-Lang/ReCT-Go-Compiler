@@ -1,21 +1,8 @@
-set gamer <- "Jerry Jerry";
+var someFloat <- 0.0;
 
-add(gamer, gamer);
-
-function add(x string, y string) string {
-    while(x = y) {
-        if (x = "Jerry") {
-            Print("haha");
-            return y;
-        } else {
-            Print(gamer);
-            from (i <- 0) to 100 {
-                gamer <- gamer;
-				Write("assign ");
-				Sleep(50);
-            }
-            break
-        }
-    }
-    return x;
+while(true)
+{
+	someFloat <- someFloat + 0.000001;
+	Print(string(someFloat));
+	Sleep(999);
 }

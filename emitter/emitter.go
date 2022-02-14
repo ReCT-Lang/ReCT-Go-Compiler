@@ -629,9 +629,6 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 	}
 
-	print.PrintCF(print.Red, "UNIMPLEMENTED BINARY EXPRESSION: %s : %s => %s", expr.Left, expr.Right, expr.Op.OperatorKind)
-	os.Exit(-1)
-
 	return nil
 }
 
@@ -676,8 +673,78 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 
 func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.BoundConversionExpressionNode) value.Value {
 
-	print.PrintC(print.Red, "conversions arent implemented yet!")
-	os.Exit(-1)
+	value := emt.EmitExpression(blk, expr.Expression)
+
+	if expr.ToType.Fingerprint() == builtins.Any.Fingerprint() {
+		// TODO: 'any' datatype
+
+		// to string conversion
+	} else if expr.ToType.Fingerprint() == builtins.String.Fingerprint() {
+		switch expr.Expression.Type().Fingerprint() {
+		case builtins.String.Fingerprint():
+			return value
+		case builtins.Bool.Fingerprint():
+			trueStr := emt.GetStringConstant(blk, "true")
+			falseStr := emt.GetStringConstant(blk, "false")
+
+			return emt.CopyStringNoFree(blk, blk.NewSelect(value, trueStr, falseStr))
+		case builtins.Int.Fingerprint():
+			// find out how much space we need to allocate
+			len := blk.NewCall(emt.CFunctions["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%d"), value)
+
+			// allocate space for the new string
+			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(len, CI32(1)))
+
+			// convert the float
+			blk.NewCall(emt.CFunctions["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%d"), value)
+
+			return newStr
+
+		case builtins.Float.Fingerprint():
+			// convert float to double, idk why but it doesnt work without it
+			double := blk.NewFPExt(value, types.Double)
+
+			// find out how much space we need to allocate
+			len := blk.NewCall(emt.CFunctions["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%f"), double)
+
+			// allocate space for the new string
+			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(len, CI32(1)))
+
+			// convert the float
+			blk.NewCall(emt.CFunctions["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%f"), double)
+
+			return newStr
+		}
+
+		// string -> bool
+		//} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
+		//	switch value.(type) {
+		//	case string:
+		//		val, _ := strconv.ParseBool(value.(string))
+		//		return val
+		//	default:
+		//		print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
+		//		os.Exit(-1)
+		//	}
+		//} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
+		//	switch value.(type) {
+		//	case string:
+		//		val, _ := strconv.Atoi(value.(string))
+		//		return val
+		//	default:
+		//		print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
+		//		os.Exit(-1)
+		//	}
+		//} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
+		//	switch value.(type) {
+		//	case string:
+		//		val, _ := strconv.ParseFloat(value.(string), 32)
+		//		return val
+		//	default:
+		//		print.PrintCF(print.Red, "No Conversion! (cringe) [%s -> %s]", expr.Expression.Type().Fingerprint(), expr.ToType.Fingerprint())
+		//		os.Exit(-1)
+		//	}
+	}
 
 	return nil
 }
