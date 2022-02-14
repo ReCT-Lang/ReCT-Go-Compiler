@@ -804,6 +804,7 @@ func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) const
 }
 
 func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value {
+
 	// check if this literal has already been created
 	val, ok := emt.StrConstants[literal]
 	if ok {

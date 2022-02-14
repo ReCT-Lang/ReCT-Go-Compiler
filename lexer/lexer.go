@@ -11,7 +11,7 @@ import (
 
 // Lexer : Lexer struct for lexing :GentlemenSphere:
 type Lexer struct {
-	Code   []byte
+	Code   []rune
 	Line   int
 	Column int
 	Index  int
@@ -28,16 +28,16 @@ func Lex(filename string) []Token {
 	for scanner.Index < len(scanner.Code) {
 		c := scanner.Code[scanner.Index]
 
-		peek := func(offset int) byte {
+		peek := func(offset int) rune {
 			if scanner.Index+offset < len(scanner.Code) {
 				return scanner.Code[scanner.Index+offset]
 			}
 			return '\000'
 		}
 
-		if unicode.IsLetter(rune(c)) {
+		if unicode.IsLetter(c) {
 			scanner.getId()
-		} else if unicode.IsNumber(rune(c)) {
+		} else if unicode.IsNumber(c) {
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
@@ -187,7 +187,7 @@ func (lxr *Lexer) getId() {
 func (lxr *Lexer) getOperator() {
 	var _token TokenKind
 
-	peek := func(offset int) byte {
+	peek := func(offset int) rune {
 		if lxr.Index+offset < len(lxr.Code) {
 			return lxr.Code[lxr.Index+offset]
 		}
@@ -302,9 +302,9 @@ func (lxr *Lexer) getOperator() {
 	lxr.Increment()
 }
 
-// handleFileOpen reads the file and returns a byte array ([]byte)
+// handleFileOpen reads the file and returns a byte array ([]byte) // nah fam we usin runes
 // only handles NotExist and Permission error btw
-func handleFileOpen(filename string) []byte {
+func handleFileOpen(filename string) []rune {
 	contents, err := os.ReadFile(filename)
 	if errors.Is(err, os.ErrNotExist) {
 		print.Error(
@@ -343,7 +343,7 @@ func handleFileOpen(filename string) []byte {
 	// Offload a copy of contents for error handling
 	// Also split at new lines because that makes referencing easier
 	print.CodeReference = strings.Split(string(contents), "\n")
-	return contents
+	return []rune(string(contents))
 }
 
 // CheckIfKeyword used by Lexer.getId to convert an identifier Token to a keyword Token
