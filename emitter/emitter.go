@@ -78,6 +78,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 }
 
 // <FUNCTIONS>-----------------------------------------------------------------
+
 func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.BoundBlockStatementNode) *ir.Func {
 	// figure out all parameters and their types
 	params := make([]*ir.Param, 0)
