@@ -173,7 +173,7 @@ const (
 
 	// Lexer ErrorCodes (start at 1000)
 	UnexpectedCharacterErrorCode = iota + 1000 // 1003
-	FileDoesNotExitErrorCode     = iota + 1000 // 1004
+	FileDoesNotExistErrorCode    = iota + 1000 // 1004
 	FilePermissionErrorCode      = iota + 1000 // 1005
 	FileVoidErrorCode            = iota + 1000 // 1006
 	RealValueConversionErrorCode = iota + 1000 // 1007
@@ -213,7 +213,7 @@ const (
 
 	// Lexer Errors
 	UnexpectedCharacterError = "UnexpectedCharacter"
-	FileDoesNotExitError     = "FileDoesNotExit"
+	FileDoesNotExistError    = "FileDoesNotExist"
 	FilePermissionError      = "FilePermission"
 	FileVoidError            = "FileVoid"
 	RealValueConversionError = "RealValueConversion"
@@ -292,8 +292,8 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 		return IDKErrorCode
 	case UnexpectedTokenError:
 		return UnexpectedTokenErrorCode
-	case FileDoesNotExitError:
-		return FileDoesNotExitErrorCode
+	case FileDoesNotExistError:
+		return FileDoesNotExistErrorCode
 	case FilePermissionError:
 		return FilePermissionErrorCode
 	case FileVoidError:
@@ -312,6 +312,7 @@ var errorData = map[ErrorCode]map[string]string{
 	NotImplementedErrorCode: {
 		"name": "NotImplemented",
 		"area": "Developer",
+		"code": "9000",
 		"explanation": `This error is used as a &wplace marker&w for features that are &wnot fully developed&w yet. 
 Since the feature it not fully developed, it &rwill not&r have a &wspecific error code&w or type for you to check out.`,
 		"example":    "",
@@ -320,6 +321,7 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	IDKErrorCode: {
 		"name":        "IDK(cringe)",
 		"area":        "Developer",
+		"code":        "9001",
 		"explanation": `This error is &drdepreciated&dr. It may be used as an alternative for a &mNotImplemented&m Error, please use: &dyrgoc -lookup &c9000&c, for more information.`,
 		"example":     "",
 		"additional":  "",
@@ -327,6 +329,7 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	NULLErrorCode: {
 		"name":        "NULL",
 		"area":        "Developer",
+		"code":        "8999",
 		"explanation": "This error is &mNULL&m!",
 		"example":     "",
 		"additional":  "",
@@ -334,6 +337,7 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	UnexpectedCharacterErrorCode: {
 		"name": "UnexpectedCharacter",
 		"area": "Lexer",
+		"code": "1003",
 		"explanation": `An &mUnexpectedCharacter&m Error occurs when the &bLexer/scanner&b of the compiler encounters a &wcharacter&w that the &wcompiler&w &rdoes not&r know how to &wprocess&w. 
 Since the compiler does not know how to process this character, it &drcannot proceed&dr and instead outputs an &mUnexpectedCharacter&m Error so the developer 
 of the program can correct the issues and &weither remove or replace&w the &wunexpected character&w.`,
@@ -343,5 +347,45 @@ of the program can correct the issues and &weither remove or replace&w the &wune
 &c[LEXER] &dcUnexpectedCharacter &rError(&dr2&r, &dr7&r): &dycharacter &g"@"&dy was not expected! Compiler does not know how to process this character!
 [> Error look up code: &c1003&dy (use: &brgoc -lookup &c1003&dy, for more information)]`,
 		"additional": "This error can cause a &mBadToken&m error in the &bParser&b later on.",
+	},
+	FileDoesNotExistErrorCode: {
+		"name":        "FileDoesNotExist",
+		"area":        "Lexer",
+		"code":        "1003",
+		"explanation": ``,
+		"example":     "",
+		"additional":  "",
+	},
+	FilePermissionErrorCode: {
+		"name":        "FilePermission",
+		"area":        "Lexer",
+		"code":        "1004",
+		"explanation": ``,
+		"example":     "",
+		"additional":  "",
+	},
+	FileVoidErrorCode: {
+		"name":        "FileVoid",
+		"area":        "Lexer",
+		"code":        "1005",
+		"explanation": ``,
+		"example":     "",
+		"additional":  "",
+	},
+	RealValueConversionErrorCode: {
+		"name":        "RealValueConversion",
+		"area":        "Lexer",
+		"code":        "1006",
+		"explanation": ``,
+		"example":     "",
+		"additional":  "",
+	},
+	UnexpectedTokenErrorCode: {
+		"name":        "UnexpectedToken",
+		"area":        "Lexer",
+		"code":        "1007",
+		"explanation": "This error is &mNULL&m!",
+		"example":     "",
+		"additional":  "",
 	},
 }
