@@ -14,6 +14,7 @@
 typedef struct any_vtable {
 	const struct any_vtable* parentVTable; // will be NULL for "any" as its the root
 	const char* className;                 // will be "Any"
+	void (*Function)(class_Any*)           // destructor function pointer
 } Any_vTable;
 
 // the objects struct
@@ -22,7 +23,7 @@ typedef struct {
 } class_Any;
 
 // definition for the Any vTable
-const Any_vTable Any_vTable_Const = {NULL, "Any"};
+const Any_vTable Any_vTable_Const = {NULL, "Any", &Any_public_Die};
 
 // defintion for the objects constructor
 void Any_public_Contructor(class_Any* this) {
@@ -44,6 +45,7 @@ void Any_public_Die(class_Any* this) {}
 typedef struct {
 	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
 	const char* className;          // will be "String"
+	void (*Function)(class_String*) // destructor function pointer
 } String_vTable;
 
 // the objects struct
@@ -56,7 +58,7 @@ typedef struct {
 } class_String;
 
 // definition for the String vTable
-const String_vTable String_vTable_Const = {&Any_vTable_Const, "String"};
+const String_vTable String_vTable_Const = {&Any_vTable_Const, "String", &String_public_Die};
 
 // defintion for the objects constructor
 void String_public_Contructor(class_String* this) {
@@ -116,6 +118,7 @@ void String_public_AddChar(class_String* this, char value) {
 typedef struct {
 	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
 	const char* className;          // will be "Int"
+	void (*Function)(class_Int*)    // destructor function pointer
 } Int_vTable;
 
 // the objects struct
@@ -125,7 +128,7 @@ typedef struct {
 } class_Int;
 
 // definition for the Int vTable
-const Int_vTable Int_vTable_Const = {&Any_vTable_Const, "Int"};
+const Int_vTable Int_vTable_Const = {&Any_vTable_Const, "Int", &Int_public_Die};
 
 // defintion for the objects constructor
 void Int_public_Contructor(class_Int* this, int value) {
@@ -150,6 +153,7 @@ int Int_public_GetValue(class_Int* this) {
 typedef struct {
 	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
 	const char* className;          // will be "Float"
+	void (*Function)(class_Float*)  // destructor function pointer
 } Float_vTable;
 
 // the objects struct
@@ -159,7 +163,7 @@ typedef struct {
 } class_Float;
 
 // definition for the Float vTable
-const Float_vTable Float_vTable_Const = {&Any_vTable_Const, "Float"};
+const Float_vTable Float_vTable_Const = {&Any_vTable_Const, "Float", &Float_public_Die};
 
 // defintion for the objects constructor
 void Float_public_Contructor(class_Float* this, float value) {
@@ -184,6 +188,7 @@ float Float_public_GetValue(class_Float* this) {
 typedef struct {
 	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
 	const char* className;          // will be "Bool"
+	void (*Function)(class_Bool*)   // destructor function pointer
 } Bool_vTable;
 
 // the objects struct
@@ -193,7 +198,7 @@ typedef struct {
 } class_Bool;
 
 // definition for the Bool vTable
-const Bool_vTable Bool_vTable_Const = {&Any_vTable_Const, "Bool"};
+const Bool_vTable Bool_vTable_Const = {&Any_vTable_Const, "Bool", &Bool_public_Contructor};
 
 // defintion for the objects constructor
 void Bool_public_Contructor(class_Bool* this, bool value) {
