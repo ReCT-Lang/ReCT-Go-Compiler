@@ -11,3 +11,6 @@ program.bc
 .replit
 .gitpod
 *.toml
+
+# idea metadata
+**.idea/** 
