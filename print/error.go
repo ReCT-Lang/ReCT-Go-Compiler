@@ -104,12 +104,16 @@ import (
  * bad character is removed or replaced.
  */
 
-// Global variable :gentleman:
-var CodeReference []string
+// CodeReference stores code for both error lookups and compiler-time error messages.
+// It stores code for error lookups, when compiling it is overwritten with the code to compile.
+var CodeReference []string = []string{
+	"&dyvar &wjerr&r@&wy &w<- &g\"Hello, World\"&g;",
+}
 
 // When no data can be found for line, length or column
 
 // Error prints custom error message and code snippet to terminal/console
+// Uses old colour formatting method, will switch to Format() later
 func Error(area string, _type ErrorType, line, column, length int, message string, fargs ...interface{}) {
 	PrintCodeSnippet(line, column, length)
 	WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
@@ -125,6 +129,26 @@ func Error(area string, _type ErrorType, line, column, length int, message strin
 	PrintC(DarkYellow, ", for more information)]\n")
 }
 
+// ErrorS basically Error but returns a string instead of printing
+func ErrorS(area string, _type ErrorType, line, column, length int, message string, a ...interface{}) string {
+	output := PrintCodeSnippetS(line, column, length)
+	output += Format(
+		fmt.Sprintf(
+			"\n&dc[&c%s&dc] %s &rError(&dr%d&r, &dr%d&r): &dy%s\n[> &rError&dy look up code: &c%d&dy (use: &yrgoc -lookup=&c%d&dy, for more information!)]\n",
+			strings.ToUpper(area),
+			string(_type),
+			line,
+			column,
+			fmt.Sprintf(message, a...),
+			ErrorTypeToCode(_type),
+			ErrorTypeToCode(_type),
+		),
+		Gray,
+	)
+	return output
+}
+
+// PrintCodeSnippet does what it says on the label, it prints a snippet of the code in CodeReference.
 func PrintCodeSnippet(line, column, length int) {
 	if line <= 0 || column <= 0 || length <= 0 {
 		return
@@ -134,8 +158,30 @@ func PrintCodeSnippet(line, column, length int) {
 		WriteC(Gray, strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line))))
 		PrintC(Red, strings.Repeat("^", length))
 	} else {
-		PrintC(Red, strings.Repeat("^", length))
+		PrintC(Red, strings.Repeat("^", length+column))
 	}
+}
+
+// PrintCodeSnippetS returns a code snippet string instead of returning it like PrintCodeSnippet.
+func PrintCodeSnippetS(line, column, length int) string {
+	output := ""
+	if line <= 0 || column <= 0 || length <= 0 {
+		return output
+	}
+	output += Format(
+		fmt.Sprintf("\n%d | %s", line, CodeReference[line-1]),
+		Gray,
+	)
+	if column > 3 {
+		output += "\n" + strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line)))
+		output += Format(
+			strings.Repeat("^", length),
+			Red,
+		)
+	} else {
+		output += strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line)))
+	}
+	return output + "\n"
 }
 
 // Still working wonky
@@ -173,7 +219,7 @@ const (
 
 	// Lexer ErrorCodes (start at 1000)
 	UnexpectedCharacterErrorCode = iota + 1000 // 1003
-	FileDoesNotExitErrorCode     = iota + 1000 // 1004
+	FileDoesNotExistErrorCode    = iota + 1000 // 1004
 	FilePermissionErrorCode      = iota + 1000 // 1005
 	FileVoidErrorCode            = iota + 1000 // 1006
 	RealValueConversionErrorCode = iota + 1000 // 1007
@@ -213,7 +259,7 @@ const (
 
 	// Lexer Errors
 	UnexpectedCharacterError = "UnexpectedCharacter"
-	FileDoesNotExitError     = "FileDoesNotExit"
+	FileDoesNotExistError    = "FileDoesNotExist"
 	FilePermissionError      = "FilePermission"
 	FileVoidError            = "FileVoid"
 	RealValueConversionError = "RealValueConversion"
@@ -292,8 +338,8 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 		return IDKErrorCode
 	case UnexpectedTokenError:
 		return UnexpectedTokenErrorCode
-	case FileDoesNotExitError:
-		return FileDoesNotExitErrorCode
+	case FileDoesNotExistError:
+		return FileDoesNotExistErrorCode
 	case FilePermissionError:
 		return FilePermissionErrorCode
 	case FileVoidError:
@@ -312,6 +358,7 @@ var errorData = map[ErrorCode]map[string]string{
 	NotImplementedErrorCode: {
 		"name": "NotImplemented",
 		"area": "Developer",
+		"code": string(rune(NotImplementedErrorCode)),
 		"explanation": `This error is used as a &wplace marker&w for features that are &wnot fully developed&w yet. 
 Since the feature it not fully developed, it &rwill not&r have a &wspecific error code&w or type for you to check out.`,
 		"example":    "",
@@ -320,6 +367,7 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	IDKErrorCode: {
 		"name":        "IDK(cringe)",
 		"area":        "Developer",
+		"code":        string(rune(IDKErrorCode)),
 		"explanation": `This error is &drdepreciated&dr. It may be used as an alternative for a &mNotImplemented&m Error, please use: &dyrgoc -lookup &c9000&c, for more information.`,
 		"example":     "",
 		"additional":  "",
@@ -327,6 +375,7 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	NULLErrorCode: {
 		"name":        "NULL",
 		"area":        "Developer",
+		"code":        string(rune(NULLErrorCode)),
 		"explanation": "This error is &mNULL&m!",
 		"example":     "",
 		"additional":  "",
@@ -334,14 +383,77 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	UnexpectedCharacterErrorCode: {
 		"name": "UnexpectedCharacter",
 		"area": "Lexer",
+		"code": string(rune(UnexpectedCharacterErrorCode)),
 		"explanation": `An &mUnexpectedCharacter&m Error occurs when the &bLexer/scanner&b of the compiler encounters a &wcharacter&w that the &wcompiler&w &rdoes not&r know how to &wprocess&w. 
 Since the compiler does not know how to process this character, it &drcannot proceed&dr and instead outputs an &mUnexpectedCharacter&m Error so the developer 
 of the program can correct the issues and &weither remove or replace&w the &wunexpected character&w.`,
-		"example": `1 | &mPrint&m(&g"Here's an example: "&g);
+		"example": ErrorS(
+			"Lexer",
+			UnexpectedCharacterError,
+			1,
+			10,
+			5,
+			"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)",
+			string(CodeReference[0][15]),
+		),
+		"additional": "This error can cause a &mBadToken&m error in the &bParser&b later on.",
+	},
+	FileDoesNotExistErrorCode: {
+		"name": "FileDoesNotExist",
+		"area": "Lexer",
+		"code": string(rune(FileDoesNotExistErrorCode)),
+		"explanation": `The &wcompiler will check if your file exists&w, and &wif&w it does &drnot&dr the compiler will output this error.
+Usually the cause of this error is entering the &rwrong path&r to the file or a &rtypo&r in the file's name.'`,
+		"example":    "",
+		"additional": "",
+	},
+	FilePermissionErrorCode: {
+		"name": "FilePermission",
+		"area": "Lexer",
+		"code": string(rune(FilePermissionErrorCode)),
+		"explanation": `The compiler will &wtry to open your file&w, and if it cannot it will make a &wseries of checks&w to see &rwhy it can't open your file&r.
+In this case, the &wcompiler found your file&w but the compiler doesn't have the &cpermissions to open the file&c.
+You may need to &wrun the compiler as administrator&w, &wmove the file&w into a different directory (which can update permissions), 
+or directly &wmodify the file's write/read permissions&w.'`,
+		"example":    "",
+		"additional": "",
+	},
+	FileVoidErrorCode: {
+		"name": "FileVoid",
+		"area": "Lexer",
+		"code": string(rune(FileVoidErrorCode)),
+		"explanation": `This error occurs when the &wcompiler is trying to open your file&w. If opening your &rfile fails&r, the compiler will take a 
+series of &wsteps to identify the problem&w, often this leads to a &mFilePermission&m error or a &mFileDoesNotExist&m error.
+However, if the compiler &wcannot diagnose the problem&w, it will output a &mFileVoid&m error. 
+Put simply, &wsomething is wrong with the file&w, and the &ccompiler doesn't know what&c.`,
+		"example":    "",
+		"additional": "",
+	},
+	RealValueConversionErrorCode: {
+		"name": "RealValueConversion",
+		"area": "Lexer",
+		"code": string(rune(RealValueConversionErrorCode)),
+		"explanation": `The compiler will try to convert some values like &dyint&dy and &dyfloat&dy into their true values to help down the line.
+This can &wissues if the conversion fails&w. &wYou should check your float and int values for oddities.&w
+The most likely cause of this error is &drmultiple points in float literals&dr.`,
+		"example":    "",
+		"additional": "",
+	},
+	UnexpectedTokenErrorCode: {
+		"name": "UnexpectedToken",
+		"area": "Parser",
+		"code": string(rune(UnexpectedTokenErrorCode)),
+		"explanation": `An UnexpectedToken error occurs when the compiler is expecting a different value, identifier, keyword, or operator 
+than what was provided. A common cause of this error is the previous occurrence of a &mUnexpectedCharacter&m error. This is because
+&unexpectedCharacter&m errors produce a &mBadToken&m which is then processed by the parser to produce an &mUnexpectedToken&m error.`,
+		"example": "",
+		"additional": `Another common cause of an &mUnexpectedToken&m error is a value, identifier, keyword, or operator appearing
+where it shouldn't.'`,
+	},
+}
+
+/*`1 | &mPrint&m(&g"Here's an example: "&g);
 2 | &dyvar&dy Je&r@&rrryNameVariable <- &g"Jerry"&g;
         &dr^^^^^
 &c[LEXER] &dcUnexpectedCharacter &rError(&dr2&r, &dr7&r): &dycharacter &g"@"&dy was not expected! Compiler does not know how to process this character!
-[> Error look up code: &c1003&dy (use: &brgoc -lookup &c1003&dy, for more information)]`,
-		"additional": "This error can cause a &mBadToken&m error in the &bParser&b later on.",
-	},
-}
+[> Error look up code: &c1003&dy (use: &brgoc -lookup &c1003&dy, for more information)]`*/
