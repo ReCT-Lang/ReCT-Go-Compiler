@@ -309,7 +309,7 @@ func handleFileOpen(filename string) []rune {
 	if errors.Is(err, os.ErrNotExist) {
 		print.Error(
 			"LEXER",
-			print.FileDoesNotExitError,
+			print.FileDoesNotExistError,
 			0,
 			0,
 			0,
