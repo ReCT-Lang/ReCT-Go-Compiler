@@ -56,20 +56,21 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	for _, fnc := range emitter.Program.Functions {
 		if !fnc.Symbol.BuiltIn {
 			function := Function{IRFunction: emitter.EmitFunction(fnc.Symbol, fnc.Body), BoundFunction: fnc}
-			emitter.Functions[function.IRFunction.Name()] = function
+			functionName := tern(emitter.UseFingerprints, function.BoundFunction.Symbol.Fingerprint(), function.BoundFunction.Symbol.Name)
+			emitter.Functions[functionName] = function
 		}
 	}
 
 	// emit main function first
 	mainName := tern(emitter.UseFingerprints, program.MainFunction.Fingerprint(), program.MainFunction.Name)
 	emitter.FunctionSym = emitter.Functions[mainName].BoundFunction.Symbol
-	emitter.EmitBlockStatement(emitter.Functions[mainName].IRFunction, emitter.Functions[mainName].BoundFunction.Body)
+	emitter.EmitBlockStatement(emitter.Functions[mainName].BoundFunction.Symbol, emitter.Functions[mainName].IRFunction, emitter.Functions[mainName].BoundFunction.Body)
 
 	// emit function bodies
 	for _, fnc := range emitter.Functions {
 		if !fnc.BoundFunction.Symbol.BuiltIn && fnc.BoundFunction.Symbol.Fingerprint() != program.MainFunction.Fingerprint() {
 			emitter.FunctionSym = fnc.BoundFunction.Symbol
-			emitter.EmitBlockStatement(fnc.IRFunction, fnc.BoundFunction.Body)
+			emitter.EmitBlockStatement(fnc.BoundFunction.Symbol, fnc.IRFunction, fnc.BoundFunction.Body)
 		}
 	}
 
@@ -93,9 +94,10 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 
 	// the function name
 	functionName := tern(emt.UseFingerprints, sym.Fingerprint(), sym.Name)
+	irName := tern(sym.Fingerprint() == emt.Program.MainFunction.Fingerprint(), "main", functionName)
 
 	// create an IR function definition
-	function := emt.Module.NewFunc(functionName, returnType, params...)
+	function := emt.Module.NewFunc(irName, returnType, params...)
 
 	// create a root block
 	root := function.NewBlock("")
@@ -129,10 +131,11 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	return function
 }
 
-func (emt *Emitter) EmitBlockStatement(fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
+func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
 	// set up our environment
+	functionName := tern(emt.UseFingerprints, sym.Fingerprint(), sym.Name)
 	emt.Function = fnc
-	emt.Locals = emt.FunctionLocals[fnc.Name()]
+	emt.Locals = emt.FunctionLocals[functionName]
 	emt.Labels = make(map[string]*ir.Block)
 
 	// load the root block
