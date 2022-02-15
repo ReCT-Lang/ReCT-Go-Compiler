@@ -260,7 +260,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 		}
 	}
 
-	// --< state of the art garbage collecting >---------------------------
+	// --< state-of-the-art garbage collecting >---------------------------
 	// 1. go through all locals created up to this point
 	// 2. check if they need freeing
 	// 3. if they do, free them
