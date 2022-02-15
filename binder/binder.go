@@ -113,7 +113,7 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 
 	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem)
 	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
-		print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
+		//print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
 		line, column, length := mem.Position()
 		print.Error(
 			"BINDER",
