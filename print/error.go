@@ -152,6 +152,9 @@ func LookUp(code ErrorCode) {
 		if data["additional"] != "" {
 			fmt.Println(Format(data["additional"]+"\n", Gray))
 		}
+		fmt.Println(Format("Still having troubles? Get help on the offical Discord server: &db%s!", Gray, "https://discord.gg/kk9MsnABdF"))
+	} else {
+		fmt.Println(Format("The error code &c%d&c is &drinvalid&r!", Gray, int(code)))
 	}
 }
 
@@ -309,9 +312,36 @@ var errorData = map[ErrorCode]map[string]string{
 	NotImplementedErrorCode: {
 		"name": "NotImplemented",
 		"area": "Developer",
-		"explanation": `This error is used as a place market for features that are not fully developed yet. 
-Since the feature it not fully developed, it will not have a specific error code or type for you to check out.`,
+		"explanation": `This error is used as a &wplace marker&w for features that are &wnot fully developed&w yet. 
+Since the feature it not fully developed, it &rwill not&r have a &wspecific error code&w or type for you to check out.`,
 		"example":    "",
-		"additional": "If you think a \"NotImplemented\" error is a mistake, please contact one of the main contributors of the project, or contribute the new error yourself.",
+		"additional": "If you think a &mNotImplemented&m error is a mistake, please contact one of the main contributors of the project, or contribute the new error yourself.",
+	},
+	IDKErrorCode: {
+		"name":        "IDK(cringe)",
+		"area":        "Developer",
+		"explanation": `This error is &drdepreciated&dr. It may be used as an alternative for a &mNotImplemented&m Error, please use: &dyrgoc -lookup &c9000&c, for more information.`,
+		"example":     "",
+		"additional":  "",
+	},
+	NULLErrorCode: {
+		"name":        "NULL",
+		"area":        "Developer",
+		"explanation": "This error is &mNULL&m!",
+		"example":     "",
+		"additional":  "",
+	},
+	UnexpectedCharacterErrorCode: {
+		"name": "UnexpectedCharacter",
+		"area": "Lexer",
+		"explanation": `An &mUnexpectedCharacter&m Error occurs when the &bLexer/scanner&b of the compiler encounters a &wcharacter&w that the &wcompiler&w &rdoes not&r know how to &wprocess&w. 
+Since the compiler does not know how to process this character, it &drcannot proceed&dr and instead outputs an &mUnexpectedCharacter&m Error so the developer 
+of the program can correct the issues and &weither remove or replace&w the &wunexpected character&w.`,
+		"example": `1 | &mPrint&m(&g"Here's an example: "&g);
+2 | &dyvar&dy Je&r@&rrryNameVariable <- &g"Jerry"&g;
+        &dr^^^^^
+&c[LEXER] &dcUnexpectedCharacter &rError(&dr2&r, &dr7&r): &dycharacter &g"@"&dy was not expected! Compiler does not know how to process this character!
+[> Error look up code: &c1003&dy (use: &brgoc -lookup &c1003&dy, for more information)]`,
+		"additional": "This error can cause a &mBadToken&m error in the &bParser&b later on.",
 	},
 }
