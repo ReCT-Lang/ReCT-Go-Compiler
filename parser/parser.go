@@ -46,7 +46,7 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 		// Added this additionalInfo section to help users know why a parser error occurred
 		additionalInfo := ""
 		if prs.current().Kind == lexer.BadToken {
-			additionalInfo = " (may be caused by previous \"UnexpectedCharacterError\" which produced a BadToken)"
+			additionalInfo = " (may be caused by previous \"UnexpectedCharacterError\" which produces a BadToken)"
 		}
 		print.Error(
 			"PARSER",
@@ -574,14 +574,14 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	// Added this additionalInfo section to help users know why a parser error occurred
 	additionalInfo := ""
 	if prs.current().Kind == lexer.BadToken {
-		additionalInfo = " (may be caused by previous \"UnexpectedCharacterError\" which produced a BadToken)"
+		additionalInfo = " (may be caused by previous \"UnexpectedCharacterError\" which produces a BadToken)"
 	}
 	print.Error(
 		"PARSER",
 		print.UnexpectedTokenError,
 		prs.current().Line,
 		prs.current().Column,
-		5,
+		8,
 		"unexpected Token \"%s\"!"+additionalInfo,
 		prs.current().Kind,
 	)

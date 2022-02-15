@@ -60,12 +60,28 @@ func (lxr *Lexer) getNumber() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
 
-	for lxr.Index < len(lxr.Code) && (unicode.IsDigit(rune(lxr.Code[lxr.Index])) || rune(lxr.Code[lxr.Index]) == '.') {
-		buffer += string(lxr.Code[lxr.Index])
+	// Checks if rune value is a digit, dot or underscore
+	// Simplifies code
+	isDigitOrDotOrUnderScore := func(c rune) bool {
+		return unicode.IsDigit(c) || c == '.' || c == '_'
+	}
+
+	// Underscores are now allowed (don't tell Red, it can be our little secret!)
+	// Integers and floats can now contain underscores to increase readability
+	// Example: 10_000_000_000 (instead of 10000000000)
+	// Underscores are removed at lexing, and aren't parsed or processed further than this.
+	// - Added without difficulty, your favourite Duck, Tokorv. <3
+	for lxr.Index < len(lxr.Code) && isDigitOrDotOrUnderScore(lxr.Code[lxr.Index]) {
+
+		// Here we check for, and remove underscores.
+		// Underscores are removed by simply not appending them to the buffer
+		if lxr.Code[lxr.Index] != '_' {
+			buffer += string(lxr.Code[lxr.Index])
+		}
 		lxr.Increment()
 	}
 
-	// Checking if number is actually an imposter... float
+	// Checking if number is actually an imposter... float... sus
 	if strings.Contains(buffer, ".") {
 		// float real value
 		realValueBuffer, err := strconv.ParseFloat(buffer, 32)
