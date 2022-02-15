@@ -190,7 +190,8 @@ func LookUp(code ErrorCode) {
 	if data := errorData[code]; data != nil {
 		fmt.Println(Format("ReCT-Go-Compiler v&c%s&c - Error Look up &c%d", White, "1.1", int(code)))
 		fmt.Println(Format("Name: &m%s", Gray, data["name"]))
-		fmt.Println(Format("Area: &b%s\n", Gray, data["area"]))
+		fmt.Println(Format("Area: &b%s", Gray, data["area"]))
+		fmt.Println(Format("Code: &c%d\n", Gray, code))
 		fmt.Println(Format(data["explanation"]+"\n", Gray))
 		if data["example"] != "" {
 			fmt.Println(Format(data["example"]+"\n", Gray))
@@ -203,6 +204,47 @@ func LookUp(code ErrorCode) {
 		fmt.Println(Format("The error code &c%d&c is &drinvalid&r!", Gray, int(code)))
 	}
 }
+
+// ErrorType stores the string value of errors, it's helpful to have all the error in one place.
+type ErrorType string
+
+const (
+	// Developer Error
+	NotImplementedError ErrorType = "NotImplemented"
+	IDK                           = "IDK(cringe)" // Depreciated (because it's kind of dumb)
+
+	// Lexer Errors
+	UnexpectedCharacterError = "UnexpectedCharacter"
+	FileDoesNotExistError    = "FileDoesNotExist"
+	FilePermissionError      = "FilePermission"
+	FileVoidError            = "FileVoid"
+	RealValueConversionError = "RealValueConversion"
+
+	// Parser Errors
+	UnexpectedTokenError = "UnexpectedToken"
+
+	// Binder Errors
+	DuplicateParameterError            = "DuplicateParameter"
+	DuplicateFunctionError             = "DuplicateFunction"
+	DuplicateVariableDeclarationError  = "DuplicateVariableDeclaration"
+	UndefinedVariableReferenceError    = "UndefinedVariableReference"
+	TypeFunctionDoesNotExistError      = "TypeFunctionDoesNotExist"
+	ConversionError                    = "Conversion"
+	ExplicitConversionError            = "ExplicitConversion"
+	UnexpectedExpressionStatementError = "UnexpectedExpressionStatement"
+	OutsideReturnError                 = "OutsideReturn"
+	VoidReturnError                    = "VoidReturn"
+	OutsideBreakError                  = "OutsideBreak"
+	UnexpectedNonIntegerValueError     = "UnexpectedNonIntegerValue"
+	OutsideContinueError               = "OutsideContinue"
+	BinaryOperatorTypeError            = "BinaryOperatorType"
+	IncorrectTypeFunctionCallError     = "IncorrectTypeFunctionCall"
+	BadNumberOfParametersError         = "BadNumberOfParameters"
+	UndefinedFunctionCallError         = "UndefinedFunctionCall"
+	UnaryOperatorTypeError             = "UnaryOperatorType"
+	UnknownDataTypeError               = "UnknownDataType"
+	UnknownStatementError              = "UnknownStatement"
+)
 
 // ErrorCode the numerical representation of an Error, this allows it to be "looked up"
 // using the Error lookup system. Each ErrorCode increments by 1 per declaration.
@@ -248,46 +290,6 @@ const (
 	UnaryOperatorTypeErrorCode             = iota + 3000
 	UnknownDataTypeErrorCode               = iota + 3000
 	UnknownStatementErrorCode              = iota + 3000 // 3028
-)
-
-type ErrorType string
-
-const (
-	// Developer Error
-	NotImplementedError ErrorType = "NotImplemented"
-	IDK                           = "IDK(cringe)" // Depreciated (because it's kind of dumb)
-
-	// Lexer Errors
-	UnexpectedCharacterError = "UnexpectedCharacter"
-	FileDoesNotExistError    = "FileDoesNotExist"
-	FilePermissionError      = "FilePermission"
-	FileVoidError            = "FileVoid"
-	RealValueConversionError = "RealValueConversion"
-
-	// Parser Errors
-	UnexpectedTokenError = "UnexpectedToken"
-
-	// Binder Errors
-	DuplicateParameterError            = "DuplicateParameter"
-	DuplicateFunctionError             = "DuplicateFunction"
-	DuplicateVariableDeclarationError  = "DuplicateVariableDeclaration"
-	UndefinedVariableReferenceError    = "UndefinedVariableReference"
-	TypeFunctionDoesNotExistError      = "TypeFunctionDoesNotExist"
-	ConversionError                    = "Conversion"
-	ExplicitConversionError            = "ExplicitConversion"
-	UnexpectedExpressionStatementError = "UnexpectedExpressionStatement"
-	OutsideReturnError                 = "OutsideReturn"
-	VoidReturnError                    = "VoidReturn"
-	OutsideBreakError                  = "OutsideBreak"
-	UnexpectedNonIntegerValueError     = "UnexpectedNonIntegerValue"
-	OutsideContinueError               = "OutsideContinue"
-	BinaryOperatorTypeError            = "BinaryOperatorType"
-	IncorrectTypeFunctionCallError     = "IncorrectTypeFunctionCall"
-	BadNumberOfParametersError         = "BadNumberOfParameters"
-	UndefinedFunctionCallError         = "UndefinedFunctionCall"
-	UnaryOperatorTypeError             = "UnaryOperatorType"
-	UnknownDataTypeError               = "UnknownDataType"
-	UnknownStatementError              = "UnknownStatement"
 )
 
 func ErrorTypeToCode(e ErrorType) ErrorCode {
@@ -354,11 +356,22 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 }
 
 // errorData stores all the lookup errorData
+// This is super long so let me give a more in-detail explanation!
+// Each error there values:
+// * "name" 		-> Stores the name of the error
+// * "area" 		-> Stores where in the compiler the error is called
+// * "code" 		-> An integer user can use to "lookup" the error
+// * "explanation" 	-> An explanation of what the error is/why it occurs.
+// * "example" 		-> This is generated using ErrorS() and is an example of the error in practice.
+// 			   		-> Some error messages will not have an example as they may not be caused by the code itself.
+//			   		-> CodeReference stores all example code in a string array. This is wiped at compile time.
+// * "additional" 	-> This is for additional information, sometimes relating to side effects or further explanation of
+//					-> the example code.
 var errorData = map[ErrorCode]map[string]string{
 	NotImplementedErrorCode: {
 		"name": "NotImplemented",
 		"area": "Developer",
-		"code": string(rune(NotImplementedErrorCode)),
+		"code": string(rune(IDKErrorCode)),
 		"explanation": `This error is used as a &wplace marker&w for features that are &wnot fully developed&w yet. 
 Since the feature it not fully developed, it &rwill not&r have a &wspecific error code&w or type for you to check out.`,
 		"example":    "",
