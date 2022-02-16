@@ -6,6 +6,7 @@ ReCT-Go-Compiler
 out.bc
 out.ll
 program.bc
+program
 
 # annoy configs
 .replit
