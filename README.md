@@ -56,11 +56,12 @@ Here is an example of a hello world program in ReCT.
 ```js
 package sys; 
 
-function HelloWorld() string {
+function HelloWorld() string
+{
     return "Hello, World";
 }
 
-sys::Print(HelloWorld);
+sys::Print(HelloWorld());
 ```
 
 For more examples, please refer to the [Documentation](https://docs.rect.ml/).
