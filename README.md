@@ -98,4 +98,9 @@ Follow this links and tell us your thoughts, ask questions and be part of the Re
 Thanks to this pecial people that made this project happen.
 
 * [Mauro Baladés](https://github.com/mauro-balades)
+* [RedCubeDev-ByteSpace](https://github.com/RedCubeDev-ByteSpace)
+* [tokorv](https://github.com/tokorv)
+* [Khhs167](https://github.com/Khhs167)
+* [WillTheDeveloper](https://github.com/WillTheDeveloper)
+* [Carcass-Project](https://github.com/Carcass-Project)
 
