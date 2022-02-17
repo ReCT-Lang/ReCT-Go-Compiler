@@ -9,11 +9,11 @@
     <a href=""><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="">Website</a>
+    <a href="https://rect.ml">Website</a>
     ·
-    <a href="">Report Bug</a>
+    <a href="https://github.com/ReCT-Lang/ReCT-Go-Compiler/issues">Report Bug</a>
     ·
-    <a href="">Request Feature</a>
+    <a href="https://github.com/ReCT-Lang/ReCT-Go-Compiler/pulls">Request Feature</a>
 </p>
 
 <hr>
@@ -45,9 +45,12 @@ If you whant to try Rect, the first thing you should do is to install it localy.
 5. If on Windows add as an environmental variable, if on Linux add the executable to your PATH variable.
 6. Run the help menu via `rgoc -h`
 
-## Usage
+## Examples
 
-{TODO}
+Here is an example of a hello world programm in ReCT.
+```python
+Print("Hello, world")
+```
 
 _For more examples, please refer to the [Documentation]()_
 
@@ -63,7 +66,7 @@ _For more examples, please refer to the [Documentation]()_
 - [ ] IR emitter
     - [ ] Go modules binding
 
-See the [open issues]() for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/ReCT-Lang/ReCT-Go-Compiler/issues) for a full list of proposed features (and known issues).
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -89,8 +92,8 @@ Distributed under the GNU.3 License. See `LICENSE` for more information.
 
 Follow this links and tell us your thoughts, ask questions and be part of the Rect community!
 
-* Discord : https://discord.gg/kk9MsnABdF
-* Website : http://rect.ml/
+* [Discord](https://discord.gg/kk9MsnABdF)
+* [Website](http://rect.ml/)
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
