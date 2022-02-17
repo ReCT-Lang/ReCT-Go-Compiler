@@ -184,7 +184,7 @@ func PrintCodeSnippetS(line, column, length int) string {
 	return output + "\n"
 }
 
-// Still working wonky
+// LookUp prints an explanation of an error message
 func LookUp(code ErrorCode) {
 	// Relative path is not good, maybe it's time for the compiler to have some kind of config?
 	if data := errorData[code]; data != nil {
@@ -288,10 +288,11 @@ const (
 	BadNumberOfParametersErrorCode         = iota + 3000
 	UndefinedFunctionCallErrorCode         = iota + 3000
 	UnaryOperatorTypeErrorCode             = iota + 3000
-	UnknownDataTypeErrorCode               = iota + 3000
+	UnknownDataTypeErrorCode               = iota + 3000 // NOTE: this error does not exist, and I have no idea why!
 	UnknownStatementErrorCode              = iota + 3000 // 3028
 )
 
+// ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179
 func ErrorTypeToCode(e ErrorType) ErrorCode {
 	switch e {
 	case UnexpectedCharacterError:
@@ -332,7 +333,7 @@ func ErrorTypeToCode(e ErrorType) ErrorCode {
 		return UndefinedFunctionCallErrorCode
 	case UnaryOperatorTypeError:
 		return UnaryOperatorTypeErrorCode
-	case UnknownDataTypeError:
+	case UnknownDataTypeError: // Does not exist
 		return UnknownDataTypeErrorCode
 	case NotImplementedError:
 		return NotImplementedErrorCode
@@ -371,7 +372,6 @@ var errorData = map[ErrorCode]map[string]string{
 	NotImplementedErrorCode: {
 		"name": "NotImplemented",
 		"area": "Developer",
-		"code": string(rune(IDKErrorCode)),
 		"explanation": `This error is used as a &wplace marker&w for features that are &wnot fully developed&w yet. 
 Since the feature it not fully developed, it &rwill not&r have a &wspecific error code&w or type for you to check out.`,
 		"example":    "",
@@ -380,7 +380,6 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	IDKErrorCode: {
 		"name":        "IDK(cringe)",
 		"area":        "Developer",
-		"code":        string(rune(IDKErrorCode)),
 		"explanation": `This error is &drdepreciated&dr. It may be used as an alternative for a &mNotImplemented&m Error, please use: &dyrgoc -lookup &c9000&c, for more information.`,
 		"example":     "",
 		"additional":  "",
@@ -388,7 +387,6 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	NULLErrorCode: {
 		"name":        "NULL",
 		"area":        "Developer",
-		"code":        string(rune(NULLErrorCode)),
 		"explanation": "This error is &mNULL&m!",
 		"example":     "",
 		"additional":  "",
@@ -396,7 +394,6 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 	UnexpectedCharacterErrorCode: {
 		"name": "UnexpectedCharacter",
 		"area": "Lexer",
-		"code": string(rune(UnexpectedCharacterErrorCode)),
 		"explanation": `An &mUnexpectedCharacter&m Error occurs when the &bLexer/scanner&b of the compiler encounters a &wcharacter&w that the &wcompiler&w &rdoes not&r know how to &wprocess&w. 
 Since the compiler does not know how to process this character, it &drcannot proceed&dr and instead outputs an &mUnexpectedCharacter&m Error so the developer 
 of the program can correct the issues and &weither remove or replace&w the &wunexpected character&w.`,
@@ -414,7 +411,6 @@ of the program can correct the issues and &weither remove or replace&w the &wune
 	FileDoesNotExistErrorCode: {
 		"name": "FileDoesNotExist",
 		"area": "Lexer",
-		"code": string(rune(FileDoesNotExistErrorCode)),
 		"explanation": `The &wcompiler will check if your file exists&w, and &wif&w it does &drnot&dr the compiler will output this error.
 Usually the cause of this error is entering the &rwrong path&r to the file or a &rtypo&r in the file's name.'`,
 		"example":    "",
@@ -423,7 +419,6 @@ Usually the cause of this error is entering the &rwrong path&r to the file or a 
 	FilePermissionErrorCode: {
 		"name": "FilePermission",
 		"area": "Lexer",
-		"code": string(rune(FilePermissionErrorCode)),
 		"explanation": `The compiler will &wtry to open your file&w, and if it cannot it will make a &wseries of checks&w to see &rwhy it can't open your file&r.
 In this case, the &wcompiler found your file&w but the compiler doesn't have the &cpermissions to open the file&c.
 You may need to &wrun the compiler as administrator&w, &wmove the file&w into a different directory (which can update permissions), 
@@ -434,7 +429,6 @@ or directly &wmodify the file's write/read permissions&w.'`,
 	FileVoidErrorCode: {
 		"name": "FileVoid",
 		"area": "Lexer",
-		"code": string(rune(FileVoidErrorCode)),
 		"explanation": `This error occurs when the &wcompiler is trying to open your file&w. If opening your &rfile fails&r, the compiler will take a 
 series of &wsteps to identify the problem&w, often this leads to a &mFilePermission&m error or a &mFileDoesNotExist&m error.
 However, if the compiler &wcannot diagnose the problem&w, it will output a &mFileVoid&m error. 
@@ -445,7 +439,6 @@ Put simply, &wsomething is wrong with the file&w, and the &ccompiler doesn't kno
 	RealValueConversionErrorCode: {
 		"name": "RealValueConversion",
 		"area": "Lexer",
-		"code": string(rune(RealValueConversionErrorCode)),
 		"explanation": `The compiler will try to convert some values like &dyint&dy and &dyfloat&dy into their true values to help down the line.
 This can &wissues if the conversion fails&w. &wYou should check your float and int values for oddities.&w
 The most likely cause of this error is &drmultiple points in float literals&dr.`,
@@ -455,7 +448,6 @@ The most likely cause of this error is &drmultiple points in float literals&dr.`
 	UnexpectedTokenErrorCode: {
 		"name": "UnexpectedToken",
 		"area": "Parser",
-		"code": string(rune(UnexpectedTokenErrorCode)),
 		"explanation": `An UnexpectedToken error occurs when the compiler is expecting a different value, identifier, keyword, or operator 
 than what was provided. A common cause of this error is the previous occurrence of a &mUnexpectedCharacter&m error. This is because
 &unexpectedCharacter&m errors produce a &mBadToken&m which is then processed by the parser to produce an &mUnexpectedToken&m error.`,
@@ -466,7 +458,6 @@ where it shouldn't.'`,
 	DuplicateParameterErrorCode: {
 		"name": "DuplicateParameter",
 		"area": "Binder",
-		"code": string(rune(DuplicateParameterErrorCode)),
 		"explanation": `This error is caused by multiple of the same parameter declared in a single function declaration.
 In order to fix this, you need to remove the duplicate parameter or rename one of the parameters so they
 appear to be different.`,
@@ -476,7 +467,6 @@ appear to be different.`,
 	DuplicateFunctionErrorCode: {
 		"name": "DuplicateFunction",
 		"area": "Binder",
-		"code": string(rune(DuplicateFunctionErrorCode)),
 		"explanation": `This error occurs when the compiler detects multiple functions of the same name are being defined.
 The compiler will always detect the second declaration as it can only check the function with previously processed
 function symbols. In order to fix this issue, the user needs to change the name of one of the functions.`,
@@ -486,7 +476,6 @@ function symbols. In order to fix this issue, the user needs to change the name 
 	DuplicateVariableDeclarationErrorCode: {
 		"name": "DuplicateVariableDeclaration",
 		"area": "Binder",
-		"code": string(rune(DuplicateVariableDeclarationErrorCode)),
 		"explanation": `Similar to &mDuplicantFunction&m and &mDuplicantParameter&m errors, &DuplicantVariableDeclaration&m
 error occurs when two variables of the same name are defined within the same or parent-to-child scope.
 In order to fix this, the user needs to change the name or remove one of the variable declarations.`,
@@ -494,41 +483,43 @@ In order to fix this, the user needs to change the name or remove one of the var
 		"additional": "",
 	},
 	UndefinedVariableReferenceErrorCode: {
-		"name":        "UndefinedVariableReference",
-		"area":        "Binder",
-		"code":        string(rune(UndefinedVariableReferenceErrorCode)),
-		"explanation": ``,
-		"example":     "",
-		"additional":  "",
+		"name": "UndefinedVariableReference",
+		"area": "Binder",
+		"explanation": `The compiler must have previous record of a variable's existence to ensure that the variable
+the user is referencing exists. If the variable does not exist the compile will produce this error.
+The variable you are trying to reference may have a typo in the name or be declared in a scope that compiler is not considering.`,
+		"example":    "",
+		"additional": "",
 	},
 	TypeFunctionDoesNotExistErrorCode: {
-		"name":        "TypeFunctionDoesNotExist",
-		"area":        "Binder",
-		"code":        string(rune(TypeFunctionDoesNotExistErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "TypeFunctionDoesNotExist",
+		"area": "Binder",
+		"explanation": `A type function that was referenced in the code doesn't exist!
+A type function is a function accessed through a variable of a specific type such as GetLength() on a string variable.
+This error occurs when the function in question doesn't exist for that datatype. `,
+		"example":    "",
+		"additional": "",
 	},
 	ConversionErrorCode: {
-		"name":        "Conversion",
-		"area":        "Binder",
-		"code":        string(rune(ConversionErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "Conversion",
+		"area": "Binder",
+		"explanation": `This error occurs when a program attempts to convert from one type to another type but the conversion
+doesn't exist. This means the compiler doesn't know how to convert between the types and therefore returns and error.`,
+		"example":    "",
+		"additional": "",
 	},
 	ExplicitConversionErrorCode: {
-		"name":        "ExplicitConversion",
-		"area":        "Developer",
-		"code":        string(rune(ExplicitConversionErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "ExplicitConversion",
+		"area": "Binder",
+		"explanation": `Similar to &mConversion&m error, this error occurs when the program tries to convert from one type
+to another but does not know how. However, in this case, you can write an explicit type cast which allows the compiler to 
+understand which type to convert to.`,
+		"example":    "",
+		"additional": "",
 	},
 	UnexpectedExpressionStatementErrorCode: {
 		"name": "UnexpectedExpressionStatement",
 		"area": "Binder",
-		"code": string(rune(UnexpectedExpressionStatementErrorCode)),
 		"explanation": `&mUnexpectedExpressionStatement&m error occurs when an expression other than call or assignment
 is used as a statement. Only specific expressions are allowed to be used as statements such as 
 function calls and variable assignments.`,
@@ -536,106 +527,102 @@ function calls and variable assignments.`,
 		"additional": "",
 	},
 	OutsideReturnErrorCode: {
-		"name":        "OutsideReturn",
-		"area":        "Binder",
-		"code":        string(rune(OutsideReturnErrorCode)),
-		"explanation": ``,
-		"example":     "",
-		"additional":  "",
+		"name": "OutsideReturn",
+		"area": "Binder",
+		"explanation": `This error occurs when a return statement is used outside of a function.
+to fix this, you will need to remove the return statement. Maybe you put it in the wrong scope?`,
+		"example":    "",
+		"additional": "",
 	},
 	VoidReturnErrorCode: {
-		"name":        "VoidReturn",
-		"area":        "Binder",
-		"code":        string(rune(VoidReturnErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "VoidReturn",
+		"area": "Binder",
+		"explanation": `This error occurs when a return statement is used inside of a void function.
+A void function cannot return any value and therefore a return statement is not allowed.
+Similar to &mOutsideReturn&m error, you will need to remove the return statement.`,
+		"example":    "",
+		"additional": "",
 	},
 	OutsideBreakErrorCode: {
-		"name":        "OutsideBreak",
-		"area":        "Binder",
-		"code":        string(rune(OutsideBreakErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "OutsideBreak",
+		"area": "Binder",
+		"explanation": `This error occurs when a break statement is used outside of a loop.
+A break statement cannot be used outside of a loop; the compiler does not know how to 
+manage a break statement if it is not inside a loop.
+You must remove the break statement. Maybe it is in the wrong scope?'`,
+		"example":    "",
+		"additional": "",
 	},
 	UnexpectedNonIntegerValueErrorCode: {
-		"name":        "UnexpectedNonIntegerValue",
-		"area":        "Binder",
-		"code":        string(rune(UnexpectedNonIntegerValueErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "UnexpectedNonIntegerValue",
+		"area": "Binder",
+		"explanation": `This error occurs when the compiler is expecting an integer value (literal, or expression),
+but instead finds a different type. To fix this, you must remove the non-integer value and replace it with
+and integer value.`,
+		"example":    "",
+		"additional": "",
 	},
 	OutsideContinueErrorCode: {
-		"name":        "OutsideContinue",
-		"area":        "Binder",
-		"code":        string(rune(OutsideContinueErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "OutsideContinue",
+		"area": "Binder",
+		"explanation": `This error occurs when a continue statement is used outside of a loop.
+A continue statement cannot be used outside of a loop as it's functionality is to do with the 
+loop it is contained within. To fix this, you must remove the continue statement or place it inside a loop.`,
+		"example":    "",
+		"additional": "",
 	},
 	BinaryOperatorTypeErrorCode: {
-		"name":        "BinaryOperatorType",
-		"area":        "Binder",
-		"code":        string(rune(BinaryOperatorTypeErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "BinaryOperatorType",
+		"area": "Binder",
+		"explanation": `This error occurs when the user attempts to use a binary operator between two types the
+compiler does not know how to use the binary operator with.`,
+		"example":    "",
+		"additional": "",
 	},
 	IncorrectTypeFunctionCallErrorCode: {
-		"name":        "IncorrectTypeFunctionCall",
-		"area":        "Binder",
-		"code":        string(rune(IncorrectTypeFunctionCallErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "IncorrectTypeFunctionCall",
+		"area": "Binder",
+		"explanation": `A type function is a function that can be accessed and applied to it's type.
+An example of a type function would be GetLength on a string datatype.
+This error occurs when a type function is used on a datatype that doesn't have access to that 
+type function. The compiler does not know how to use the type function on that datatype and 
+therefore, the compiler error.`,
+		"example":    "",
+		"additional": "",
 	},
 	BadNumberOfParametersErrorCode: {
-		"name":        "BadNumberOfParameters",
-		"area":        "Binder",
-		"code":        string(rune(BadNumberOfParametersErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "BadNumberOfParameters",
+		"area": "Binder",
+		"explanation": `A function call expects a certain number of arguments but too many or too little
+arguments are provided. The function can only be ran if it has the correct number of argument it expects.`,
+		"example":    "",
+		"additional": "",
 	},
 	UndefinedFunctionCallErrorCode: {
-		"name":        "UndefinedFunctionCall",
-		"area":        "Binder",
-		"code":        string(rune(UndefinedFunctionCallErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "UndefinedFunctionCall",
+		"area": "Binder",
+		"explanation": `This error occurs when the user tries to use a function call that does not exist.
+This error is similar to &mTypeFunctionDoesNotExit&m and &mUndefinedVariableReference&m as in both cases the 
+user is trying to access language constructs that don't exist.
+Usually this error is caused by a typo in the function call name.'`,
+		"example":    "",
+		"additional": "",
 	},
 	UnaryOperatorTypeErrorCode: {
-		"name":        "UnaryOperatorType",
-		"area":        "Binder",
-		"code":        string(rune(UnaryOperatorTypeErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
-	},
-	UnknownDataTypeErrorCode: {
-		"name":        "UnknownDataType",
-		"area":        "Binder",
-		"code":        string(rune(UnknownDataTypeErrorCode)),
-		"explanation": "This error is &mNULL&m!",
-		"example":     "",
-		"additional":  "",
+		"name": "UnaryOperatorType",
+		"area": "Binder",
+		"explanation": `Similar to &mBinaryOperatorType&m error, &mUnaryOperatorType&m error occurs when 
+the user tries to use the unary operator with two types that the compiler does not now how to process with
+a particular unary operator.`,
+		"example":    "",
+		"additional": "",
 	},
 	UnknownStatementErrorCode: {
 		"name": "UnknownStatement",
 		"area": "Binder",
-		"code": string(rune(UnknownStatementErrorCode)),
 		"explanation": `This error occurs when a statement is found that should not exist. The compiler checks through all
 the possible statement types (like ifStatement, whileStatement, etc) and the one it found does not match any that exist.`,
 		"example":    "",
 		"additional": "",
 	},
 }
-
-/*`1 | &mPrint&m(&g"Here's an example: "&g);
-2 | &dyvar&dy Je&r@&rrryNameVariable <- &g"Jerry"&g;
-        &dr^^^^^
-&c[LEXER] &dcUnexpectedCharacter &rError(&dr2&r, &dr7&r): &dycharacter &g"@"&dy was not expected! Compiler does not know how to process this character!
-[> Error look up code: &c1003&dy (use: &brgoc -lookup &c1003&dy, for more information)]`*/
