@@ -6,7 +6,7 @@
 <p>
 	  ReCT is a statically typed, easy to use language with a package manager.
     <br />
-    <a href=""><strong>Explore the docs »</strong></a>
+    <a href="https://docs.rect.ml/"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://rect.ml">Website</a>
@@ -32,7 +32,7 @@ Features:
 * Statically typed
 * Faster than other programming lanugages
 
-It has a lot more features that can be explored! You can check them out in the [documentation]().
+It has a lot more features that can be explored! You can check them out in the [documentation](https://docs.rect.ml/).
 
 ## Installation
 
@@ -52,7 +52,7 @@ Here is an example of a hello world programm in ReCT.
 Print("Hello, world")
 ```
 
-_For more examples, please refer to the [Documentation]()_
+_For more examples, please refer to the [Documentation](https://docs.rect.ml/)_
 
 
 <!-- ROADMAP -->
