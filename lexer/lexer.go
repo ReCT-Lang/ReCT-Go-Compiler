@@ -143,11 +143,6 @@ func (lxr *Lexer) getString() {
 // for us to process (at least for now), instead we just keep incrementing through them to increase
 // the Lexer Column and Line until we find a new line.
 func (lxr *Lexer) getComment() {
-	// We could just skip the line? Maybe future optimisation?
-	// You don't need to keep track of the column because it gets reset after a new line anyway :/
-
-	// Never-mind, you have to update the index... I wonder if there's a way you can skip to the next \n without
-	// processing each character though - Tokorv
 
 	// just increment until we're at the end of file or and of a line
 	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '\n' {

@@ -83,7 +83,7 @@ func CreateToken(value string, kind TokenKind, line int, column int) Token {
 	}
 }
 
-// just another constructor to not have to include the spaced bool every time
+// CreateTokenSpaced just another constructor to not have to include the spaced bool every time
 func CreateTokenSpaced(value string, kind TokenKind, line int, column int, spaced bool) Token {
 	return Token{
 		Value:      value,
