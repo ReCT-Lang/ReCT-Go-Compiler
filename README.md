@@ -108,10 +108,6 @@ Follow these links and tell us your thoughts, ask questions, and be part of the 
 
 Thanks to these special people that made this project happen.
 
-* [Mauro Baladés](https://github.com/mauro-balades)
-* [RedCubeDev-ByteSpace](https://github.com/RedCubeDev-ByteSpace)
-* [tokorv](https://github.com/tokorv)
-* [Khhs167](https://github.com/Khhs167)
-* [WillTheDeveloper](https://github.com/WillTheDeveloper)
-* [Carcass-Project](https://github.com/Carcass-Project)
-
+<a href="https://github.com/ReCT-Lang/ReCT-Go-Compiler/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ReCT-Lang/ReCT-Go-Compiler" />
+</a>
