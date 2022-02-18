@@ -21,8 +21,12 @@ type Emitter struct {
 	Module          *ir.Module
 	UseFingerprints bool
 
-	// referenced C functions
-	CFunctions map[string]*ir.Func
+	// referenced functions
+	CFuncs   map[string]*ir.Func
+	ArcFuncs map[string]*ir.Func
+
+	// referenced classes
+	Classes map[string]types.Type
 
 	// global variables
 	Globals        map[string]Global
@@ -45,9 +49,11 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		UseFingerprints: useFingerprints,
 		Globals:         make(map[string]Global),
 		Functions:       make(map[string]Function),
-		CFunctions:      make(map[string]*ir.Func),
+		CFuncs:          make(map[string]*ir.Func),
+		ArcFuncs:        make(map[string]*ir.Func),
 		FunctionLocals:  make(map[string]map[string]Local),
 		StrConstants:    make(map[string]value.Value),
+		Classes:         make(map[string]types.Type),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -56,13 +62,13 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	for _, fnc := range emitter.Program.Functions {
 		if !fnc.Symbol.BuiltIn {
 			function := Function{IRFunction: emitter.EmitFunction(fnc.Symbol, fnc.Body), BoundFunction: fnc}
-			functionName := tern(emitter.UseFingerprints, function.BoundFunction.Symbol.Fingerprint(), function.BoundFunction.Symbol.Name)
+			functionName := emitter.Id(fnc.Symbol)
 			emitter.Functions[functionName] = function
 		}
 	}
 
 	// emit main function first
-	mainName := tern(emitter.UseFingerprints, program.MainFunction.Fingerprint(), program.MainFunction.Name)
+	mainName := emitter.Id(program.MainFunction)
 	emitter.FunctionSym = emitter.Functions[mainName].BoundFunction.Symbol
 	emitter.EmitBlockStatement(emitter.Functions[mainName].BoundFunction.Symbol, emitter.Functions[mainName].IRFunction, emitter.Functions[mainName].BoundFunction.Body)
 
@@ -84,7 +90,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	params := make([]*ir.Param, 0)
 	for _, param := range sym.Parameters {
 		// figure out how to call this parameter
-		paramName := tern(emt.UseFingerprints, param.Fingerprint(), param.Name)
+		paramName := emt.Id(param)
 
 		// create it
 		params = append(params, ir.NewParam(paramName, IRTypes[param.Type.Fingerprint()]))
@@ -94,7 +100,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	returnType := IRTypes[sym.Type.Fingerprint()]
 
 	// the function name
-	functionName := tern(emt.UseFingerprints, sym.Fingerprint(), sym.Name)
+	functionName := emt.Id(sym)
 	irName := tern(sym.Fingerprint() == emt.Program.MainFunction.Fingerprint(), "main", functionName)
 
 	// create an IR function definition
@@ -115,7 +121,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 				continue
 			}
 
-			varName := tern(emt.UseFingerprints, declStatement.Variable.Fingerprint(), declStatement.Variable.SymbolName())
+			varName := emt.Id(declStatement.Variable)
 
 			// create local variable
 			local := root.NewAlloca(IRTypes[declStatement.Variable.VarType().Fingerprint()])
@@ -134,7 +140,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 
 func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
 	// set up our environment
-	functionName := tern(emt.UseFingerprints, sym.Fingerprint(), sym.Name)
+	functionName := emt.Id(sym)
 	emt.Function = fnc
 	emt.Locals = emt.FunctionLocals[functionName]
 	emt.Labels = make(map[string]*ir.Block)
@@ -197,13 +203,10 @@ func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func,
 // <STATEMENTS>----------------------------------------------------------------
 
 func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundnodes.BoundVariableDeclarationStatementNode) {
-	varName := tern(emt.UseFingerprints, stmt.Variable.Fingerprint(), stmt.Variable.SymbolName())
+	varName := emt.Id(stmt.Variable)
 	expression := emt.EmitExpression(blk, stmt.Initializer)
 
-	// if the value is a string, copy it (dont just pass the pointer)
-	if stmt.Initializer.Type().Fingerprint() == builtins.String.Fingerprint() {
-		expression = emt.CopyString(blk, expression, stmt.Initializer)
-	}
+	// TODO(RedCube): ARC this please
 
 	if stmt.Variable.IsGlobal() {
 		// create a new global
@@ -241,8 +244,8 @@ func (emt *Emitter) EmitBoundExpressionStatement(blk *ir.Block, stmt boundnodes.
 
 	// if the expressions value is a string is requires cleanup
 	if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
-		blk.Insts = append(blk.Insts, NewComment("expression value unused -> cleanup required"))
-		blk.NewCall(emt.CFunctions["free"], expr)
+		blk.Insts = append(blk.Insts, NewComment("expression value unused -> destroying reference"))
+		emt.DestroyReference(blk, expr)
 	}
 }
 
@@ -272,7 +275,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 
 		if local.Type.Fingerprint() == builtins.String.Fingerprint() {
 			blk.Insts = append(blk.Insts, NewComment(" -> utterly obliterating '%"+name+"'"))
-			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[local.Type.Fingerprint()], local.IRLocal))
+			blk.NewCall(emt.CFuncs["free"], blk.NewLoad(IRTypes[local.Type.Fingerprint()], local.IRLocal))
 		}
 	}
 
@@ -280,7 +283,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 	for _, param := range emt.FunctionSym.Parameters {
 		if param.Type.Fingerprint() == builtins.String.Fingerprint() {
 			blk.Insts = append(blk.Insts, NewComment(" -> utterly obliterating '%"+param.Name+"'"))
-			blk.NewCall(emt.CFunctions["free"], emt.Function.Params[param.Ordinal])
+			blk.NewCall(emt.CFuncs["free"], emt.Function.Params[param.Ordinal])
 		}
 	}
 	blk.Insts = append(blk.Insts, NewComment("</ReturnGC>"))
@@ -298,10 +301,10 @@ func (emt *Emitter) EmitGarbageCollectionStatement(blk *ir.Block, stmt boundnode
 		// check if the variables type needs to be freed
 
 		if variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
-			varName := tern(emt.UseFingerprints, variable.Fingerprint(), variable.SymbolName())
+			varName := emt.Id(variable)
 			blk.Insts = append(blk.Insts, NewComment(" -> destroy variable '%"+varName+"'"))
 
-			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(types.I8Ptr, emt.Locals[varName].IRLocal))
+			blk.NewCall(emt.CFuncs["free"], blk.NewLoad(types.I8Ptr, emt.Locals[varName].IRLocal))
 			blk.NewStore(constant.NewNull(types.I8Ptr), emt.Locals[varName].IRLocal)
 		}
 	}
@@ -358,7 +361,7 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 }
 
 func (emt *Emitter) EmitVariableExpression(blk *ir.Block, expr boundnodes.BoundVariableExpressionNode) value.Value {
-	varName := tern(emt.UseFingerprints, expr.Variable.Fingerprint(), expr.Variable.SymbolName())
+	varName := emt.Id(expr.Variable)
 
 	// parameters
 	if expr.Variable.SymbolType() == symbols.Parameter {
@@ -374,7 +377,7 @@ func (emt *Emitter) EmitVariableExpression(blk *ir.Block, expr boundnodes.BoundV
 }
 
 func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.BoundAssignmentExpressionNode) value.Value {
-	varName := tern(emt.UseFingerprints, expr.Variable.Fingerprint(), expr.Variable.SymbolName())
+	varName := emt.Id(expr.Variable)
 	expression := emt.EmitExpression(blk, expr.Expression)
 
 	// if the value is a string, copy it (dont just pass the pointer)
@@ -385,7 +388,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	if expr.Variable.IsGlobal() {
 		// if this variable already contained a string -> clean that one up
 		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
-			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[expr.Variable.VarType().Fingerprint()], emt.Globals[varName].IRGlobal))
+			blk.NewCall(emt.CFuncs["free"], blk.NewLoad(IRTypes[expr.Variable.VarType().Fingerprint()], emt.Globals[varName].IRGlobal))
 		}
 
 		// assign the value to the global variable
@@ -394,7 +397,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	} else {
 		// if this variable already contained a string -> clean that one up
 		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() {
-			blk.NewCall(emt.CFunctions["free"], blk.NewLoad(IRTypes[expr.Variable.VarType().Fingerprint()], emt.Locals[varName].IRLocal))
+			blk.NewCall(emt.CFuncs["free"], blk.NewLoad(IRTypes[expr.Variable.VarType().Fingerprint()], emt.Locals[varName].IRLocal))
 		}
 
 		// assign the value to the local variable
@@ -449,28 +452,28 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// figure out how long our left and right are
-			leftLen := blk.NewCall(emt.CFunctions["strlen"], left)
-			rightLen := blk.NewCall(emt.CFunctions["strlen"], right)
+			leftLen := blk.NewCall(emt.CFuncs["strlen"], left)
+			rightLen := blk.NewCall(emt.CFuncs["strlen"], right)
 
 			// allocate a new buffer for the concatination to go into
-			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(blk.NewAdd(leftLen, rightLen), CI32(1)))
+			newStr := blk.NewCall(emt.CFuncs["malloc"], blk.NewAdd(blk.NewAdd(leftLen, rightLen), CI32(1)))
 
 			// copy over the left string
-			blk.NewCall(emt.CFunctions["strcpy"], newStr, left)
+			blk.NewCall(emt.CFuncs["strcpy"], newStr, left)
 
 			// concat the other side into it
-			blk.NewCall(emt.CFunctions["strcat"], newStr, right)
+			blk.NewCall(emt.CFuncs["strcat"], newStr, right)
 
 			// if left and right arent variables (meaning they are already memory managed)
 			// free() them
 			if expr.Left.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Left.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], left)
+				blk.NewCall(emt.CFuncs["free"], left)
 			}
 
 			if expr.Right.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Right.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], right)
+				blk.NewCall(emt.CFuncs["free"], right)
 			}
 
 			return newStr
@@ -541,18 +544,18 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// compare left and right using strcmp
-			result := blk.NewCall(emt.CFunctions["strcmp"], left, right)
+			result := blk.NewCall(emt.CFuncs["strcmp"], left, right)
 
 			// if left and right arent variables (meaning they are already memory managed)
 			// free() them
 			if expr.Left.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Left.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], left)
+				blk.NewCall(emt.CFuncs["free"], left)
 			}
 
 			if expr.Right.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Right.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], right)
+				blk.NewCall(emt.CFuncs["free"], right)
 			}
 
 			// to check if they are equal, check if the result is 0
@@ -571,18 +574,18 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// compare left and right using strcmpint
-			result := blk.NewCall(emt.CFunctions["strcmp"], left, right)
+			result := blk.NewCall(emt.CFuncs["strcmp"], left, right)
 
 			// if left and right arent variables (meaning they are already memory managed)
 			// free() them
 			if expr.Left.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Left.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], left)
+				blk.NewCall(emt.CFuncs["free"], left)
 			}
 
 			if expr.Right.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Right.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], right)
+				blk.NewCall(emt.CFuncs["free"], right)
 			}
 
 			// to check if they are unequal, check if the result is not 0
@@ -650,7 +653,7 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 		arguments = append(arguments, expression)
 	}
 
-	functionName := tern(emt.UseFingerprints, expr.Function.Fingerprint(), expr.Function.Name)
+	functionName := emt.Id(expr.Function)
 
 	call := blk.NewCall(emt.Functions[functionName].IRFunction, arguments...)
 
@@ -659,7 +662,7 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 	if expr.Function.BuiltIn {
 		for i, arg := range arguments {
 			if expr.Arguments[i].Type().Fingerprint() == builtins.String.Fingerprint() {
-				blk.NewCall(emt.CFunctions["free"], arg)
+				blk.NewCall(emt.CFuncs["free"], arg)
 			}
 		}
 	}
@@ -694,13 +697,13 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			return emt.CopyStringNoFree(blk, blk.NewSelect(value, trueStr, falseStr))
 		case builtins.Int.Fingerprint():
 			// find out how much space we need to allocate
-			len := blk.NewCall(emt.CFunctions["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%d"), value)
+			len := blk.NewCall(emt.CFuncs["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%d"), value)
 
 			// allocate space for the new string
-			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(len, CI32(1)))
+			newStr := blk.NewCall(emt.CFuncs["malloc"], blk.NewAdd(len, CI32(1)))
 
 			// convert the float
-			blk.NewCall(emt.CFunctions["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%d"), value)
+			blk.NewCall(emt.CFuncs["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%d"), value)
 
 			return newStr
 
@@ -709,13 +712,13 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			double := blk.NewFPExt(value, types.Double)
 
 			// find out how much space we need to allocate
-			len := blk.NewCall(emt.CFunctions["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%g"), double)
+			len := blk.NewCall(emt.CFuncs["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%g"), double)
 
 			// allocate space for the new string
-			newStr := blk.NewCall(emt.CFunctions["malloc"], blk.NewAdd(len, CI32(1)))
+			newStr := blk.NewCall(emt.CFuncs["malloc"], blk.NewAdd(len, CI32(1)))
 
 			// convert the float
-			blk.NewCall(emt.CFunctions["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%g"), double)
+			blk.NewCall(emt.CFuncs["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%g"), double)
 
 			return newStr
 		}
@@ -724,13 +727,13 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 	} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// see if the string we got is equal to "true"
-			result := blk.NewCall(emt.CFunctions["strcmp"], value, emt.GetStringConstant(blk, "true"))
+			result := blk.NewCall(emt.CFuncs["strcmp"], value, emt.GetStringConstant(blk, "true"))
 
 			// if value isnt a variable (meaning its already memory managed)
 			// free() it
 			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], value)
+				blk.NewCall(emt.CFuncs["free"], value)
 			}
 
 			// to check if they are equal, check if the result is 0
@@ -738,20 +741,20 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
-			result := blk.NewCall(emt.CFunctions["atoi"], value)
+			result := blk.NewCall(emt.CFuncs["atoi"], value)
 
 			// if value isnt a variable (meaning its already memory managed)
 			// free() it
 			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], value)
+				blk.NewCall(emt.CFuncs["free"], value)
 			}
 
 			return result
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
-			result := blk.NewCall(emt.CFunctions["atof"], value)
+			result := blk.NewCall(emt.CFuncs["atof"], value)
 
 			// convert the result from a double to a float
 			floatRes := blk.NewFPTrunc(result, types.Float)
@@ -760,7 +763,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			// free() it
 			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
 				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFunctions["free"], value)
+				blk.NewCall(emt.CFuncs["free"], value)
 			}
 
 			return floatRes
@@ -775,12 +778,12 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 
 func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source boundnodes.BoundExpressionNode) value.Value {
 	// copy over the string
-	newStr := blk.NewCall(emt.CFunctions["uStringCopy"], expression)
+	newStr := blk.NewCall(emt.CFuncs["uStringCopy"], expression)
 
 	// if this isnt another variable, free the old buffer
 	if source.NodeType() != boundnodes.BoundVariableExpression &&
 		source.NodeType() != boundnodes.BoundLiteralExpression {
-		blk.NewCall(emt.CFunctions["free"], expression)
+		blk.NewCall(emt.CFuncs["free"], expression)
 	}
 
 	return newStr
@@ -788,8 +791,8 @@ func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source bou
 
 func (emt *Emitter) CopyStringNoFree(blk *ir.Block, expression value.Value) value.Value {
 	// copy over the string
-	newStr := blk.NewCall(emt.CFunctions["uStringCopy"], expression)
-	return newStr
+	//newStr := blk.NewCall(emt.CFuncs["uStringCopy"], expression)
+	return nil
 }
 
 func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) constant.Constant {
@@ -829,6 +832,22 @@ func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value
 	return pointer
 }
 
+//func (emt *Emitter) CreateObject(blk *ir.Block, typ types.Type) value.Value {
+//instance := blk.NewAlloca(typ)
+//}
+
+func (emt *Emitter) CreateReference(blk *ir.Block, expr value.Value) {
+	// bitcast the expression to an Any-Pointer
+	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)]))
+	blk.NewCall(emt.ArcFuncs["registerReference"], any)
+}
+
+func (emt *Emitter) DestroyReference(blk *ir.Block, expr value.Value) {
+	// bitcast the expression to an Any-Pointer
+	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)]))
+	blk.NewCall(emt.ArcFuncs["dieReference"], any)
+}
+
 // </UTILS>--------------------------------------------------------------------
 
 // yes
@@ -838,6 +857,11 @@ func tern(cond bool, str1 string, str2 string) string {
 	} else {
 		return str2
 	}
+}
+
+// even yes-erer
+func (emt *Emitter) Id(sym symbols.Symbol) string {
+	return tern(emt.UseFingerprints, sym.Fingerprint(), sym.SymbolName())
 }
 
 func btern(cond bool, v1 *ir.Block, v2 *ir.Block) *ir.Block {

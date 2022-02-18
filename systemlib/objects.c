@@ -21,7 +21,7 @@ void Any_public_Constructor(class_Any* this) {
 }
 
 // definition for the objects destructor
-void Any_public_Die(class_Any* this) {}
+void Any_public_Die(void* this) {}
 
 // -----------------------------------------------------------------------------
 // "string" object type
@@ -42,7 +42,7 @@ void String_public_Constructor(class_String* this) {
 }
 
 // definition for the objects destructor
-void String_public_Die(class_Any* this) {
+void String_public_Die(void* this) {
     // convert generic pointer to string class pointer
     class_String* me = (class_String*)this;
 
@@ -100,7 +100,7 @@ void Int_public_Constructor(class_Int* this, int value) {
 }
 
 // definition for the objects destructor
-void Int_public_Die(class_Any* this) {}
+void Int_public_Die(void* this) {}
 
 // definition for a string.Resize() method
 int Int_public_GetValue(class_Int* this) {
@@ -123,7 +123,7 @@ void Float_public_Constructor(class_Float* this, float value) {
 }
 
 // definition for the objects destructor
-void Float_public_Die(class_Any* this) {}
+void Float_public_Die(void* this) {}
 
 // definition for a string.Resize() method
 float Float_public_GetValue(class_Float* this) {
@@ -146,7 +146,7 @@ void Bool_public_Constructor(class_Bool* this, bool value) {
 }
 
 // definition for the objects destructor
-void Bool_public_Die(class_Any* this) {}
+void Bool_public_Die(void* this) {}
 
 // definition for a string.Resize() method
 bool Bool_public_GetValue(class_Bool* this) {

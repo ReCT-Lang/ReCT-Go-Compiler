@@ -16,14 +16,14 @@ typedef struct Bool_vTable   Bool_vTable;
 typedef struct class_Bool    class_Bool;
 
 // declare destructor function pointer
-typedef void (*DiePointer)(class_Any*);
+typedef void (*DiePointer)(void*);
 
 // declare all destructors
-void Any_public_Die   (class_Any*);
-void String_public_Die(class_Any*);
-void Int_public_Die   (class_Any*);
-void Float_public_Die (class_Any*);
-void Bool_public_Die  (class_Any*);
+void Any_public_Die   (void*);
+void String_public_Die(void*);
+void Int_public_Die   (void*);
+void Float_public_Die (void*);
+void Bool_public_Die  (void*);
 
 // -----------------------------------------------------------------------------
 // base "any" object type
@@ -32,7 +32,7 @@ void Bool_public_Die  (class_Any*);
 
 // the object's vtable (for method lookup and method overriding)
 struct Any_vTable {
-	const struct any_vtable* parentVTable; // will be NULL for "any" as its the root
+	const void* parentVTable; // will be NULL for "any" as its the root
 	const char* className;                 // will be "Any"
 	DiePointer dieFunction;                 // destructor function pointer
 };

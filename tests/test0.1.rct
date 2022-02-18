@@ -1,8 +1,0 @@
-while(true
-{
-	Write(">> ");
-	var input <- Input();
-
-	Write(input + " divided by 2 is: ");
-	Print(string(float(input) / 2.0));
-}

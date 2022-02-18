@@ -19,6 +19,6 @@ void arc_UnregisterReference(class_Any* obj)
     // if the reference pointer is 0 (or negative for some random reason)
     // clear it!
     if (obj->referenceCounter <= 0) {
-        obj->vtable->dieFunction(obj);
+        obj->vtable->dieFunction((void*)obj);
     }
 }

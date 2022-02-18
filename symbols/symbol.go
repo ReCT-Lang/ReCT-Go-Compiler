@@ -4,6 +4,7 @@ type Symbol interface {
 	SymbolType() SymbolType
 	SymbolName() string
 	Print(indent string)
+	Fingerprint() string
 }
 
 var variableCounter = 0
@@ -14,7 +15,6 @@ type VariableSymbol interface {
 	IsReadOnly() bool
 	IsGlobal() bool
 	VarType() TypeSymbol
-	Fingerprint() string
 }
 
 // types of symbols

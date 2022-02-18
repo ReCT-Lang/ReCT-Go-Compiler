@@ -4,8 +4,7 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-pc-linux-gnu"
 
 %struct.class_Any = type { %struct.Any_vTable*, i32 }
-%struct.Any_vTable = type { %struct.any_vtable*, i8*, {}* }
-%struct.any_vtable = type opaque
+%struct.Any_vTable = type { i8*, i8*, void (i8*)* }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @arc_RegisterReference(%struct.class_Any* %0) #0 {
@@ -39,10 +38,10 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
   %13 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %12, i32 0, i32 0
   %14 = load %struct.Any_vTable*, %struct.Any_vTable** %13, align 8
   %15 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %14, i32 0, i32 2
-  %16 = bitcast {}** %15 to void (%struct.class_Any*)**
-  %17 = load void (%struct.class_Any*)*, void (%struct.class_Any*)** %16, align 8
-  %18 = load %struct.class_Any*, %struct.class_Any** %2, align 8
-  call void %17(%struct.class_Any* %18)
+  %16 = load void (i8*)*, void (i8*)** %15, align 8
+  %17 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %18 = bitcast %struct.class_Any* %17 to i8*
+  call void %16(i8* %18)
   br label %19
 
 19:                                               ; preds = %11, %1

@@ -31,7 +31,7 @@ func (sym TypeFunctionSymbol) Print(indent string) {
 }
 
 func (sym TypeFunctionSymbol) Fingerprint() string {
-	id := "F_" + sym.Name + "_"
+	id := "TF_" + sym.OriginType.Fingerprint() + "_" + sym.Name + "_"
 
 	for _, param := range sym.Parameters {
 		id += "[" + param.Type.Fingerprint() + "]"
