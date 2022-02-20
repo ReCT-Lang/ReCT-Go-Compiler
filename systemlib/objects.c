@@ -51,6 +51,30 @@ void String_public_Die(void* this) {
 	}
 }
 
+// definition for a string.Load method
+// -----------------------------------------------------------------------------
+// [i] this is for loading char arrays into a string object
+// -----------------------------------------------------------------------------
+void String_public_Load(class_String* this, char* source) {
+	// get the length of out source
+	int size = strlen(source);
+
+	// allocate a new buffer
+	char* output = malloc(size + 1);
+
+	// copy over the source
+	memcpy(output, source, size + 1);
+
+	// free the old buffer
+	free(this->buffer);
+
+	// change our pointer
+	this->buffer = output;
+
+	// update our max length
+	this->maxLen = size;
+}
+
 // definition for a string.Resize() method
 void String_public_Resize(class_String* this, int size) {
 	// allocate a new buffer

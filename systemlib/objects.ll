@@ -63,7 +63,7 @@ define dso_local void @String_public_Die(i8* %0) #0 {
   %11 = load %struct.class_String*, %struct.class_String** %3, align 8
   %12 = getelementptr inbounds %struct.class_String, %struct.class_String* %11, i32 0, i32 2
   %13 = load i8*, i8** %12, align 8
-  call void @free(i8* %13) #3
+  call void @free(i8* %13) #4
   br label %14
 
 14:                                               ; preds = %10, %1
@@ -99,6 +99,53 @@ define dso_local void @String_public_Constructor(%struct.class_String* %0) #0 {
 declare void @free(i8*) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @String_public_Load(%struct.class_String* %0, i8* %1) #0 {
+  %3 = alloca %struct.class_String*, align 8
+  %4 = alloca i8*, align 8
+  %5 = alloca i32, align 4
+  %6 = alloca i8*, align 8
+  store %struct.class_String* %0, %struct.class_String** %3, align 8
+  store i8* %1, i8** %4, align 8
+  %7 = load i8*, i8** %4, align 8
+  %8 = call i64 @strlen(i8* %7) #5
+  %9 = trunc i64 %8 to i32
+  store i32 %9, i32* %5, align 4
+  %10 = load i32, i32* %5, align 4
+  %11 = add nsw i32 %10, 1
+  %12 = sext i32 %11 to i64
+  %13 = call noalias align 16 i8* @malloc(i64 %12) #4
+  store i8* %13, i8** %6, align 8
+  %14 = load i8*, i8** %6, align 8
+  %15 = load i8*, i8** %4, align 8
+  %16 = load i32, i32* %5, align 4
+  %17 = add nsw i32 %16, 1
+  %18 = sext i32 %17 to i64
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %14, i8* align 1 %15, i64 %18, i1 false)
+  %19 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %20 = getelementptr inbounds %struct.class_String, %struct.class_String* %19, i32 0, i32 2
+  %21 = load i8*, i8** %20, align 8
+  call void @free(i8* %21) #4
+  %22 = load i8*, i8** %6, align 8
+  %23 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %24 = getelementptr inbounds %struct.class_String, %struct.class_String* %23, i32 0, i32 2
+  store i8* %22, i8** %24, align 8
+  %25 = load i32, i32* %5, align 4
+  %26 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %27 = getelementptr inbounds %struct.class_String, %struct.class_String* %26, i32 0, i32 4
+  store i32 %25, i32* %27, align 4
+  ret void
+}
+
+; Function Attrs: nounwind readonly willreturn
+declare i64 @strlen(i8*) #2
+
+; Function Attrs: nounwind
+declare noalias align 16 i8* @malloc(i64) #1
+
+; Function Attrs: argmemonly nofree nounwind willreturn
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #3
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0 {
   %3 = alloca %struct.class_String*, align 8
   %4 = alloca i32, align 4
@@ -107,7 +154,7 @@ define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0
   store i32 %1, i32* %4, align 4
   %6 = load i32, i32* %4, align 4
   %7 = sext i32 %6 to i64
-  %8 = call noalias align 16 i8* @malloc(i64 %7) #3
+  %8 = call noalias align 16 i8* @malloc(i64 %7) #4
   store i8* %8, i8** %5, align 8
   %9 = load i8*, i8** %5, align 8
   %10 = load %struct.class_String*, %struct.class_String** %3, align 8
@@ -121,7 +168,7 @@ define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0
   %17 = load %struct.class_String*, %struct.class_String** %3, align 8
   %18 = getelementptr inbounds %struct.class_String, %struct.class_String* %17, i32 0, i32 2
   %19 = load i8*, i8** %18, align 8
-  call void @free(i8* %19) #3
+  call void @free(i8* %19) #4
   %20 = load i8*, i8** %5, align 8
   %21 = load %struct.class_String*, %struct.class_String** %3, align 8
   %22 = getelementptr inbounds %struct.class_String, %struct.class_String* %21, i32 0, i32 2
@@ -132,12 +179,6 @@ define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0
   store i32 %23, i32* %25, align 4
   ret void
 }
-
-; Function Attrs: nounwind
-declare noalias align 16 i8* @malloc(i64) #1
-
-; Function Attrs: argmemonly nofree nounwind willreturn
-declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @String_public_AddChar(%struct.class_String* %0, i8 signext %1) #0 {
@@ -299,8 +340,10 @@ define dso_local zeroext i1 @Bool_public_GetValue(%struct.class_Bool* %0) #0 {
 
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #2 = { argmemonly nofree nounwind willreturn }
-attributes #3 = { nounwind }
+attributes #2 = { nounwind readonly willreturn "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #3 = { argmemonly nofree nounwind willreturn }
+attributes #4 = { nounwind }
+attributes #5 = { nounwind readonly willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

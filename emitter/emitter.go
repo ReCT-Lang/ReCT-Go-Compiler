@@ -369,8 +369,10 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, float64(expr.Value.(float32)))
 	case builtins.String.Fingerprint():
-		// emt.GetStringConstant(blk, expr.Value.(string))
-		return emt.CreateObject(blk, emt.Id(builtins.String))
+		charPtr := emt.GetStringConstant(blk, expr.Value.(string))
+		strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+		blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["load"], strObj, charPtr)
+		return strObj
 	}
 
 	return nil
@@ -809,7 +811,7 @@ func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) const
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, 0)
 	case builtins.String.Fingerprint():
-		return constant.NewNull(types.I8Ptr)
+		return constant.NewNull(emt.IRTypes(builtins.String.Fingerprint()).(*types.PointerType))
 	}
 
 	return nil

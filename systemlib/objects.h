@@ -25,6 +25,16 @@ void Int_public_Die   (void*);
 void Float_public_Die (void*);
 void Bool_public_Die  (void*);
 
+// declare all constructors
+void Any_public_Constructor(class_Any*);
+void String_public_Constructor(class_String*);
+void Int_public_Constructor(class_Int*, int);
+void Float_public_Constructor(class_Float*, float);
+void Bool_public_Constructor(class_Bool*, bool);
+
+// delcare string loading function
+void String_public_Load(class_String*, char*);
+
 // -----------------------------------------------------------------------------
 // base "any" object type
 // Note: all object types will inherit from this

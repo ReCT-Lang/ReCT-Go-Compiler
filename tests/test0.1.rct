@@ -7,4 +7,5 @@ from (i <- 0) to 2
 function gamer(param string)
 {
 	var aaaa <- param;
+	Print(aaaa);
 }

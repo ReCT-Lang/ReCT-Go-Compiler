@@ -3,6 +3,10 @@ source_filename = "./systemlib.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
+%struct.class_String = type { %struct.String_vTable*, i32, i8*, i32, i32, i32 }
+%struct.String_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
+%struct.Any_vTable = type { i8*, i8*, void (i8*)* }
+
 @isCursorVisible = dso_local global i8 1, align 1
 @.str = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @.str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
@@ -11,109 +15,119 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.4 = private unnamed_addr constant [8 x i8] c"\1B[?251]\00", align 1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Print(i8* %0) #0 {
-  %2 = alloca i8*, align 8
-  store i8* %0, i8** %2, align 8
-  %3 = load i8*, i8** %2, align 8
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i64 0, i64 0), i8* %3)
+define dso_local void @rct_Print(%struct.class_String* %0) #0 {
+  %2 = alloca %struct.class_String*, align 8
+  store %struct.class_String* %0, %struct.class_String** %2, align 8
+  %3 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %4 = getelementptr inbounds %struct.class_String, %struct.class_String* %3, i32 0, i32 2
+  %5 = load i8*, i8** %4, align 8
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i64 0, i64 0), i8* %5)
   ret void
 }
 
 declare i32 @printf(i8*, ...) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Write(i8* %0) #0 {
-  %2 = alloca i8*, align 8
-  store i8* %0, i8** %2, align 8
-  %3 = load i8*, i8** %2, align 8
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.1, i64 0, i64 0), i8* %3)
+define dso_local void @rct_Write(%struct.class_String* %0) #0 {
+  %2 = alloca %struct.class_String*, align 8
+  store %struct.class_String* %0, %struct.class_String** %2, align 8
+  %3 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %4 = getelementptr inbounds %struct.class_String, %struct.class_String* %3, i32 0, i32 2
+  %5 = load i8*, i8** %4, align 8
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.1, i64 0, i64 0), i8* %5)
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i8* @rct_Input() #0 {
+define dso_local %struct.class_String* @rct_Input() #0 {
   %1 = alloca i8*, align 8
   %2 = alloca i8*, align 8
   %3 = alloca i32, align 4
-  %4 = call noalias align 16 i8* @malloc(i64 1042) #4
-  store i8* %4, i8** %1, align 8
+  %4 = alloca %struct.class_String*, align 8
+  %5 = call noalias align 16 i8* @malloc(i64 1042) #4
+  store i8* %5, i8** %1, align 8
   store i32 0, i32* %3, align 4
-  br label %5
+  br label %6
 
-5:                                                ; preds = %37, %0
-  %6 = load i8*, i8** %1, align 8
-  %7 = icmp ne i8* %6, null
-  br i1 %7, label %8, label %17
+6:                                                ; preds = %38, %0
+  %7 = load i8*, i8** %1, align 8
+  %8 = icmp ne i8* %7, null
+  br i1 %8, label %9, label %18
 
-8:                                                ; preds = %5
-  %9 = call i32 @getchar()
-  %10 = trunc i32 %9 to i8
-  %11 = load i8*, i8** %1, align 8
-  %12 = load i32, i32* %3, align 4
-  %13 = sext i32 %12 to i64
-  %14 = getelementptr inbounds i8, i8* %11, i64 %13
-  store i8 %10, i8* %14, align 1
-  %15 = sext i8 %10 to i32
-  %16 = icmp ne i32 %15, 10
-  br label %17
+9:                                                ; preds = %6
+  %10 = call i32 @getchar()
+  %11 = trunc i32 %10 to i8
+  %12 = load i8*, i8** %1, align 8
+  %13 = load i32, i32* %3, align 4
+  %14 = sext i32 %13 to i64
+  %15 = getelementptr inbounds i8, i8* %12, i64 %14
+  store i8 %11, i8* %15, align 1
+  %16 = sext i8 %11 to i32
+  %17 = icmp ne i32 %16, 10
+  br label %18
 
-17:                                               ; preds = %8, %5
-  %18 = phi i1 [ false, %5 ], [ %16, %8 ]
-  br i1 %18, label %19, label %40
+18:                                               ; preds = %9, %6
+  %19 = phi i1 [ false, %6 ], [ %17, %9 ]
+  br i1 %19, label %20, label %41
 
-19:                                               ; preds = %17
-  %20 = load i32, i32* %3, align 4
-  %21 = srem i32 %20, 1042
-  %22 = icmp eq i32 %21, 1041
-  br i1 %22, label %23, label %36
+20:                                               ; preds = %18
+  %21 = load i32, i32* %3, align 4
+  %22 = srem i32 %21, 1042
+  %23 = icmp eq i32 %22, 1041
+  br i1 %23, label %24, label %37
 
-23:                                               ; preds = %19
-  %24 = load i8*, i8** %1, align 8
-  %25 = load i32, i32* %3, align 4
-  %26 = add nsw i32 1042, %25
-  %27 = add nsw i32 %26, 1
-  %28 = sext i32 %27 to i64
-  %29 = mul i64 1, %28
-  %30 = call align 16 i8* @realloc(i8* %24, i64 %29) #4
-  store i8* %30, i8** %2, align 8
-  %31 = icmp eq i8* %30, null
-  br i1 %31, label %32, label %34
+24:                                               ; preds = %20
+  %25 = load i8*, i8** %1, align 8
+  %26 = load i32, i32* %3, align 4
+  %27 = add nsw i32 1042, %26
+  %28 = add nsw i32 %27, 1
+  %29 = sext i32 %28 to i64
+  %30 = mul i64 1, %29
+  %31 = call align 16 i8* @realloc(i8* %25, i64 %30) #4
+  store i8* %31, i8** %2, align 8
+  %32 = icmp eq i8* %31, null
+  br i1 %32, label %33, label %35
 
-32:                                               ; preds = %23
-  %33 = load i8*, i8** %1, align 8
-  call void @free(i8* %33) #4
-  br label %34
+33:                                               ; preds = %24
+  %34 = load i8*, i8** %1, align 8
+  call void @free(i8* %34) #4
+  br label %35
 
-34:                                               ; preds = %32, %23
-  %35 = load i8*, i8** %2, align 8
-  store i8* %35, i8** %1, align 8
-  br label %36
-
-36:                                               ; preds = %34, %19
+35:                                               ; preds = %33, %24
+  %36 = load i8*, i8** %2, align 8
+  store i8* %36, i8** %1, align 8
   br label %37
 
-37:                                               ; preds = %36
-  %38 = load i32, i32* %3, align 4
-  %39 = add nsw i32 %38, 1
-  store i32 %39, i32* %3, align 4
-  br label %5, !llvm.loop !6
+37:                                               ; preds = %35, %20
+  br label %38
 
-40:                                               ; preds = %17
-  %41 = load i8*, i8** %1, align 8
-  %42 = icmp ne i8* %41, null
-  br i1 %42, label %43, label %48
+38:                                               ; preds = %37
+  %39 = load i32, i32* %3, align 4
+  %40 = add nsw i32 %39, 1
+  store i32 %40, i32* %3, align 4
+  br label %6, !llvm.loop !6
 
-43:                                               ; preds = %40
-  %44 = load i8*, i8** %1, align 8
-  %45 = load i32, i32* %3, align 4
-  %46 = sext i32 %45 to i64
-  %47 = getelementptr inbounds i8, i8* %44, i64 %46
-  store i8 0, i8* %47, align 1
-  br label %48
+41:                                               ; preds = %18
+  %42 = load i8*, i8** %1, align 8
+  %43 = icmp ne i8* %42, null
+  br i1 %43, label %44, label %49
 
-48:                                               ; preds = %43, %40
-  %49 = load i8*, i8** %1, align 8
-  ret i8* %49
+44:                                               ; preds = %41
+  %45 = load i8*, i8** %1, align 8
+  %46 = load i32, i32* %3, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds i8, i8* %45, i64 %47
+  store i8 0, i8* %48, align 1
+  br label %49
+
+49:                                               ; preds = %44, %41
+  %50 = load %struct.class_String*, %struct.class_String** %4, align 8
+  call void @String_public_Constructor(%struct.class_String* %50)
+  %51 = load %struct.class_String*, %struct.class_String** %4, align 8
+  %52 = load i8*, i8** %1, align 8
+  call void @String_public_Load(%struct.class_String* %51, i8* %52)
+  %53 = load %struct.class_String*, %struct.class_String** %4, align 8
+  ret %struct.class_String* %53
 }
 
 ; Function Attrs: nounwind
@@ -126,6 +140,10 @@ declare align 16 i8* @realloc(i8*, i64) #2
 
 ; Function Attrs: nounwind
 declare void @free(i8*) #2
+
+declare void @String_public_Constructor(%struct.class_String*) #1
+
+declare void @String_public_Load(%struct.class_String*, i8*) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @rct_Clear() #0 {

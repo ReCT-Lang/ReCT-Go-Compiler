@@ -8,21 +8,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "objects.h"
+
 #define BUFFER 1042
 
 bool isCursorVisible = true;
 
-void rct_Print(const char* text)
+void rct_Print(class_String* text)
 {
-    printf("%s\n", text);
+    printf("%s\n", text->buffer);
 }
 
-void rct_Write(const char* text)
+void rct_Write(class_String* text)
 {
-    printf("%s", text);
+    printf("%s", text->buffer);
 }
 
-const char* rct_Input()
+class_String* rct_Input()
 {
     char *str = malloc(sizeof(char) * BUFFER), *err;
     int pos;
@@ -37,7 +39,12 @@ const char* rct_Input()
     }
     if(str != NULL)
         str[pos] = '\0';
-    return str;
+
+	class_String* strInstance;
+	String_public_Constructor(strInstance);
+	String_public_Load(strInstance, str);
+
+    return strInstance;
 }
 
 void rct_Clear()

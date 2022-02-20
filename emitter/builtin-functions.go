@@ -67,13 +67,13 @@ func (emt *Emitter) EmitCLibReferences() {
 }
 
 func (emt *Emitter) EmitSystemFuncReferences() {
-	Print := emt.Module.NewFunc("rct_Print", types.Void, ir.NewParam("text", types.I8Ptr))
+	Print := emt.Module.NewFunc("rct_Print", types.Void, ir.NewParam("text", emt.IRTypes(builtins.String.Fingerprint())))
 	emt.Functions[emt.Id(builtins.Print)] = Function{IRFunction: Print, BoundFunction: binder.BoundFunction{Symbol: builtins.Print}}
 
-	Write := emt.Module.NewFunc("rct_Write", types.Void, ir.NewParam("text", types.I8Ptr))
+	Write := emt.Module.NewFunc("rct_Write", types.Void, ir.NewParam("text", emt.IRTypes(builtins.String.Fingerprint())))
 	emt.Functions[emt.Id(builtins.Write)] = Function{IRFunction: Write, BoundFunction: binder.BoundFunction{Symbol: builtins.Write}}
 
-	Input := emt.Module.NewFunc("rct_Input", types.I8Ptr)
+	Input := emt.Module.NewFunc("rct_Input", emt.IRTypes(builtins.String.Fingerprint()))
 	emt.Functions[emt.Id(builtins.Input)] = Function{IRFunction: Input, BoundFunction: binder.BoundFunction{Symbol: builtins.Input}}
 
 	Clear := emt.Module.NewFunc("rct_Clear", types.Void)
@@ -121,6 +121,9 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 	Float_public_Constructor := emt.Module.NewFunc("Float_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Float)), ir.NewParam("value", types.Float))
 	Bool_public_Constructor := emt.Module.NewFunc("Bool_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Bool)), ir.NewParam("value", types.I8))
 
+	// load the string.Load() function
+	String_public_Load := emt.Module.NewFunc("String_public_Load", types.Void, ir.NewParam("this", types.NewPointer(class_String)), ir.NewParam("source", types.I8Ptr))
+
 	// find out what names to use for the classes
 	anyName := emt.Id(builtins.Any)
 	stringName := emt.Id(builtins.String)
@@ -129,11 +132,14 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 	boolName := emt.Id(builtins.Bool)
 
 	// store all of them gamers
-	emt.Classes[anyName] = Class{Type: class_Any, Constructor: Any_public_Constructor}
-	emt.Classes[stringName] = Class{Type: class_String, Constructor: String_public_Constructor}
-	emt.Classes[intName] = Class{Type: class_Int, Constructor: Int_public_Constructor}
-	emt.Classes[floatName] = Class{Type: class_Float, Constructor: Float_public_Constructor}
-	emt.Classes[boolName] = Class{Type: class_Bool, Constructor: Bool_public_Constructor}
+	emt.Classes[anyName] = Class{Type: class_Any, Constructor: Any_public_Constructor, Functions: make(map[string]*ir.Func)}
+	emt.Classes[stringName] = Class{Type: class_String, Constructor: String_public_Constructor, Functions: make(map[string]*ir.Func)}
+	emt.Classes[intName] = Class{Type: class_Int, Constructor: Int_public_Constructor, Functions: make(map[string]*ir.Func)}
+	emt.Classes[floatName] = Class{Type: class_Float, Constructor: Float_public_Constructor, Functions: make(map[string]*ir.Func)}
+	emt.Classes[boolName] = Class{Type: class_Bool, Constructor: Bool_public_Constructor, Functions: make(map[string]*ir.Func)}
+
+	// store string functions
+	emt.Classes[stringName].Functions["load"] = String_public_Load
 
 	registerReference := emt.Module.NewFunc("arc_RegisterReference", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)))
 	emt.ArcFuncs["registerReference"] = registerReference
