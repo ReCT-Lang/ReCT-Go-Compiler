@@ -12,13 +12,23 @@ import (
 
 // this file is just keeping track of how ReCT types map to LLVM types
 
-var IRTypes map[string]types.Type = map[string]types.Type{
-	builtins.Void.Fingerprint():   types.Void,
-	builtins.Bool.Fingerprint():   types.I1,
-	builtins.Int.Fingerprint():    types.I32,
-	builtins.Float.Fingerprint():  types.Float,
-	builtins.String.Fingerprint(): types.I8Ptr,
-	builtins.Any.Fingerprint():    types.I8Ptr,
+func (emt *Emitter) IRTypes(fingerprint string) types.Type {
+	switch fingerprint {
+	case builtins.Void.Fingerprint():
+		return types.Void
+	case builtins.Bool.Fingerprint():
+		return types.I1
+	case builtins.Int.Fingerprint():
+		return types.I32
+	case builtins.Float.Fingerprint():
+		return types.Float
+	case builtins.String.Fingerprint():
+		return types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type)
+	case builtins.Any.Fingerprint():
+		return types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type)
+	}
+
+	return nil
 }
 
 type Global struct {

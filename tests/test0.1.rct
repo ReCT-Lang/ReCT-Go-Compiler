@@ -1,0 +1,6 @@
+test();
+
+function test()
+{
+    var a <- "yes";
+}
