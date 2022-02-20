@@ -1,11 +1,6 @@
-from (i <- 0) to 2
+while (true)
 {
-    var b <- "aaaaaaaaaa";
-	gamer(b);
-}
+	var input <- Input();
+	Print(input);
 
-function gamer(param string)
-{
-	var aaaa <- param;
-	Print(aaaa);
 }

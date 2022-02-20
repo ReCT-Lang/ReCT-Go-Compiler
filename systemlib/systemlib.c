@@ -9,17 +9,18 @@
 #include <string.h>
 
 #include "objects.h"
+#include "arc.h"
 
 #define BUFFER 1042
 
 bool isCursorVisible = true;
 
-void rct_Print(class_String* text)
+void rct_Print(class_String *text)
 {
     printf("%s\n", text->buffer);
 }
 
-void rct_Write(class_String* text)
+void rct_Write(class_String *text)
 {
     printf("%s", text->buffer);
 }
@@ -40,9 +41,10 @@ class_String* rct_Input()
     if(str != NULL)
         str[pos] = '\0';
 
-	class_String* strInstance;
+	class_String *strInstance = (class_String*)malloc(sizeof(class_String));
 	String_public_Constructor(strInstance);
 	String_public_Load(strInstance, str);
+	arc_RegisterReference((class_Any*)strInstance);
 
     return strInstance;
 }
@@ -86,20 +88,4 @@ void rct_Sleep(int ms)
     #else
 	sleep(ms / 1000);
     #endif
-}
-
-const char* util_copy_string(const char* source)
-{
-	char* newStr = malloc(strlen(source) + 1);
-	strcpy(newStr, source);
-
-	return newStr;
-}
-
-void util_free_string_if_not_null(char* source)
-{
-	if (source != NULL)
-	{
-		free(source);
-	}
 }

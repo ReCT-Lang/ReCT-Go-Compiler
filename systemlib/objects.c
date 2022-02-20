@@ -1,6 +1,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<stdbool.h>
+#include<stdio.h>
 #include "objects.h"
 
 // NOTE: I made all class names capitalised, this is to distinguish primitives
@@ -56,6 +57,7 @@ void String_public_Die(void* this) {
 // [i] this is for loading char arrays into a string object
 // -----------------------------------------------------------------------------
 void String_public_Load(class_String* this, char* source) {
+
 	// get the length of out source
 	int size = strlen(source);
 

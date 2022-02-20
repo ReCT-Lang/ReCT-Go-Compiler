@@ -32,7 +32,7 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
   br i1 %4, label %5, label %6
 
 5:                                                ; preds = %1
-  br label %23
+  br label %25
 
 6:                                                ; preds = %1
   %7 = load %struct.class_Any*, %struct.class_Any** %2, align 8
@@ -44,7 +44,7 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
   %12 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %11, i32 0, i32 1
   %13 = load i32, i32* %12, align 8
   %14 = icmp sle i32 %13, 0
-  br i1 %14, label %15, label %23
+  br i1 %14, label %15, label %25
 
 15:                                               ; preds = %6
   %16 = load %struct.class_Any*, %struct.class_Any** %2, align 8
@@ -55,11 +55,17 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
   %21 = load %struct.class_Any*, %struct.class_Any** %2, align 8
   %22 = bitcast %struct.class_Any* %21 to i8*
   call void %20(i8* %22)
-  br label %23
+  %23 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %24 = bitcast %struct.class_Any* %23 to i8*
+  call void @free(i8* %24) #3
+  br label %25
 
-23:                                               ; preds = %5, %15, %6
+25:                                               ; preds = %5, %15, %6
   ret void
 }
+
+; Function Attrs: nounwind
+declare void @free(i8*) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @arc_RegisterReferenceVerbose(%struct.class_Any* %0, i8* %1) #0 {
@@ -85,7 +91,7 @@ define dso_local void @arc_RegisterReferenceVerbose(%struct.class_Any* %0, i8* %
   ret void
 }
 
-declare i32 @printf(i8*, ...) #1
+declare i32 @printf(i8*, ...) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8* %1) #0 {
@@ -98,7 +104,7 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   br i1 %6, label %7, label %8
 
 7:                                                ; preds = %2
-  br label %54
+  br label %56
 
 8:                                                ; preds = %2
   %9 = load %struct.class_Any*, %struct.class_Any** %3, align 8
@@ -120,7 +126,7 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   %24 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %23, i32 0, i32 1
   %25 = load i32, i32* %24, align 8
   %26 = icmp eq i32 %25, 0
-  br i1 %26, label %27, label %42
+  br i1 %26, label %27, label %44
 
 27:                                               ; preds = %8
   %28 = load %struct.class_Any*, %struct.class_Any** %3, align 8
@@ -138,32 +144,37 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   %40 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %41 = bitcast %struct.class_Any* %40 to i8*
   call void %39(i8* %41)
-  br label %54
+  %42 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %43 = bitcast %struct.class_Any* %42 to i8*
+  call void @free(i8* %43) #3
+  br label %56
 
-42:                                               ; preds = %8
-  %43 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %44 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %43, i32 0, i32 1
-  %45 = load i32, i32* %44, align 8
-  %46 = icmp slt i32 %45, 0
-  br i1 %46, label %47, label %53
+44:                                               ; preds = %8
+  %45 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %46 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %45, i32 0, i32 1
+  %47 = load i32, i32* %46, align 8
+  %48 = icmp slt i32 %47, 0
+  br i1 %48, label %49, label %55
 
-47:                                               ; preds = %42
-  %48 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %49 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %48, i32 0, i32 1
-  %50 = load i32, i32* %49, align 8
-  %51 = load i8*, i8** %4, align 8
-  %52 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([44 x i8], [44 x i8]* @.str.3, i64 0, i64 0), i32 %50, i8* %51)
-  br label %53
+49:                                               ; preds = %44
+  %50 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %51 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %50, i32 0, i32 1
+  %52 = load i32, i32* %51, align 8
+  %53 = load i8*, i8** %4, align 8
+  %54 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([44 x i8], [44 x i8]* @.str.3, i64 0, i64 0), i32 %52, i8* %53)
+  br label %55
 
-53:                                               ; preds = %47, %42
-  br label %54
+55:                                               ; preds = %49, %44
+  br label %56
 
-54:                                               ; preds = %7, %53, %27
+56:                                               ; preds = %7, %55, %27
   ret void
 }
 
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #3 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

@@ -6,6 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.class_String = type { %struct.String_vTable*, i32, i8*, i32, i32, i32 }
 %struct.String_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Any_vTable = type { i8*, i8*, void (i8*)* }
+%struct.class_Any = type { %struct.Any_vTable*, i32 }
 
 @isCursorVisible = dso_local global i8 1, align 1
 @.str = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
@@ -121,13 +122,19 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   br label %49
 
 49:                                               ; preds = %44, %41
-  %50 = load %struct.class_String*, %struct.class_String** %4, align 8
-  call void @String_public_Constructor(%struct.class_String* %50)
-  %51 = load %struct.class_String*, %struct.class_String** %4, align 8
-  %52 = load i8*, i8** %1, align 8
-  call void @String_public_Load(%struct.class_String* %51, i8* %52)
+  %50 = call noalias align 16 i8* @malloc(i64 40) #4
+  %51 = bitcast i8* %50 to %struct.class_String*
+  store %struct.class_String* %51, %struct.class_String** %4, align 8
+  %52 = load %struct.class_String*, %struct.class_String** %4, align 8
+  call void @String_public_Constructor(%struct.class_String* %52)
   %53 = load %struct.class_String*, %struct.class_String** %4, align 8
-  ret %struct.class_String* %53
+  %54 = load i8*, i8** %1, align 8
+  call void @String_public_Load(%struct.class_String* %53, i8* %54)
+  %55 = load %struct.class_String*, %struct.class_String** %4, align 8
+  %56 = bitcast %struct.class_String* %55 to %struct.class_Any*
+  call void @arc_RegisterReference(%struct.class_Any* %56)
+  %57 = load %struct.class_String*, %struct.class_String** %4, align 8
+  ret %struct.class_String* %57
 }
 
 ; Function Attrs: nounwind
@@ -144,6 +151,8 @@ declare void @free(i8*) #2
 declare void @String_public_Constructor(%struct.class_String*) #1
 
 declare void @String_public_Load(%struct.class_String*, i8*) #1
+
+declare void @arc_RegisterReference(%struct.class_Any*) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @rct_Clear() #0 {

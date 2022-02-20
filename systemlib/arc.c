@@ -1,4 +1,6 @@
+#include<stdlib.h>
 #include<stdio.h>
+#include "arc.h"
 #include "objects.h"
 
 // ReCT ARC system
@@ -22,7 +24,8 @@ void arc_UnregisterReference(class_Any* obj)
     // if the reference pointer is 0 (or negative for some random reason)
     // clear it!
     if (obj->referenceCounter <= 0) {
-        obj->vtable->dieFunction((void*)obj);
+        obj->vtable->dieFunction((void*)obj); // destroy the objects data
+		free(obj);                            // destroy the struct
     }
 }
 
@@ -47,6 +50,7 @@ void arc_UnregisterReferenceVerbose(class_Any* obj, char* comment)
     if (obj->referenceCounter == 0) {
         printf("[36mARC [0m- [31mDestroying %s instance - %s[0m\n", obj->vtable->className, comment);
         obj->vtable->dieFunction((void*)obj);
+		free(obj); 
     }
 	else if (obj->referenceCounter < 0) {
 		printf("[36mARC [0m- [0;35mWhat?? [%d] - %s[0m\n", obj->referenceCounter, comment);
