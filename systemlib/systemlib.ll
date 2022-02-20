@@ -45,7 +45,7 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %2 = alloca i8*, align 8
   %3 = alloca i32, align 4
   %4 = alloca %struct.class_String*, align 8
-  %5 = call noalias align 16 i8* @malloc(i64 1042) #4
+  %5 = call noalias align 16 i8* @malloc(i64 1042) #3
   store i8* %5, i8** %1, align 8
   store i32 0, i32* %3, align 4
   br label %6
@@ -84,14 +84,14 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %28 = add nsw i32 %27, 1
   %29 = sext i32 %28 to i64
   %30 = mul i64 1, %29
-  %31 = call align 16 i8* @realloc(i8* %25, i64 %30) #4
+  %31 = call align 16 i8* @realloc(i8* %25, i64 %30) #3
   store i8* %31, i8** %2, align 8
   %32 = icmp eq i8* %31, null
   br i1 %32, label %33, label %35
 
 33:                                               ; preds = %24
   %34 = load i8*, i8** %1, align 8
-  call void @free(i8* %34) #4
+  call void @free(i8* %34) #3
   br label %35
 
 35:                                               ; preds = %33, %24
@@ -122,7 +122,7 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   br label %49
 
 49:                                               ; preds = %44, %41
-  %50 = call noalias align 16 i8* @malloc(i64 40) #4
+  %50 = call noalias align 16 i8* @malloc(i64 40) #3
   %51 = bitcast i8* %50 to %struct.class_String*
   store %struct.class_String* %51, %struct.class_String** %4, align 8
   %52 = load %struct.class_String*, %struct.class_String** %4, align 8
@@ -208,7 +208,7 @@ define dso_local zeroext i1 @rct_GetCursorVisible() #0 {
 define dso_local i32 @rct_Random(i32 %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
-  %3 = call i32 @rand() #4
+  %3 = call i32 @rand() #3
   %4 = load i32, i32* %2, align 4
   %5 = srem i32 %3, %4
   ret i32 %5
@@ -229,52 +229,10 @@ define dso_local void @rct_Sleep(i32 %0) #0 {
 
 declare i32 @sleep(i32) #1
 
-; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i8* @util_copy_string(i8* %0) #0 {
-  %2 = alloca i8*, align 8
-  %3 = alloca i8*, align 8
-  store i8* %0, i8** %2, align 8
-  %4 = load i8*, i8** %2, align 8
-  %5 = call i64 @strlen(i8* %4) #5
-  %6 = add i64 %5, 1
-  %7 = call noalias align 16 i8* @malloc(i64 %6) #4
-  store i8* %7, i8** %3, align 8
-  %8 = load i8*, i8** %3, align 8
-  %9 = load i8*, i8** %2, align 8
-  %10 = call i8* @strcpy(i8* %8, i8* %9) #4
-  %11 = load i8*, i8** %3, align 8
-  ret i8* %11
-}
-
-; Function Attrs: nounwind readonly willreturn
-declare i64 @strlen(i8*) #3
-
-; Function Attrs: nounwind
-declare i8* @strcpy(i8*, i8*) #2
-
-; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @util_free_string_if_not_null(i8* %0) #0 {
-  %2 = alloca i8*, align 8
-  store i8* %0, i8** %2, align 8
-  %3 = load i8*, i8** %2, align 8
-  %4 = icmp ne i8* %3, null
-  br i1 %4, label %5, label %7
-
-5:                                                ; preds = %1
-  %6 = load i8*, i8** %2, align 8
-  call void @free(i8* %6) #4
-  br label %7
-
-7:                                                ; preds = %5, %1
-  ret void
-}
-
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #2 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #3 = { nounwind readonly willreturn "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #4 = { nounwind }
-attributes #5 = { nounwind readonly willreturn }
+attributes #3 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}
