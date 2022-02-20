@@ -140,4 +140,10 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 
 	unregisterReference := emt.Module.NewFunc("arc_UnregisterReference", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)))
 	emt.ArcFuncs["dieReference"] = unregisterReference
+
+	registerVerboseReference := emt.Module.NewFunc("arc_RegisterReferenceVerbose", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)), ir.NewParam("comment", types.I8Ptr))
+	emt.ArcFuncs["registerVerboseReference"] = registerVerboseReference
+
+	unregisterVerboseReference := emt.Module.NewFunc("arc_UnregisterReferenceVerbose", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)), ir.NewParam("comment", types.I8Ptr))
+	emt.ArcFuncs["dieVerboseReference"] = unregisterVerboseReference
 }

@@ -1,6 +1,10 @@
-test();
-
-function test()
+from (i <- 0) to 2
 {
-    var a <- "yes";
+    var b <- "aaaaaaaaaa";
+	gamer(b);
+}
+
+function gamer(param string)
+{
+	var aaaa <- param;
 }

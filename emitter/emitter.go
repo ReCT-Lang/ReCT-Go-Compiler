@@ -206,8 +206,10 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 	varName := emt.Id(stmt.Variable)
 	expression := emt.EmitExpression(blk, stmt.Initializer)
 
-	// no reference destruction needed (would equal out to 0)
-	// left another comment in var assignment with a better explanation lol
+	// if the expression is any type of variable expression -> increase reference counter
+	if stmt.Initializer.NodeType() == boundnodes.BoundVariableExpression {
+		emt.CreateReferenceVerbose(blk, expression, emt.GetStringConstant(blk, "variable declaration"))
+	}
 
 	if stmt.Variable.IsGlobal() {
 		// create a new global
@@ -263,7 +265,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 		if stmt.Expression.NodeType() == boundnodes.BoundVariableExpression {
 			if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() ||
 				stmt.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
-				emt.CreateReference(blk, expression)
+				emt.CreateReferenceVerbose(blk, expression, emt.GetStringConstant(blk, "return value copy"))
 			}
 		}
 	}
@@ -283,16 +285,17 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 		if local.Type.Fingerprint() == builtins.String.Fingerprint() ||
 			local.Type.Fingerprint() == builtins.Any.Fingerprint() {
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+name+"'"))
-			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(local.Type.Fingerprint()), local.IRLocal))
+			emt.DestroyReferenceVerbose(blk, blk.NewLoad(emt.IRTypes(local.Type.Fingerprint()), local.IRLocal), emt.GetStringConstant(blk, "ReturnGC (leaving '"+emt.Function.Name()+"')"))
 		}
 	}
 
 	// clean up any parameters as well
+	// (passed variables wont be cleaned up as their reference counter has been increased before the call)
 	for _, param := range emt.FunctionSym.Parameters {
 		if param.Type.Fingerprint() == builtins.String.Fingerprint() ||
 			param.Type.Fingerprint() == builtins.Any.Fingerprint() {
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+param.Name+"'"))
-			emt.DestroyReference(blk, emt.Function.Params[param.Ordinal])
+			emt.DestroyReferenceVerbose(blk, emt.Function.Params[param.Ordinal], emt.GetStringConstant(blk, "ReturnGC (parameter) (leaving '"+emt.Function.Name()+"')"))
 		}
 	}
 	blk.Insts = append(blk.Insts, NewComment("</ReturnARC>"))
@@ -314,10 +317,10 @@ func (emt *Emitter) EmitGarbageCollectionStatement(blk *ir.Block, stmt boundnode
 			varName := emt.Id(variable)
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+varName+"'"))
 
-			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(variable.VarType().Fingerprint()), emt.Locals[varName].IRLocal))
+			emt.DestroyReferenceVerbose(blk, blk.NewLoad(emt.IRTypes(variable.VarType().Fingerprint()), emt.Locals[varName].IRLocal), emt.GetStringConstant(blk, "GC statement (end of block)"))
 
 			// write NULL to the pointer
-			blk.NewStore(constant.NewNull(types.NewPointer(emt.IRTypes(variable.VarType().Fingerprint()))), emt.Locals[varName].IRLocal)
+			blk.NewStore(constant.NewNull(emt.IRTypes(variable.VarType().Fingerprint()).(*types.PointerType)), emt.Locals[varName].IRLocal)
 		}
 	}
 	blk.Insts = append(blk.Insts, NewComment("</GC - ARC>"))
@@ -393,6 +396,11 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	varName := emt.Id(expr.Variable)
 	expression := emt.EmitExpression(blk, expr.Expression)
 
+	// if the expression is any type of variable expression -> increase reference counter
+	if expr.Expression.NodeType() == boundnodes.BoundVariableExpression {
+		emt.CreateReferenceVerbose(blk, expression, emt.GetStringConstant(blk, "variable assignment"))
+	}
+
 	if expr.Variable.IsGlobal() {
 		// if this variable already contained an object -> destroy the reference
 		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() ||
@@ -414,14 +422,11 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 		blk.NewStore(expression, emt.Locals[varName].IRLocal)
 	}
 
-	// no need for reference destruction as we would destroy one (-1)
-	// and then add one for this variable (+1) which equals out to 0
-
 	// also return the value as this can also be used as an expression
 	// if we're working with objects, a new reference has to be counted
 	if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() ||
 		expr.Variable.VarType().Fingerprint() == builtins.Any.Fingerprint() {
-		emt.CreateReference(blk, expression)
+		emt.CreateReferenceVerbose(blk, expression, emt.GetStringConstant(blk, "assignment value copy"))
 		return expression
 	}
 
@@ -665,7 +670,7 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 		if arg.NodeType() == boundnodes.BoundVariableExpression {
 			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
 				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
-				emt.CreateReference(blk, expression)
+				emt.CreateReferenceVerbose(blk, expression, emt.GetStringConstant(blk, "copy for parameter"))
 			}
 		}
 
@@ -710,10 +715,10 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 		case builtins.String.Fingerprint():
 			return value
 		case builtins.Bool.Fingerprint():
-			trueStr := emt.GetStringConstant(blk, "true")
-			falseStr := emt.GetStringConstant(blk, "false")
+			//trueStr := emt.GetStringConstant(blk, "true")
+			//falseStr := emt.GetStringConstant(blk, "false")
 
-			return emt.CopyStringNoFree(blk, blk.NewSelect(value, trueStr, falseStr))
+			//return emt.CopyStringNoFree(blk, blk.NewSelect(value, trueStr, falseStr))
 		case builtins.Int.Fingerprint():
 			// find out how much space we need to allocate
 			len := blk.NewCall(emt.CFuncs["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%d"), value)
@@ -795,26 +800,6 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 // </EXPRESSIONS>--------------------------------------------------------------
 // <UTILS>---------------------------------------------------------------------
 
-func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source boundnodes.BoundExpressionNode) value.Value {
-	// copy over the string
-	newStr := blk.NewCall(emt.CFuncs["uStringCopy"], expression)
-
-	// TODO(RedCube): figure out what todo here lolo
-	// if this isnt another variable, free the old buffer
-	if source.NodeType() != boundnodes.BoundVariableExpression &&
-		source.NodeType() != boundnodes.BoundLiteralExpression {
-		blk.NewCall(emt.CFuncs["free"], expression)
-	}
-
-	return newStr
-}
-
-func (emt *Emitter) CopyStringNoFree(blk *ir.Block, expression value.Value) value.Value {
-	// copy over the string
-	//newStr := blk.NewCall(emt.CFuncs["uStringCopy"], expression)
-	return nil
-}
-
 func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) constant.Constant {
 	switch typ.Fingerprint() {
 	case builtins.Bool.Fingerprint():
@@ -867,7 +852,7 @@ func (emt *Emitter) CreateObject(blk *ir.Block, typ string, args ...value.Value)
 	blk.NewCall(emt.Classes[typ].Constructor, arguments...)
 
 	// create reference
-	emt.CreateReference(blk, instancePointer)
+	emt.CreateReferenceVerbose(blk, instancePointer, emt.GetStringConstant(blk, "initial instance"))
 
 	return instancePointer
 }
@@ -886,9 +871,35 @@ func (emt *Emitter) DestroyReference(blk *ir.Block, expr value.Value) {
 	blk.NewCall(emt.ArcFuncs["dieReference"], any)
 }
 
-// </UTILS>--------------------------------------------------------------------
+func (emt *Emitter) Box(blk *ir.Block, val value.Value, typ symbols.TypeSymbol) value.Value {
+	// boxing is the act of "objectifying" primitive types
+	// (like an int or bool)
 
-// yes
+	// create a new object and give it the primitive to be "capsuled"
+	obj := emt.CreateObject(blk, emt.Id(typ), val)
+
+	return obj
+}
+
+// DEBUG FUNCTIONS
+func (emt *Emitter) CreateReferenceVerbose(blk *ir.Block, expr value.Value, comment value.Value) {
+	// bitcast the expression to an Any-Pointer
+	// (meaning we dont change any data, we only change the pointer type)
+	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
+	blk.NewCall(emt.ArcFuncs["registerVerboseReference"], any, comment)
+}
+
+func (emt *Emitter) DestroyReferenceVerbose(blk *ir.Block, expr value.Value, comment value.Value) {
+	// bitcast the expression to an Any-Pointer
+	// (meaning we dont change any data, we only change the pointer type)
+	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
+	blk.NewCall(emt.ArcFuncs["dieVerboseReference"], any, comment)
+}
+
+// </UTILS>--------------------------------------------------------------------
+//<HELPERS>--------------------------------------------------------------------
+
+// Ternary (because its kinda nice)
 func tern(cond bool, str1 string, str2 string) string {
 	if cond {
 		return str1
@@ -897,31 +908,19 @@ func tern(cond bool, str1 string, str2 string) string {
 	}
 }
 
-// even yes-erer
+// a little function to get the relevant name of a symbol (name or fingerprint)
 func (emt *Emitter) Id(sym symbols.Symbol) string {
 	return tern(emt.UseFingerprints, sym.Fingerprint(), sym.SymbolName())
 }
 
-func btern(cond bool, v1 *ir.Block, v2 *ir.Block) *ir.Block {
-	if cond {
-		return v1
-	} else {
-		return v2
-	}
-}
-
-func itern(cond bool, v1 interface{}, v2 interface{}) interface{} {
-	if cond {
-		return v1
-	} else {
-		return v2
-	}
-}
-
+// another little shortcut to create an integer constant
 func CI32(val int32) value.Value {
 	return constant.NewInt(types.I32, int64(val))
 }
 
+// b o o l
 func CB1(val bool) value.Value {
 	return constant.NewBool(val)
 }
+
+//</HELPERS>-------------------------------------------------------------------
