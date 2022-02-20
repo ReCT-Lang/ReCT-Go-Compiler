@@ -3,6 +3,7 @@ package emitter
 import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
+
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
 )
@@ -95,29 +96,48 @@ func (emt *Emitter) EmitSystemFuncReferences() {
 }
 
 func (emt *Emitter) EmitClassAndArcReferences() {
+
+	// function pointer type for destructors
 	dieFunction := types.NewPointer(types.NewFunc(types.Void, types.I8Ptr))
 
+	// vTables
 	Any_vTable := emt.Module.NewTypeDef("%struct.Any_vTable", types.NewStruct(types.I8Ptr, types.I8Ptr, dieFunction))
 	String_vTable := emt.Module.NewTypeDef("%struct.String_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
 	Int_vTable := emt.Module.NewTypeDef("%struct.Int_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
 	Float_vTable := emt.Module.NewTypeDef("%struct.Float_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
 	Bool_vTable := emt.Module.NewTypeDef("%struct.Bool_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
 
+	// load all classes
+	class_Any := emt.Module.NewTypeDef("%struct.class_Any", types.NewStruct(Any_vTable, types.I32))
+	class_String := emt.Module.NewTypeDef("%struct.class_String", types.NewStruct(String_vTable, types.I32, types.I8Ptr, types.I32, types.I32, types.I32))
+	class_Int := emt.Module.NewTypeDef("%struct.class_Int", types.NewStruct(Int_vTable, types.I32, types.I32))
+	class_Float := emt.Module.NewTypeDef("%struct.class_Float", types.NewStruct(Float_vTable, types.I32, types.Float))
+	class_Bool := emt.Module.NewTypeDef("%struct.class_Bool", types.NewStruct(Bool_vTable, types.I32, types.I8))
+
+	// load all of their constructors
+	Any_public_Constructor := emt.Module.NewFunc("Any_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Any)))
+	String_public_Constructor := emt.Module.NewFunc("String_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_String)))
+	Int_public_Constructor := emt.Module.NewFunc("Int_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Int)), ir.NewParam("value", types.I32))
+	Float_public_Constructor := emt.Module.NewFunc("Float_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Float)), ir.NewParam("value", types.Float))
+	Bool_public_Constructor := emt.Module.NewFunc("Bool_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Bool)), ir.NewParam("value", types.I8))
+
+	// find out what names to use for the classes
 	anyName := emt.Id(builtins.Any)
 	stringName := emt.Id(builtins.String)
 	intName := emt.Id(builtins.Int)
 	floatName := emt.Id(builtins.Float)
 	boolName := emt.Id(builtins.Bool)
 
-	emt.Classes[anyName] = emt.Module.NewTypeDef("%struct.class_Any", types.NewStruct(Any_vTable, types.I32))
-	emt.Classes[stringName] = emt.Module.NewTypeDef("%struct.class_String", types.NewStruct(String_vTable, types.I32, types.I8Ptr, types.I32, types.I32, types.I32))
-	emt.Classes[intName] = emt.Module.NewTypeDef("%struct.class_Int", types.NewStruct(Int_vTable, types.I32, types.I32))
-	emt.Classes[floatName] = emt.Module.NewTypeDef("%struct.class_Float", types.NewStruct(Float_vTable, types.I32, types.Float))
-	emt.Classes[boolName] = emt.Module.NewTypeDef("%struct.class_Bool", types.NewStruct(Bool_vTable, types.I32, types.I8))
+	// store all of them gamers
+	emt.Classes[anyName] = Class{Type: class_Any, Constructor: Any_public_Constructor}
+	emt.Classes[stringName] = Class{Type: class_String, Constructor: String_public_Constructor}
+	emt.Classes[intName] = Class{Type: class_Int, Constructor: Int_public_Constructor}
+	emt.Classes[floatName] = Class{Type: class_Float, Constructor: Float_public_Constructor}
+	emt.Classes[boolName] = Class{Type: class_Bool, Constructor: Bool_public_Constructor}
 
-	registerReference := emt.Module.NewFunc("arc_RegisterReference", types.Void, ir.NewParam("obj", types.NewPointer(emt.Classes[anyName])))
+	registerReference := emt.Module.NewFunc("arc_RegisterReference", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)))
 	emt.ArcFuncs["registerReference"] = registerReference
 
-	unregisterReference := emt.Module.NewFunc("arc_UnregisterReference", types.Void, ir.NewParam("obj", types.NewPointer(emt.Classes[anyName])))
+	unregisterReference := emt.Module.NewFunc("arc_UnregisterReference", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)))
 	emt.ArcFuncs["dieReference"] = unregisterReference
 }

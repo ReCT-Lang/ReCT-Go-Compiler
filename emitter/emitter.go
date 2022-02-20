@@ -26,7 +26,7 @@ type Emitter struct {
 	ArcFuncs map[string]*ir.Func
 
 	// referenced classes
-	Classes map[string]types.Type
+	Classes map[string]Class
 
 	// global variables
 	Globals        map[string]Global
@@ -53,7 +53,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		ArcFuncs:        make(map[string]*ir.Func),
 		FunctionLocals:  make(map[string]map[string]Local),
 		StrConstants:    make(map[string]value.Value),
-		Classes:         make(map[string]types.Type),
+		Classes:         make(map[string]Class),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -645,6 +645,8 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 	for _, arg := range expr.Arguments {
 		expression := emt.EmitExpression(blk, arg)
 
+		//TODO(RedCube): fix this mess...
+
 		// if this is a string, make a copy before handing it over
 		if arg.Type().Fingerprint() == builtins.String.Fingerprint() {
 			expression = emt.CopyString(blk, expression, arg)
@@ -780,6 +782,7 @@ func (emt *Emitter) CopyString(blk *ir.Block, expression value.Value, source bou
 	// copy over the string
 	newStr := blk.NewCall(emt.CFuncs["uStringCopy"], expression)
 
+	// TODO(RedCube): figure out what todo here lolo
 	// if this isnt another variable, free the old buffer
 	if source.NodeType() != boundnodes.BoundVariableExpression &&
 		source.NodeType() != boundnodes.BoundLiteralExpression {
@@ -832,19 +835,34 @@ func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value
 	return pointer
 }
 
-//func (emt *Emitter) CreateObject(blk *ir.Block, typ types.Type) value.Value {
-//instance := blk.NewAlloca(typ)
-//}
+func (emt *Emitter) CreateObject(blk *ir.Block, typ string, args ...value.Value) value.Value {
+	// create space for the instance
+	instance := blk.NewAlloca(emt.Classes[typ].Type)
+
+	// get pointer to instance
+	instancePointer := blk.NewGetElementPtr(emt.Classes[typ].Type, instance, CI32(0))
+
+	// contructor arguments
+	arguments := []value.Value{instancePointer}
+	arguments = append(arguments, args...)
+
+	// call the constructor
+	blk.NewCall(emt.Classes[typ].Constructor, arguments...)
+
+	return instancePointer
+}
 
 func (emt *Emitter) CreateReference(blk *ir.Block, expr value.Value) {
 	// bitcast the expression to an Any-Pointer
-	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)]))
+	// (meaning we dont change any data, we only change the pointer type)
+	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
 	blk.NewCall(emt.ArcFuncs["registerReference"], any)
 }
 
 func (emt *Emitter) DestroyReference(blk *ir.Block, expr value.Value) {
 	// bitcast the expression to an Any-Pointer
-	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)]))
+	// (meaning we dont change any data, we only change the pointer type)
+	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
 	blk.NewCall(emt.ArcFuncs["dieReference"], any)
 }
 

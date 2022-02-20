@@ -37,3 +37,8 @@ type Function struct {
 	IRFunction    *ir.Func
 	BoundFunction binder.BoundFunction
 }
+
+type Class struct {
+	Type        types.Type
+	Constructor *ir.Func
+}
