@@ -1,2 +1,7 @@
-var any someObj <- "100";
-Print(string(someObj) + "aaaa");
+var someString <- "abcde";
+
+from (i <- 0) to 5 
+{
+	Print("str: " + someString + "; len: " + string(someString->GetLength()));
+	someString <-+ someString;
+}

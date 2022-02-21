@@ -4,11 +4,8 @@ import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/nodes/boundnodes"
-	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
-	"os"
-
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/constant"
 	"github.com/llir/llvm/ir/enum"
@@ -675,9 +672,28 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 }
 
 func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundTypeCallExpressionNode) value.Value {
+	// load the variables value
+	// ------------------------
+	var value value.Value
 
-	print.PrintC(print.Red, "type calls arent implemented yet!")
-	os.Exit(-1)
+	// parameters
+	if expr.Variable.SymbolType() == symbols.Parameter {
+		paramSymbol := expr.Variable.(symbols.ParameterSymbol)
+		value = emt.Function.Params[paramSymbol.Ordinal]
+	}
+
+	// vars
+	if expr.Variable.IsGlobal() {
+		value = blk.NewLoad(emt.IRTypes(emt.Globals[emt.Id(expr.Variable)].Type.Fingerprint()), emt.Globals[emt.Id(expr.Variable)].IRGlobal)
+	} else {
+		value = blk.NewLoad(emt.IRTypes(emt.Locals[emt.Id(expr.Variable)].Type.Fingerprint()), emt.Locals[emt.Id(expr.Variable)].IRLocal)
+	}
+
+	switch expr.Function.Fingerprint() {
+	case builtins.GetLength.Fingerprint():
+		// call the get length function on the string
+		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], value)
+	}
 
 	return nil
 }
