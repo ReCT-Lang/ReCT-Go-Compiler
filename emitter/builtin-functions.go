@@ -124,6 +124,7 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 	// load the string.Load() function
 	String_public_Load := emt.Module.NewFunc("String_public_Load", types.Void, ir.NewParam("this", types.NewPointer(class_String)), ir.NewParam("source", types.I8Ptr))
 	String_public_Concat := emt.Module.NewFunc("String_public_Concat", types.NewPointer(class_String), ir.NewParam("a", types.NewPointer(class_String)), ir.NewParam("b", types.NewPointer(class_String)))
+	String_public_Equal := emt.Module.NewFunc("String_public_Equal", types.I1, ir.NewParam("a", types.NewPointer(class_String)), ir.NewParam("b", types.NewPointer(class_String)))
 
 	// find out what names to use for the classes
 	anyName := emt.Id(builtins.Any)
@@ -142,6 +143,7 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 	// store string functions
 	emt.Classes[stringName].Functions["load"] = String_public_Load
 	emt.Classes[stringName].Functions["concat"] = String_public_Concat
+	emt.Classes[stringName].Functions["equal"] = String_public_Equal
 
 	registerReference := emt.Module.NewFunc("arc_RegisterReference", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)))
 	emt.ArcFuncs["registerReference"] = registerReference

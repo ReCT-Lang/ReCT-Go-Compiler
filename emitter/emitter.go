@@ -42,7 +42,7 @@ type Emitter struct {
 	Labels      map[string]*ir.Block
 }
 
-const verboseARC = true
+const verboseARC = false
 
 func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	emitter := Emitter{
@@ -554,20 +554,8 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewICmp(enum.IPredEQ, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			// temporarely store left and right to access them
-			leftAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
-			rightAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
-			blk.NewStore(left, leftAlloca)
-			blk.NewStore(right, rightAlloca)
-
-			// get the left and right buffers
-			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, leftAlloca, CI32(0), CI32(2))
-			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, rightAlloca, CI32(0), CI32(2))
-			leftBuffer := blk.NewLoad(types.I8Ptr, leftBufferPointer)
-			rightBuffer := blk.NewLoad(types.I8Ptr, rightBufferPointer)
-
-			// compare left and right using strcmp
-			result := blk.NewCall(emt.CFuncs["strcmp"], leftBuffer, rightBuffer)
+			// compare left and right using the string class' equal function
+			result := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["equal"], left, right)
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// free() them
@@ -576,11 +564,11 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			}
 
 			if expr.Right.NodeType() != boundnodes.BoundVariableExpression {
-				emt.DestroyReference(blk, left, "string compare cleanup (right)")
+				emt.DestroyReference(blk, right, "string compare cleanup (right)")
 			}
 
-			// to check if they are equal, check if the result is 0
-			return blk.NewICmp(enum.IPredEQ, result, CI32(0))
+			// return the result
+			return result
 		}
 
 	case boundnodes.NotEquals:
@@ -594,20 +582,8 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewICmp(enum.IPredNE, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			// temporarely store left and right to access them
-			leftAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
-			rightAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
-			blk.NewStore(left, leftAlloca)
-			blk.NewStore(right, rightAlloca)
-
-			// get the left and right buffers
-			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, leftAlloca, CI32(0), CI32(2))
-			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, rightAlloca, CI32(0), CI32(2))
-			leftBuffer := blk.NewLoad(types.I8Ptr, leftBufferPointer)
-			rightBuffer := blk.NewLoad(types.I8Ptr, rightBufferPointer)
-
-			// compare left and right using strcmp
-			result := blk.NewCall(emt.CFuncs["strcmp"], leftBuffer, rightBuffer)
+			// compare left and right using the string class' equal function
+			result := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["equal"], left, right)
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// free() them
@@ -616,11 +592,11 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			}
 
 			if expr.Right.NodeType() != boundnodes.BoundVariableExpression {
-				emt.DestroyReference(blk, left, "string compare cleanup (right)")
+				emt.DestroyReference(blk, right, "string compare cleanup (right)")
 			}
 
-			// to check if they are unequal, check if the result is not 0
-			return blk.NewICmp(enum.IPredNE, result, CI32(0))
+			// to check if they are unequal, negate the result
+			return blk.NewICmp(enum.IPredEQ, result, CI32(0))
 		}
 
 	case boundnodes.Greater:

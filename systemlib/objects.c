@@ -130,6 +130,13 @@ class_String* String_public_Concat(class_String* a, class_String* b) {
 	return newStr;
 }
 
+bool String_public_Equal(class_String* a, class_String* b) {
+	// use strcmp to check if they are equal
+	int result = strcmp(a->buffer, b->buffer);
+
+	return result == 0;
+}
+
 // -----------------------------------------------------------------------------
 // "int" object type
 // Note: this is an object version of an int, this is to box and crunch it

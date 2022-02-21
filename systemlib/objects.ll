@@ -295,6 +295,29 @@ declare i8* @strcat(i8*, i8*) #1
 declare void @arc_RegisterReference(%struct.class_Any*) #4
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local zeroext i1 @String_public_Equal(%struct.class_String* %0, %struct.class_String* %1) #0 {
+  %3 = alloca %struct.class_String*, align 8
+  %4 = alloca %struct.class_String*, align 8
+  %5 = alloca i32, align 4
+  store %struct.class_String* %0, %struct.class_String** %3, align 8
+  store %struct.class_String* %1, %struct.class_String** %4, align 8
+  %6 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %7 = getelementptr inbounds %struct.class_String, %struct.class_String* %6, i32 0, i32 2
+  %8 = load i8*, i8** %7, align 8
+  %9 = load %struct.class_String*, %struct.class_String** %4, align 8
+  %10 = getelementptr inbounds %struct.class_String, %struct.class_String* %9, i32 0, i32 2
+  %11 = load i8*, i8** %10, align 8
+  %12 = call i32 @strcmp(i8* %8, i8* %11) #6
+  store i32 %12, i32* %5, align 4
+  %13 = load i32, i32* %5, align 4
+  %14 = icmp eq i32 %13, 0
+  ret i1 %14
+}
+
+; Function Attrs: nounwind readonly willreturn
+declare i32 @strcmp(i8*, i8*) #2
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Int_public_Die(i8* %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
