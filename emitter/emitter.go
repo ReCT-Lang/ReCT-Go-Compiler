@@ -475,60 +475,19 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewFAdd(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "3\n"))
-
-			// figure out how long our left and right are
-			// for that we can just get the length property
-			leftLenPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, left, CI32(0), CI32(3))
-			rightLenPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, right, CI32(0), CI32(3))
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "a\n"))
-
-			// load the values from the pointers
-			leftLen := blk.NewLoad(types.I32, leftLenPointer)
-			rightLen := blk.NewLoad(types.I32, rightLenPointer)
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "b\n"))
-
-			// get the left and right buffers
-			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, left, CI32(0), CI32(2))
-			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, right, CI32(0), CI32(2))
-			leftBuffer := blk.NewLoad(types.I8Ptr, leftBufferPointer)
-			rightBuffer := blk.NewLoad(types.I8Ptr, rightBufferPointer)
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "c\n"))
-
-			// allocate a new buffer for the concatenation to go into
-			workBuffer := blk.NewCall(emt.CFuncs["malloc"], blk.NewAdd(blk.NewAdd(leftLen, rightLen), CI32(1)))
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "d\n"))
-
-			// copy over the left string
-			blk.NewCall(emt.CFuncs["strcpy"], workBuffer, leftBuffer)
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "e\n"))
-
-			// concat the other side into it
-			blk.NewCall(emt.CFuncs["strcat"], workBuffer, rightBuffer)
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "f\n"))
-
-			// create a new string object
-			newStr := emt.CreateObject(blk, emt.Id(builtins.String))
-			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["load"], newStr, workBuffer)
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "g\n"))
-
-			// clear work buffer
-			blk.NewCall(emt.CFuncs["free"], workBuffer)
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "h\n"))
+			newStr := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["concat"], left, right)
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// decrease their reference count
-			//if expr.Left.NodeType() != boundnodes.BoundVariableExpression {
-			//	emt.DestroyReference(blk, left, "string concat cleanup (left)")
-			//}
+			if expr.Left.NodeType() != boundnodes.BoundVariableExpression {
+				emt.DestroyReference(blk, left, "string concat cleanup (left)")
+			}
 
 			if expr.Right.NodeType() != boundnodes.BoundVariableExpression {
 				emt.DestroyReference(blk, right, "string concat cleanup (right)")
 			}
 
-			blk.NewCall(emt.CFuncs["printf"], emt.GetStringConstant(blk, "done\n"))
-
-			return left
+			return newStr
 		}
 
 	case boundnodes.Subtraction:
@@ -595,9 +554,15 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewICmp(enum.IPredEQ, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// temporarely store left and right to access them
+			leftAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
+			rightAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
+			blk.NewStore(left, leftAlloca)
+			blk.NewStore(right, rightAlloca)
+
 			// get the left and right buffers
-			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, left, CI32(0), CI32(2))
-			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, right, CI32(0), CI32(2))
+			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, leftAlloca, CI32(0), CI32(2))
+			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, rightAlloca, CI32(0), CI32(2))
 			leftBuffer := blk.NewLoad(types.I8Ptr, leftBufferPointer)
 			rightBuffer := blk.NewLoad(types.I8Ptr, rightBufferPointer)
 
@@ -629,9 +594,15 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewICmp(enum.IPredNE, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// temporarely store left and right to access them
+			leftAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
+			rightAlloca := blk.NewAlloca(types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type))
+			blk.NewStore(left, leftAlloca)
+			blk.NewStore(right, rightAlloca)
+
 			// get the left and right buffers
-			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, left, CI32(0), CI32(2))
-			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, right, CI32(0), CI32(2))
+			leftBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, leftAlloca, CI32(0), CI32(2))
+			rightBufferPointer := blk.NewGetElementPtr(emt.Classes[emt.Id(builtins.String)].Type, rightAlloca, CI32(0), CI32(2))
 			leftBuffer := blk.NewLoad(types.I8Ptr, leftBufferPointer)
 			rightBuffer := blk.NewLoad(types.I8Ptr, rightBufferPointer)
 

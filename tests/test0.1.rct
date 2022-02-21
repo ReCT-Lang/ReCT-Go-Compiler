@@ -1,3 +1,1 @@
-Print("doing the thing:");
-Print("aaaa");
-Print("doing the thing:" + "aaaa");
+Print("aaaa" + "bbbb");

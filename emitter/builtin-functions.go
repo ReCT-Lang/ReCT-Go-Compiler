@@ -101,18 +101,18 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 	dieFunction := types.NewPointer(types.NewFunc(types.Void, types.I8Ptr))
 
 	// vTables
-	Any_vTable := emt.Module.NewTypeDef("%struct.Any_vTable", types.NewStruct(types.I8Ptr, types.I8Ptr, dieFunction))
-	String_vTable := emt.Module.NewTypeDef("%struct.String_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
-	Int_vTable := emt.Module.NewTypeDef("%struct.Int_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
-	Float_vTable := emt.Module.NewTypeDef("%struct.Float_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
-	Bool_vTable := emt.Module.NewTypeDef("%struct.Bool_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
+	Any_vTable := emt.Module.NewTypeDef("struct.Any_vTable", types.NewStruct(types.I8Ptr, types.I8Ptr, dieFunction))
+	String_vTable := emt.Module.NewTypeDef("struct.String_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
+	Int_vTable := emt.Module.NewTypeDef("struct.Int_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
+	Float_vTable := emt.Module.NewTypeDef("struct.Float_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
+	Bool_vTable := emt.Module.NewTypeDef("struct.Bool_vTable", types.NewStruct(types.NewPointer(Any_vTable), types.I8Ptr, dieFunction))
 
 	// load all classes
-	class_Any := emt.Module.NewTypeDef("%struct.class_Any", types.NewStruct(Any_vTable, types.I32))
-	class_String := emt.Module.NewTypeDef("%struct.class_String", types.NewStruct(String_vTable, types.I32, types.I8Ptr, types.I32, types.I32, types.I32))
-	class_Int := emt.Module.NewTypeDef("%struct.class_Int", types.NewStruct(Int_vTable, types.I32, types.I32))
-	class_Float := emt.Module.NewTypeDef("%struct.class_Float", types.NewStruct(Float_vTable, types.I32, types.Float))
-	class_Bool := emt.Module.NewTypeDef("%struct.class_Bool", types.NewStruct(Bool_vTable, types.I32, types.I8))
+	class_Any := emt.Module.NewTypeDef("struct.class_Any", types.NewStruct(Any_vTable, types.I32))
+	class_String := emt.Module.NewTypeDef("struct.class_String", types.NewStruct(String_vTable, types.I32, types.I8Ptr, types.I32, types.I32, types.I32))
+	class_Int := emt.Module.NewTypeDef("struct.class_Int", types.NewStruct(Int_vTable, types.I32, types.I32))
+	class_Float := emt.Module.NewTypeDef("struct.class_Float", types.NewStruct(Float_vTable, types.I32, types.Float))
+	class_Bool := emt.Module.NewTypeDef("struct.class_Bool", types.NewStruct(Bool_vTable, types.I32, types.I8))
 
 	// load all of their constructors
 	Any_public_Constructor := emt.Module.NewFunc("Any_public_Constructor", types.Void, ir.NewParam("this", types.NewPointer(class_Any)))
@@ -123,6 +123,7 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 
 	// load the string.Load() function
 	String_public_Load := emt.Module.NewFunc("String_public_Load", types.Void, ir.NewParam("this", types.NewPointer(class_String)), ir.NewParam("source", types.I8Ptr))
+	String_public_Concat := emt.Module.NewFunc("String_public_Concat", types.NewPointer(class_String), ir.NewParam("a", types.NewPointer(class_String)), ir.NewParam("b", types.NewPointer(class_String)))
 
 	// find out what names to use for the classes
 	anyName := emt.Id(builtins.Any)
@@ -140,6 +141,7 @@ func (emt *Emitter) EmitClassAndArcReferences() {
 
 	// store string functions
 	emt.Classes[stringName].Functions["load"] = String_public_Load
+	emt.Classes[stringName].Functions["concat"] = String_public_Concat
 
 	registerReference := emt.Module.NewFunc("arc_RegisterReference", types.Void, ir.NewParam("obj", types.NewPointer(class_Any)))
 	emt.ArcFuncs["registerReference"] = registerReference

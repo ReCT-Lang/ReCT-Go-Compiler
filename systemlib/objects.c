@@ -3,6 +3,7 @@
 #include<stdbool.h>
 #include<stdio.h>
 #include "objects.h"
+#include "arc.h"
 
 // NOTE: I made all class names capitalised, this is to distinguish primitives
 //       like int, float, etc from they "boxed" (objectified) versions
@@ -110,6 +111,23 @@ void String_public_AddChar(class_String* this, char value) {
 
 	// increase our length
 	this->length++;
+}
+
+// string utils
+class_String* String_public_Concat(class_String* a, class_String* b) {
+	// new buffer for concatinated string
+	char *newBuffer = (char*)malloc(a->length + b->length + 1);
+	strcpy(newBuffer, a->buffer);
+	strcat(newBuffer, b->buffer);
+
+	// create a new string object
+	class_String *newStr = (class_String*)malloc(sizeof(class_String));
+	String_public_Constructor(newStr);
+	String_public_Load(newStr, newBuffer);
+	arc_RegisterReference((class_Any*)newStr);
+
+	free(newBuffer);
+	return newStr;
 }
 
 // -----------------------------------------------------------------------------
