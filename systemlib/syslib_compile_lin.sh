@@ -7,3 +7,4 @@ opt ./objects.ll > ./objects.bc
 opt ./systemlib.ll > ./systemlib.bc
 
 llvm-link ./arc.bc ./objects.bc ./systemlib.bc > ./systemlib_lin.bc
+llvm-dis ./systemlib_lin.bc > ./systemlib_lin.ll

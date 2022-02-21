@@ -109,4 +109,8 @@ var (
 		String,
 		nodes.FunctionDeclarationMember{},
 	)
+
+	Functions = []symbols.FunctionSymbol{
+		Print, Write, Input, InputKey, Clear, SetCursor, GetSizeX, GetSizeY, SetCursorVisible, GetCursorVisible, Random, Sleep, Version,
+	}
 )

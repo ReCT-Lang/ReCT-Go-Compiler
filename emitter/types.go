@@ -52,4 +52,5 @@ type Class struct {
 	Type        types.Type
 	Constructor *ir.Func
 	Functions   map[string]*ir.Func
+	Name        string
 }

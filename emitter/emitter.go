@@ -373,7 +373,7 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 	case builtins.String.Fingerprint():
 		charPtr := emt.GetStringConstant(blk, expr.Value.(string))
 		strObj := emt.CreateObject(blk, emt.Id(builtins.String))
-		blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["load"], strObj, charPtr)
+		blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, charPtr)
 		return strObj
 	}
 
@@ -475,7 +475,7 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 			return blk.NewFAdd(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
-			newStr := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["concat"], left, right)
+			newStr := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Concat"], left, right)
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// decrease their reference count
@@ -555,7 +555,7 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// compare left and right using the string class' equal function
-			result := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["equal"], left, right)
+			result := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Equal"], left, right)
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// free() them
@@ -583,7 +583,7 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// compare left and right using the string class' equal function
-			result := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["equal"], left, right)
+			result := blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Equal"], left, right)
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// free() them
@@ -690,22 +690,37 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 }
 
 func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.BoundConversionExpressionNode) value.Value {
-
 	value := emt.EmitExpression(blk, expr.Expression)
 
+	// TODO: this is kind of an ugly function, maybe it can be implemented a little nicer
+
 	if expr.ToType.Fingerprint() == builtins.Any.Fingerprint() {
-		// TODO: 'any' datatype
+
+		// if this is a string we only need to change the pointer type as it's already an object
+		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+			// change the pointer type
+			return blk.NewBitCast(value, emt.IRTypes(builtins.Any.Fingerprint()))
+
+		} else {
+			// if it's not a string it needs to be boxed
+			boxedValue := emt.Box(blk, value, expr.Expression.Type())
+			return blk.NewBitCast(boxedValue, emt.IRTypes(builtins.Any.Fingerprint()))
+		}
 
 		// to string conversion
 	} else if expr.ToType.Fingerprint() == builtins.String.Fingerprint() {
 		switch expr.Expression.Type().Fingerprint() {
-		case builtins.String.Fingerprint():
-			return value
+		case builtins.Any.Fingerprint():
+			// change the pointer type from any to string
+			return blk.NewBitCast(value, emt.IRTypes(builtins.String.Fingerprint()))
 		case builtins.Bool.Fingerprint():
-			//trueStr := emt.GetStringConstant(blk, "true")
-			//falseStr := emt.GetStringConstant(blk, "false")
+			trueStr := emt.GetStringConstant(blk, "true")
+			falseStr := emt.GetStringConstant(blk, "false")
 
-			//return emt.CopyStringNoFree(blk, blk.NewSelect(value, trueStr, falseStr))
+			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], blk.NewSelect(value, trueStr, falseStr))
+
+			return strObj
 		case builtins.Int.Fingerprint():
 			// find out how much space we need to allocate
 			len := blk.NewCall(emt.CFuncs["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%d"), value)
@@ -716,7 +731,12 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			// convert the float
 			blk.NewCall(emt.CFuncs["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%d"), value)
 
-			return newStr
+			// create a new string object
+			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], newStr)
+			blk.NewCall(emt.CFuncs["free"], newStr)
+
+			return strObj
 
 		case builtins.Float.Fingerprint():
 			// convert float to double, idk why but it doesnt work without it
@@ -731,10 +751,15 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			// convert the float
 			blk.NewCall(emt.CFuncs["snprintf"], newStr, blk.NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%g"), double)
 
-			return newStr
+			// create a new string object
+			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], newStr)
+			blk.NewCall(emt.CFuncs["free"], newStr)
+
+			return strObj
 		}
 
-		// string -> bool
+		// to bool conversions
 	} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// see if the string we got is equal to "true"
@@ -879,14 +904,14 @@ func (emt *Emitter) CreateReferenceNormal(blk *ir.Block, expr value.Value) {
 	// bitcast the expression to an Any-Pointer
 	// (meaning we dont change any data, we only change the pointer type)
 	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	blk.NewCall(emt.ArcFuncs["registerReference"], any)
+	blk.NewCall(emt.ArcFuncs["RegisterReference"], any)
 }
 
 func (emt *Emitter) DestroyReferenceNormal(blk *ir.Block, expr value.Value) {
 	// bitcast the expression to an Any-Pointer
 	// (meaning we dont change any data, we only change the pointer type)
 	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	blk.NewCall(emt.ArcFuncs["dieReference"], any)
+	blk.NewCall(emt.ArcFuncs["UnregisterReference"], any)
 }
 
 // DEBUG ARC FUNCTIONS
@@ -894,14 +919,14 @@ func (emt *Emitter) CreateReferenceVerbose(blk *ir.Block, expr value.Value, comm
 	// bitcast the expression to an Any-Pointer
 	// (meaning we dont change any data, we only change the pointer type)
 	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	blk.NewCall(emt.ArcFuncs["registerVerboseReference"], any, comment)
+	blk.NewCall(emt.ArcFuncs["RegisterReferenceVerbose"], any, comment)
 }
 
 func (emt *Emitter) DestroyReferenceVerbose(blk *ir.Block, expr value.Value, comment value.Value) {
 	// bitcast the expression to an Any-Pointer
 	// (meaning we dont change any data, we only change the pointer type)
 	any := blk.NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	blk.NewCall(emt.ArcFuncs["dieVerboseReference"], any, comment)
+	blk.NewCall(emt.ArcFuncs["UnregisterReferenceVerbose"], any, comment)
 }
 
 // </UTILS>--------------------------------------------------------------------

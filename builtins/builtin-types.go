@@ -12,4 +12,8 @@ var (
 
 	// the cursed one
 	Error = symbols.CreateTypeSymbol("?", make([]symbols.TypeSymbol, 0))
+
+	Types = []symbols.TypeSymbol{
+		Void, Bool, Int, Float, String, Any,
+	}
 )
