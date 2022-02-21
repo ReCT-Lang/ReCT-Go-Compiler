@@ -124,15 +124,29 @@ define dso_local void @String_public_Load(%struct.class_String* %0, i8* %1) #0 {
   %19 = load %struct.class_String*, %struct.class_String** %3, align 8
   %20 = getelementptr inbounds %struct.class_String, %struct.class_String* %19, i32 0, i32 2
   %21 = load i8*, i8** %20, align 8
-  call void @free(i8* %21) #4
-  %22 = load i8*, i8** %6, align 8
-  %23 = load %struct.class_String*, %struct.class_String** %3, align 8
-  %24 = getelementptr inbounds %struct.class_String, %struct.class_String* %23, i32 0, i32 2
-  store i8* %22, i8** %24, align 8
-  %25 = load i32, i32* %5, align 4
-  %26 = load %struct.class_String*, %struct.class_String** %3, align 8
-  %27 = getelementptr inbounds %struct.class_String, %struct.class_String* %26, i32 0, i32 4
-  store i32 %25, i32* %27, align 4
+  %22 = icmp ne i8* %21, null
+  br i1 %22, label %23, label %27
+
+23:                                               ; preds = %2
+  %24 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %25 = getelementptr inbounds %struct.class_String, %struct.class_String* %24, i32 0, i32 2
+  %26 = load i8*, i8** %25, align 8
+  call void @free(i8* %26) #4
+  br label %27
+
+27:                                               ; preds = %23, %2
+  %28 = load i8*, i8** %6, align 8
+  %29 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %30 = getelementptr inbounds %struct.class_String, %struct.class_String* %29, i32 0, i32 2
+  store i8* %28, i8** %30, align 8
+  %31 = load i32, i32* %5, align 4
+  %32 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %33 = getelementptr inbounds %struct.class_String, %struct.class_String* %32, i32 0, i32 3
+  store i32 %31, i32* %33, align 8
+  %34 = load i32, i32* %5, align 4
+  %35 = load %struct.class_String*, %struct.class_String** %3, align 8
+  %36 = getelementptr inbounds %struct.class_String, %struct.class_String* %35, i32 0, i32 4
+  store i32 %34, i32* %36, align 4
   ret void
 }
 

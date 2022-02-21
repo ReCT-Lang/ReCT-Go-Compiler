@@ -1,6 +1,3 @@
-while (true)
-{
-	var input <- Input();
-	Print(input);
-
-}
+Print("doing the thing:");
+Print("aaaa");
+Print("doing the thing:" + "aaaa");

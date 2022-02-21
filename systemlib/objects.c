@@ -67,13 +67,15 @@ void String_public_Load(class_String* this, char* source) {
 	// copy over the source
 	memcpy(output, source, size + 1);
 
-	// free the old buffer
-	free(this->buffer);
+	// free the old buffer if theres anything in there
+	if (this->buffer != NULL)
+		free(this->buffer);
 
 	// change our pointer
 	this->buffer = output;
 
-	// update our max length
+	// update our length and max length
+	this->length = size;
 	this->maxLen = size;
 }
 

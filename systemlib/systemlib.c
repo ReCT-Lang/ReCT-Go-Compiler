@@ -46,6 +46,9 @@ class_String* rct_Input()
 	String_public_Load(strInstance, str);
 	arc_RegisterReference((class_Any*)strInstance);
 
+	if(str != NULL)
+		free(str);
+
     return strInstance;
 }
 

@@ -133,8 +133,18 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %55 = load %struct.class_String*, %struct.class_String** %4, align 8
   %56 = bitcast %struct.class_String* %55 to %struct.class_Any*
   call void @arc_RegisterReference(%struct.class_Any* %56)
-  %57 = load %struct.class_String*, %struct.class_String** %4, align 8
-  ret %struct.class_String* %57
+  %57 = load i8*, i8** %1, align 8
+  %58 = icmp ne i8* %57, null
+  br i1 %58, label %59, label %61
+
+59:                                               ; preds = %49
+  %60 = load i8*, i8** %1, align 8
+  call void @free(i8* %60) #3
+  br label %61
+
+61:                                               ; preds = %59, %49
+  %62 = load %struct.class_String*, %struct.class_String** %4, align 8
+  ret %struct.class_String* %62
 }
 
 ; Function Attrs: nounwind
