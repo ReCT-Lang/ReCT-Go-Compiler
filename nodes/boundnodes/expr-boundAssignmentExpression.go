@@ -22,6 +22,8 @@ func (node BoundAssignmentExpressionNode) Print(indent string) {
 	node.Expression.Print(indent + "    ")
 }
 
+func (BoundAssignmentExpressionNode) IsPersistent() bool { return false }
+
 // implement the expression node interface
 func (node BoundAssignmentExpressionNode) Type() symbols.TypeSymbol { return node.Expression.Type() }
 

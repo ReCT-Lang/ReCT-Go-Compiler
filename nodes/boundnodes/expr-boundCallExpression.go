@@ -23,6 +23,8 @@ func (node BoundCallExpressionNode) Print(indent string) {
 	}
 }
 
+func (BoundCallExpressionNode) IsPersistent() bool { return false }
+
 // implement the expression node interface
 func (node BoundCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
 

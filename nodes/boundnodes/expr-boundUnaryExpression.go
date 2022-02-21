@@ -22,6 +22,8 @@ func (node BoundUnaryExpressionNode) Print(indent string) {
 	node.Expression.Print(indent + "    ")
 }
 
+func (BoundUnaryExpressionNode) IsPersistent() bool { return false }
+
 // implement the expression node interface
 func (node BoundUnaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 

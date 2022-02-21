@@ -23,6 +23,7 @@ type BoundLabel string
 type BoundExpressionNode interface {
 	BoundNode
 	Type() symbols.TypeSymbol
+	IsPersistent() bool
 }
 
 // enum for all our node types

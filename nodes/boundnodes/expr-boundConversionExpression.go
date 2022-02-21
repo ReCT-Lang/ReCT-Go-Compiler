@@ -23,6 +23,8 @@ func (node BoundConversionExpressionNode) Print(indent string) {
 	node.Expression.Print(indent + "    ")
 }
 
+func (node BoundConversionExpressionNode) IsPersistent() bool { return node.Expression.IsPersistent() }
+
 // implement the expression node interface
 func (node BoundConversionExpressionNode) Type() symbols.TypeSymbol { return node.ToType }
 

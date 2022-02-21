@@ -36,6 +36,8 @@ func (node BoundLiteralExpressionNode) Print(indent string) {
 	node.LiteralType.Print(indent + "    ")
 }
 
+func (BoundLiteralExpressionNode) IsPersistent() bool { return false }
+
 // implement the expression node interface
 func (node BoundLiteralExpressionNode) Type() symbols.TypeSymbol { return node.LiteralType }
 

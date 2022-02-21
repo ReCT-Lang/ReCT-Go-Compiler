@@ -33,6 +33,8 @@ func (node BoundTypeCallExpressionNode) Print(indent string) {
 	}
 }
 
+func (BoundTypeCallExpressionNode) IsPersistent() bool { return false }
+
 // "constructor" / ooga booga OOP cave man brain
 func CreateBoundTypeCallExpressionNode(
 	id symbols.VariableSymbol,

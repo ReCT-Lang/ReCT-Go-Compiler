@@ -20,6 +20,8 @@ func (node BoundVariableExpressionNode) Print(indent string) {
 	node.Variable.Print(indent + "    ")
 }
 
+func (BoundVariableExpressionNode) IsPersistent() bool { return true }
+
 // implement the expression node interface
 func (node BoundVariableExpressionNode) Type() symbols.TypeSymbol { return node.Variable.VarType() }
 

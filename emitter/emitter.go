@@ -208,8 +208,8 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 	varName := emt.Id(stmt.Variable)
 	expression := emt.EmitExpression(blk, stmt.Initializer)
 
-	// if the expression is any type of variable expression -> increase reference counter
-	if stmt.Initializer.NodeType() == boundnodes.BoundVariableExpression {
+	// if the expression is a variable and contains an object -> increase reference counter
+	if stmt.Initializer.IsPersistent() && stmt.Initializer.Type().IsObject {
 		emt.CreateReference(blk, expression, "variable declaration ["+varName+"]")
 	}
 
@@ -248,7 +248,7 @@ func (emt *Emitter) EmitBoundExpressionStatement(blk *ir.Block, stmt boundnodes.
 	expr := emt.EmitExpression(blk, stmt.Expression)
 
 	// if the expressions value is a string is requires cleanup
-	if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+	if stmt.Expression.Type().IsObject {
 		blk.Insts = append(blk.Insts, NewComment("expression value unused -> destroying reference"))
 		emt.DestroyReference(blk, expr, "destroying unused expression")
 	}
@@ -264,9 +264,8 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 
 		// if the expression is an object, increase its reference count to not have it deleted
 		// only do this for variables, as expressions will already have the correct count
-		if stmt.Expression.NodeType() == boundnodes.BoundVariableExpression {
-			if stmt.Expression.Type().Fingerprint() == builtins.String.Fingerprint() ||
-				stmt.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+		if stmt.Expression.IsPersistent() {
+			if stmt.Expression.Type().IsObject {
 				emt.CreateReference(blk, expression, "return value copy ["+emt.Function.Name()+"]")
 			}
 		}
@@ -284,8 +283,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 		}
 
 		// only clean up things that actually need it (any and string)
-		if local.Type.Fingerprint() == builtins.String.Fingerprint() ||
-			local.Type.Fingerprint() == builtins.Any.Fingerprint() {
+		if local.Type.IsObject {
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+name+"'"))
 			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(local.Type.Fingerprint()), local.IRLocal), "ReturnGC variable '"+local.IRLocal.Ident()+"' (leaving '"+emt.Function.Name()+"')")
 		}
@@ -294,8 +292,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 	// clean up any parameters as well
 	// (passed variables wont be cleaned up as their reference counter has been increased before the call)
 	for _, param := range emt.FunctionSym.Parameters {
-		if param.Type.Fingerprint() == builtins.String.Fingerprint() ||
-			param.Type.Fingerprint() == builtins.Any.Fingerprint() {
+		if param.Type.IsObject {
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+param.Name+"'"))
 			emt.DestroyReference(blk, emt.Function.Params[param.Ordinal], "ReturnGC (parameter) (leaving '"+emt.Function.Name()+"')")
 		}
@@ -314,8 +311,7 @@ func (emt *Emitter) EmitGarbageCollectionStatement(blk *ir.Block, stmt boundnode
 	for _, variable := range stmt.Variables {
 		// check if the variables type needs to be freed
 
-		if variable.VarType().Fingerprint() == builtins.String.Fingerprint() ||
-			variable.VarType().Fingerprint() == builtins.Any.Fingerprint() {
+		if variable.VarType().IsObject {
 			varName := emt.Id(variable)
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+varName+"'"))
 
@@ -400,15 +396,14 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	varName := emt.Id(expr.Variable)
 	expression := emt.EmitExpression(blk, expr.Expression)
 
-	// if the expression is any type of variable expression -> increase reference counter
-	if expr.Expression.NodeType() == boundnodes.BoundVariableExpression {
+	// if the expression is a variable -> increase reference counter
+	if expr.Expression.IsPersistent() && expr.Expression.Type().IsObject {
 		emt.CreateReference(blk, expression, "variable assignment ["+varName+"]")
 	}
 
 	if expr.Variable.IsGlobal() {
 		// if this variable already contained an object -> destroy the reference
-		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() ||
-			expr.Variable.VarType().Fingerprint() == builtins.Any.Fingerprint() {
+		if expr.Variable.VarType().IsObject {
 			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(expr.Variable.VarType().Fingerprint()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
 		}
 
@@ -417,8 +412,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 
 	} else {
 		// if this variable already contained an object -> destroy there reference
-		if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() ||
-			expr.Variable.VarType().Fingerprint() == builtins.Any.Fingerprint() {
+		if expr.Variable.VarType().IsObject {
 			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(expr.Variable.VarType().Fingerprint()), emt.Locals[varName].IRLocal), "destroying reference previously stored in '"+varName+"'")
 		}
 
@@ -428,8 +422,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 
 	// also return the value as this can also be used as an expression
 	// if we're working with objects, a new reference has to be counted
-	if expr.Variable.VarType().Fingerprint() == builtins.String.Fingerprint() ||
-		expr.Variable.VarType().Fingerprint() == builtins.Any.Fingerprint() {
+	if expr.Variable.VarType().IsObject {
 		emt.CreateReference(blk, expression, "assignment value copy (for stuff like a <- b++)")
 		return expression
 	}
@@ -479,11 +472,11 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// decrease their reference count
-			if expr.Left.NodeType() != boundnodes.BoundVariableExpression {
+			if !expr.Left.IsPersistent() {
 				emt.DestroyReference(blk, left, "string concat cleanup (left)")
 			}
 
-			if expr.Right.NodeType() != boundnodes.BoundVariableExpression {
+			if !expr.Right.IsPersistent() {
 				emt.DestroyReference(blk, right, "string concat cleanup (right)")
 			}
 
@@ -559,11 +552,11 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// free() them
-			if expr.Left.NodeType() != boundnodes.BoundVariableExpression {
+			if !expr.Left.IsPersistent() {
 				emt.DestroyReference(blk, left, "string compare cleanup (left)")
 			}
 
-			if expr.Right.NodeType() != boundnodes.BoundVariableExpression {
+			if !expr.Right.IsPersistent() {
 				emt.DestroyReference(blk, right, "string compare cleanup (right)")
 			}
 
@@ -587,11 +580,11 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 			// if left and right aren't variables (meaning they are already memory managed)
 			// free() them
-			if expr.Left.NodeType() != boundnodes.BoundVariableExpression {
+			if !expr.Left.IsPersistent() {
 				emt.DestroyReference(blk, left, "string compare cleanup (left)")
 			}
 
-			if expr.Right.NodeType() != boundnodes.BoundVariableExpression {
+			if !expr.Right.IsPersistent() {
 				emt.DestroyReference(blk, right, "string compare cleanup (right)")
 			}
 
@@ -654,7 +647,7 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 
 		// if this is an object -> increase its reference counter
 		// (only do this for variables)
-		if arg.NodeType() == boundnodes.BoundVariableExpression {
+		if arg.IsPersistent() {
 			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
 				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
 				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
@@ -672,7 +665,7 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 	// meaning we have to clean up its arguments ourselves
 	if expr.Function.BuiltIn {
 		for i, arg := range arguments {
-			if expr.Arguments[i].Type().Fingerprint() == builtins.String.Fingerprint() {
+			if expr.Arguments[i].Type().IsObject {
 				emt.DestroyReference(blk, arg, "ReturnARC of system function '"+functionName+"'")
 			}
 		}
@@ -718,7 +711,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			falseStr := emt.GetStringConstant(blk, "false")
 
 			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
-			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], blk.NewSelect(value, trueStr, falseStr))
+			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, blk.NewSelect(value, trueStr, falseStr))
 
 			return strObj
 		case builtins.Int.Fingerprint():
@@ -733,7 +726,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 
 			// create a new string object
 			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
-			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], newStr)
+			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			blk.NewCall(emt.CFuncs["free"], newStr)
 
 			return strObj
@@ -753,7 +746,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 
 			// create a new string object
 			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
-			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], newStr)
+			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			blk.NewCall(emt.CFuncs["free"], newStr)
 
 			return strObj
@@ -763,46 +756,90 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 	} else if expr.ToType.Fingerprint() == builtins.Bool.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// see if the string we got is equal to "true"
-			result := blk.NewCall(emt.CFuncs["strcmp"], value, emt.GetStringConstant(blk, "true"))
+			result := blk.NewCall(emt.CFuncs["strcmp"], blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value), emt.GetStringConstant(blk, "true"))
 
-			// if value isnt a variable (meaning its already memory managed)
-			// free() it
-			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
-				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFuncs["free"], value)
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "string to bool conversion cleanup")
 			}
 
 			// to check if they are equal, check if the result is 0
 			return blk.NewICmp(enum.IPredEQ, result, CI32(0))
+
+		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// bitcast to boxed bool
+			boxedBool := blk.NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Bool)].Type))
+
+			// load its value
+			primitive := blk.NewCall(emt.Classes[emt.Id(builtins.Bool)].Functions["GetValue"], boxedBool)
+
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "any to bool conversion cleanup")
+			}
+
+			return primitive
 		}
+
+		// to int conversion
 	} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
-			result := blk.NewCall(emt.CFuncs["atoi"], value)
+			result := blk.NewCall(emt.CFuncs["atoi"], blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value))
 
-			// if value isnt a variable (meaning its already memory managed)
-			// free() it
-			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
-				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFuncs["free"], value)
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "string to int conversion cleanup")
 			}
 
 			return result
+
+		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// bitcast to boxed int
+			boxedInt := blk.NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Int)].Type))
+
+			// load its value
+			primitive := blk.NewCall(emt.Classes[emt.Id(builtins.Int)].Functions["GetValue"], boxedInt)
+
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "any to int conversion cleanup")
+			}
+
+			return primitive
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
-			result := blk.NewCall(emt.CFuncs["atof"], value)
+			result := blk.NewCall(emt.CFuncs["atof"], blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value))
 
 			// convert the result from a double to a float
 			floatRes := blk.NewFPTrunc(result, types.Float)
 
-			// if value isnt a variable (meaning its already memory managed)
-			// free() it
-			if expr.Expression.NodeType() != boundnodes.BoundVariableExpression &&
-				expr.Expression.NodeType() != boundnodes.BoundLiteralExpression {
-				blk.NewCall(emt.CFuncs["free"], value)
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "string to float conversion cleanup")
 			}
 
 			return floatRes
+
+		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// bitcast to boxed float
+			boxedFloat := blk.NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Float)].Type))
+
+			// load its value
+			primitive := blk.NewCall(emt.Classes[emt.Id(builtins.Float)].Functions["GetValue"], boxedFloat)
+
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "any to float conversion cleanup")
+			}
+
+			return primitive
 		}
 	}
 

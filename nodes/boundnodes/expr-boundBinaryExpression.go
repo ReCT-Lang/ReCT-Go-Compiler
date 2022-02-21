@@ -25,6 +25,8 @@ func (node BoundBinaryExpressionNode) Print(indent string) {
 	node.Right.Print(indent + "    ")
 }
 
+func (BoundBinaryExpressionNode) IsPersistent() bool { return false }
+
 // implement the expression node interface
 func (node BoundBinaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 

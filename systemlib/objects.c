@@ -137,6 +137,15 @@ bool String_public_Equal(class_String* a, class_String* b) {
 	return result == 0;
 }
 
+// i have no idea how to access the struct
+char *String_public_GetBuffer(class_String* this) {
+	return this->buffer;
+}
+
+int String_public_GetLength(class_String* this) {
+	return this->length;
+}
+
 // -----------------------------------------------------------------------------
 // "int" object type
 // Note: this is an object version of an int, this is to box and crunch it

@@ -1,17 +1,2 @@
-Print("Loopin");
-
-var current <- "";
-
-while(true)
-{
-	current <-+ "a";
-	Print("currently at: " + current);
-
-	if (current = "aaaaaaaaaaaaaaaaaaaa")
-	{
-		Print("wow!");
-		current <- "";
-	}
-}
-
-Print("reached goal!");
+var any someObj <- "100";
+Print(string(someObj) + "aaaa");

@@ -9,6 +9,7 @@ type TypeSymbol struct {
 
 	Name     string
 	SubTypes []TypeSymbol
+	IsObject bool
 }
 
 // implement the interface
@@ -31,9 +32,10 @@ func (sym TypeSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreateTypeSymbol(name string, subTypes []TypeSymbol) TypeSymbol {
+func CreateTypeSymbol(name string, subTypes []TypeSymbol, isObject bool) TypeSymbol {
 	return TypeSymbol{
 		Name:     name,
 		SubTypes: subTypes,
+		IsObject: isObject,
 	}
 }

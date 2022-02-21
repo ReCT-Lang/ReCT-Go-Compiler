@@ -318,6 +318,26 @@ define dso_local zeroext i1 @String_public_Equal(%struct.class_String* %0, %stru
 declare i32 @strcmp(i8*, i8*) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local i8* @String_public_GetBuffer(%struct.class_String* %0) #0 {
+  %2 = alloca %struct.class_String*, align 8
+  store %struct.class_String* %0, %struct.class_String** %2, align 8
+  %3 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %4 = getelementptr inbounds %struct.class_String, %struct.class_String* %3, i32 0, i32 2
+  %5 = load i8*, i8** %4, align 8
+  ret i8* %5
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local i32 @String_public_GetLength(%struct.class_String* %0) #0 {
+  %2 = alloca %struct.class_String*, align 8
+  store %struct.class_String* %0, %struct.class_String** %2, align 8
+  %3 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %4 = getelementptr inbounds %struct.class_String, %struct.class_String* %3, i32 0, i32 3
+  %5 = load i32, i32* %4, align 8
+  ret i32 %5
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Int_public_Die(i8* %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
