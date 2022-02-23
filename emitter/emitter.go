@@ -693,6 +693,12 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 	case builtins.GetLength.Fingerprint():
 		// call the get length function on the string
 		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], value)
+	case builtins.Substring.Fingerprint():
+		start := emt.EmitExpression(blk, expr.Arguments[0])
+		length := emt.EmitExpression(blk, expr.Arguments[1])
+
+		// call the substring function on the string
+		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], value, start, length)
 	}
 
 	return nil

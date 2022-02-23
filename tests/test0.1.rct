@@ -1,7 +1,4 @@
-var someString <- "abcde";
+var text <- "This has, among other things, interested us.";
+var yes  <- text->Substring(10, 6) + text->Substring(41, 3);
 
-from (i <- 0) to 5 
-{
-	Print("str: " + someString + "; len: " + string(someString->GetLength()));
-	someString <-+ someString;
-}
+Print(yes);

@@ -146,6 +146,34 @@ int String_public_GetLength(class_String* this) {
 	return this->length;
 }
 
+class_String *String_public_Substring(class_String* this, int start, int length) {
+	
+	// new string buffer
+	char *subBuffer;
+
+	// make sure the substring is valid
+	if (start < 0 || length < 0 || start + length > this->length)
+		subBuffer = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+	else
+	{
+		subBuffer = (char*)malloc(length + 1);
+		memcpy(subBuffer, &this->buffer[start], length);
+		subBuffer[length] = '\0';
+	}
+	
+	// create a string object
+	class_String *newString = (class_String*)malloc(sizeof(class_String));
+	String_public_Constructor(newString);
+	String_public_Load(newString, subBuffer);
+	arc_RegisterReference((class_Any*)newString);
+
+	// clear the work buffer
+	free(subBuffer);
+
+	// return the string object
+	return newString;
+}
+
 // -----------------------------------------------------------------------------
 // "int" object type
 // Note: this is an object version of an int, this is to box and crunch it
