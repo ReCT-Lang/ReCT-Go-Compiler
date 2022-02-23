@@ -11,6 +11,8 @@ type CallExpressionNode struct {
 
 	Identifier lexer.Token
 	Arguments  []ExpressionNode
+
+	CastingType TypeClauseNode // if this call is actually a complex cast
 }
 
 // implement node type from interface
@@ -37,9 +39,10 @@ func (node CallExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateCallExpressionNode(id lexer.Token, args []ExpressionNode) CallExpressionNode {
+func CreateCallExpressionNode(id lexer.Token, args []ExpressionNode, castClause TypeClauseNode) CallExpressionNode {
 	return CallExpressionNode{
-		Identifier: id,
-		Arguments:  args,
+		Identifier:  id,
+		Arguments:   args,
+		CastingType: castClause,
 	}
 }

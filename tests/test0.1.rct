@@ -1,4 +1,4 @@
-var text <- "This has, among other things, interested us.";
-var yes  <- text->Substring(10, 6) + text->Substring(41, 3);
+var any someObject <- "aaa";
 
-Print(yes);
+var a <- array[string](someObj);
+var b <- a[0];

@@ -12,6 +12,7 @@ type TypeClauseNode struct {
 
 	ClauseIsSet    bool
 	TypeIdentifier lexer.Token
+	SubClauses     []TypeClauseNode
 }
 
 // implement node type from interface
@@ -21,6 +22,7 @@ func (TypeClauseNode) NodeType() NodeType { return TypeClause }
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 func (node TypeClauseNode) Position() (int, int, int) {
+	//TODO: this needs updating for subtypes but i couldn't bring myself todo so yet - RedCube
 	return node.TypeIdentifier.Line, node.TypeIdentifier.Column, len(node.TypeIdentifier.Value)
 }
 
@@ -32,9 +34,10 @@ func (node TypeClauseNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateTypeClauseNode(id lexer.Token) TypeClauseNode {
+func CreateTypeClauseNode(id lexer.Token, subtypes []TypeClauseNode) TypeClauseNode {
 	return TypeClauseNode{
-		TypeIdentifier: id,
 		ClauseIsSet:    true,
+		TypeIdentifier: id,
+		SubClauses:     subtypes,
 	}
 }

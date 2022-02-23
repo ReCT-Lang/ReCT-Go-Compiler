@@ -68,4 +68,5 @@ const (
 	BinaryExpression         NodeType = "Binary Expression"
 	VariableEditorExpression NodeType = "VariableEditor Expression"
 	TypeCallExpression       NodeType = "TypeCall Expression"
+	ArrayAccessExpression    NodeType = "ArrayAccess Expression"
 )

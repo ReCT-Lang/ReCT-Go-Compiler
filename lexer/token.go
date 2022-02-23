@@ -54,6 +54,8 @@ const (
 
 	OpenBraceToken        TokenKind = "OpenBrace '{'"
 	CloseBraceToken       TokenKind = "Closebrace '}'"
+	OpenBracketToken      TokenKind = "OpenBracket '['"
+	CloseBracketToken     TokenKind = "CloseBracket ']'"
 	OpenParenthesisToken  TokenKind = "OpenParenthesis '('"
 	CloseParenthesisToken TokenKind = "CloseParenthesis ')'"
 

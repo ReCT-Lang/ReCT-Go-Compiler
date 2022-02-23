@@ -66,6 +66,12 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 	return prs.peek(-1)
 }
 
+func (prs *Parser) rewind(to lexer.Token) {
+	for prs.current().String(false) != to.String(false) {
+		prs.Index--
+	}
+}
+
 // </HELPERS> -----------------------------------------------------------------
 
 // Parse parse a compilation (with all its functions, classes, enums, global statements, etc...)
@@ -197,7 +203,71 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 	}
 
 	identifier := prs.consume(lexer.IdToken)
-	return nodes.CreateTypeClauseNode(identifier)
+	subTypes := make([]nodes.TypeClauseNode, 0)
+
+	// subtypes
+	if prs.current().Kind == lexer.OpenBracketToken {
+		prs.consume(lexer.OpenBracketToken)
+
+		// parse all subtypes in the [] recursively
+		for true {
+			subTypes = append(subTypes, prs.parseTypeClause())
+
+			if prs.current().Kind != lexer.CommaToken {
+				break
+			} else {
+				prs.consume(lexer.CommaToken)
+			}
+		}
+
+		prs.consume(lexer.CloseBracketToken)
+	}
+
+	return nodes.CreateTypeClauseNode(identifier, subTypes)
+}
+
+// parseUncertainTypeClause consumes the datatype and returns it in node form
+// difference to parseTypeClause is that this one can fail safely if we notice that this isn't a type
+func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
+	identifier := prs.consume(lexer.IdToken)
+	subTypes := make([]nodes.TypeClauseNode, 0)
+
+	// subtypes
+	if prs.current().Kind == lexer.OpenBracketToken {
+		prs.consume(lexer.OpenBracketToken)
+
+		// parse all subtypes in the [] recursively
+		for true {
+			// check if this is an identifier
+			if prs.current().Kind != lexer.IdToken {
+				return nodes.TypeClauseNode{}, false
+			}
+
+			subClause, ok := prs.parseUncertainTypeClause()
+
+			// if the subclause failed -> fail
+			if !ok {
+				return nodes.TypeClauseNode{}, false
+			}
+
+			subTypes = append(subTypes, subClause)
+
+			if prs.current().Kind != lexer.CommaToken {
+				break
+			} else {
+				prs.consume(lexer.CommaToken)
+			}
+		}
+
+		// if there's no close bracket here -> fail
+		if prs.current().Kind != lexer.CloseBracketToken {
+			return nodes.TypeClauseNode{}, false
+		}
+
+		prs.consume(lexer.CloseBracketToken)
+	}
+
+	return nodes.CreateTypeClauseNode(identifier, subTypes), true
 }
 
 // <STATEMENTS> ---------------------------------------------------------------
@@ -296,7 +366,8 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 	// We assign typeClause and empty node and check, this means the typeClause will remain empty
 	// if there is no type in the declaration.
 	typeClause := nodes.TypeClauseNode{}
-	if prs.current().Kind == lexer.IdToken && prs.peek(1).Kind == lexer.IdToken {
+	if prs.current().Kind == lexer.IdToken &&
+		(prs.peek(1).Kind == lexer.IdToken || prs.peek(1).Kind == lexer.OpenBracketToken) {
 		typeClause = prs.parseTypeClause()
 	}
 
@@ -623,6 +694,11 @@ func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {
 		return prs.parseCallExpression()
 	}
 
+	// if there's an open bracket, assume it's a cast, if it's not we can just rewind
+	if prs.peek(1).Kind == lexer.OpenBracketToken {
+		return prs.parseComplexCastExpression()
+	}
+
 	// if not, it's a name expression
 	return prs.parseNameExpression()
 }
@@ -639,7 +715,54 @@ func (prs *Parser) parseCallExpression() nodes.CallExpressionNode {
 	args := prs.parseArguments()             // We get the arguments being put into the function
 	prs.consume(lexer.CloseParenthesisToken) // )
 
-	return nodes.CreateCallExpressionNode(identifier, args)
+	return nodes.CreateCallExpressionNode(identifier, args, nodes.TypeClauseNode{})
+}
+
+// parseComplexCastExpression this for casting what ive called "complex cast" here
+// For example: complexType[string, int](someAny)
+// we need the type and expression but have to make sure this actually is a cast and not an array access
+func (prs *Parser) parseComplexCastExpression() nodes.ExpressionNode {
+
+	// We store the identifier, so we can rewind in case we need to
+	identifier := prs.current()
+
+	// try to parse a type
+	typeClause, ok := prs.parseUncertainTypeClause()
+
+	// if it didn't go so well, rewind -> this is actually an array access
+	if !ok {
+		prs.rewind(identifier)
+		return prs.parseArrayAccessExpression()
+	}
+
+	// if there's no open parenthesis for the cast -> also rewind (this is an array access)
+	if prs.current().Kind != lexer.OpenParenthesisToken {
+		prs.rewind(identifier)
+		return prs.parseArrayAccessExpression()
+	}
+
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	expression := prs.parseExpression()      // We get the expression we want to cast
+	prs.consume(lexer.CloseParenthesisToken) // )
+
+	// return a call expression as the rest is all managed through it
+	return nodes.CreateCallExpressionNode(identifier, []nodes.ExpressionNode{expression}, typeClause)
+}
+
+// parseArrayAccessExpression this for accessing arrays!
+// For example: someArray[1]
+// we need to get the identifier and index we want to access
+func (prs *Parser) parseArrayAccessExpression() nodes.ArrayAccessExpressionNode {
+
+	// We need the identifier to know what variable to access
+	identifier := prs.consume(lexer.IdToken)
+
+	prs.consume(lexer.OpenBracketToken)  // [
+	index := prs.parseExpression()       // We get the index expression
+	prs.consume(lexer.CloseBracketToken) // ]
+
+	// return an array access expression
+	return nodes.CreateArrayAccessExpressionNode(identifier, index)
 }
 
 // parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)

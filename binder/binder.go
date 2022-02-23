@@ -577,12 +577,30 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
 	// check if this is a cast
-	typeSymbol, exists := LookupType(expr.Identifier.Value, true)
+	// -----------------------
+
+	// check if it's a primitive cast
+	typeSymbol, exists := LookupPrimitiveType(expr.Identifier.Value, true)
+
+	// if it worked -> create a primitive conversion
 	if exists && len(expr.Arguments) == 1 {
 		// bind the expression and return a conversion
 		expression := bin.BindExpression(expr.Arguments[0])
 		return bin.BindConversion(expression, typeSymbol, true)
 	}
+
+	// check if it's a complex cast
+	complexTypeSymbol, exists := LookupType(expr.CastingType, true)
+
+	// if it worked -> create a complex conversion
+	if exists && len(expr.Arguments) == 1 {
+		// bind the expression and return a conversion
+		expression := bin.BindExpression(expr.Arguments[0])
+		return bin.BindConversion(expression, complexTypeSymbol, true)
+	}
+
+	// normal function calling
+	// -----------------------
 
 	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
 	for _, arg := range expr.Arguments {
@@ -731,7 +749,7 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 		return symbols.TypeSymbol{}, false
 	}
 
-	typ, _ := LookupType(tc.TypeIdentifier.Value, false)
+	typ, _ := LookupType(tc, false)
 	return typ, true
 }
 
@@ -805,7 +823,41 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 	return boundnodes.CreateBoundConversionExpressionNode(to, expr)
 }
 
-func LookupType(name string, canFail bool) (symbols.TypeSymbol, bool) {
+func LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymbol, bool) {
+	switch typeClause.TypeIdentifier.Value {
+	case "void":
+		return builtins.Void, true
+	case "bool":
+		return builtins.Bool, true
+	case "int":
+		return builtins.Int, true
+	case "float":
+		return builtins.Float, true
+	case "string":
+		return builtins.String, true
+	case "any":
+		return builtins.Any, true
+
+	default:
+		if !canFail {
+			//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+			print.Error(
+				"BINDER",
+				print.ExplicitConversionError,
+				0,
+				0, // needs extra data added and passed into the function
+				0, // Probably wrong, but it works - that's the tokorv guarantee
+				"Couldn't find datatype \"%s\"! Are you sure it exists?",
+				typeClause.TypeIdentifier.Value,
+			)
+			os.Exit(-1)
+		}
+
+		return symbols.TypeSymbol{}, false
+	}
+}
+
+func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 	switch name {
 	case "void":
 		return builtins.Void, true

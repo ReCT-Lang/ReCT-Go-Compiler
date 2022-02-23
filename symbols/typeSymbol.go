@@ -17,7 +17,7 @@ func (TypeSymbol) SymbolType() SymbolType { return Type }
 func (s TypeSymbol) SymbolName() string   { return s.Name }
 
 func (sym TypeSymbol) Print(indent string) {
-	print.PrintC(print.Magenta, indent+"└ TypeSymbol ["+sym.Name+"]")
+	print.PrintC(print.Magenta, indent+"└ TypeSymbol ["+sym.Fingerprint()+"]")
 }
 
 // a unique identifier for each type
