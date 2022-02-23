@@ -577,6 +577,11 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseAssignmentExpression()
 	}
 
+	// array creating
+	if prs.current().Kind == lexer.MakeKeyword {
+		return prs.parseMakeArrayExpression()
+	}
+
 	// if none of the above are what we want, it must be a binary expression!
 	return prs.parseBinaryExpression(0)
 }
@@ -752,7 +757,7 @@ func (prs *Parser) parseComplexCastExpression() nodes.ExpressionNode {
 // parseArrayAccessExpression this for accessing arrays!
 // For example: someArray[1]
 // we need to get the identifier and index we want to access
-func (prs *Parser) parseArrayAccessExpression() nodes.ArrayAccessExpressionNode {
+func (prs *Parser) parseArrayAccessExpression() nodes.ExpressionNode {
 
 	// We need the identifier to know what variable to access
 	identifier := prs.consume(lexer.IdToken)
@@ -761,8 +766,40 @@ func (prs *Parser) parseArrayAccessExpression() nodes.ArrayAccessExpressionNode 
 	index := prs.parseExpression()       // We get the index expression
 	prs.consume(lexer.CloseBracketToken) // ]
 
+	// if there's an assign token, this is an array assignment
+	if prs.current().Kind == lexer.AssignToken {
+		prs.consume(lexer.AssignToken) // <-
+		value := prs.parseExpression() // the value to store in the array
+		// return an array assignment expression
+		return nodes.CreateArrayAssignmentExpressionNode(identifier, index, value)
+	}
+
 	// return an array access expression
 	return nodes.CreateArrayAccessExpressionNode(identifier, index)
+}
+
+// parseMakeArrayExpression this for creating arrays
+// For example: make string array(10)
+// we need to get the type and length of the new array
+func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
+
+	prs.consume(lexer.MakeKeyword) // make
+
+	// We need the base type of the array
+	baseType := prs.parseTypeClause()
+
+	// now we need to consume the "array" keyword
+	// only problem with that is that it doesn't exist (it's an identifier)
+	// so for now we just consume an IdToken
+
+	prs.consume(lexer.IdToken) // array
+
+	prs.consume(lexer.OpenBracketToken)  // (
+	length := prs.parseExpression()      // We get the length of the new array
+	prs.consume(lexer.CloseBracketToken) // )
+
+	// return an array access expression
+	return nodes.CreateMakeArrayExpressionNode(baseType, length)
 }
 
 // parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)

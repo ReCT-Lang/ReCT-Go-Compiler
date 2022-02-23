@@ -433,6 +433,12 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindAssignmentExpression(expr.(nodes.AssignmentExpressionNode))
 	case nodes.VariableEditorExpression:
 		return bin.BindVariableEditorExpression(expr.(nodes.VariableEditorExpressionNode))
+	case nodes.ArrayAccessExpression:
+		return bin.BindArrayAccessExpression(expr.(nodes.ArrayAccessExpressionNode))
+	case nodes.ArrayAssignmentExpression:
+		return bin.BindArrayAssignmentExpression(expr.(nodes.ArrayAssignmentExpressionNode))
+	case nodes.MakeArrayExpression:
+		return bin.BindMakeArrayExpression(expr.(nodes.MakeArrayExpressionNode))
 	case nodes.CallExpression:
 		return bin.BindCallExpression(expr.(nodes.CallExpressionNode))
 	case nodes.UnaryExpression:
@@ -520,6 +526,63 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 
 	// return it as an assignment
 	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression)
+}
+
+func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
+	// bind the variable
+	variable := bin.BindVariableReference(expr.Identifier.Value)
+
+	// check if the variable is an array
+	if variable.VarType().Name != "array" {
+		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol
+		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", variable.VarType().Name)
+		os.Exit(-1)
+	}
+
+	// bind the index expression
+	index := bin.BindExpression(expr.Index)
+
+	// return it as an assignment
+	return boundnodes.CreateBoundArrayAccessExpressionNode(variable, index)
+}
+
+func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
+	// bind the variable
+	variable := bin.BindVariableReference(expr.Identifier.Value)
+
+	// check if the variable is an array
+	if variable.VarType().Name != "array" {
+		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol #2
+		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", variable.VarType().Name)
+		os.Exit(-1)
+	}
+
+	// bind the index expression
+	index := bin.BindExpression(expr.Index)
+
+	// bind the value
+	value := bin.BindExpression(expr.Value)
+
+	// check if the value matches the array's type
+	if value.Type().Fingerprint() != variable.VarType().SubTypes[0].Fingerprint() {
+		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol #3
+		print.PrintCF(print.Red, "Array assignment types dont match! (trying to put %s into %s-Array)", value.Type().Name, variable.VarType().SubTypes[0].Name)
+		os.Exit(-1)
+	}
+
+	// return it as an assignment
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(variable, index, value)
+}
+
+func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
+	// resolve the type symbol
+	baseType, _ := LookupType(expr.Type, false)
+
+	// bind the length expression
+	length := bin.BindExpression(expr.Length)
+
+	// return the bound node
+	return boundnodes.CreateBoundMakeArrayExpressionNode(baseType, length)
 }
 
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
@@ -837,6 +900,9 @@ func LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymb
 		return builtins.String, true
 	case "any":
 		return builtins.Any, true
+	case "array":
+		baseType, _ := LookupType(typeClause.SubClauses[0], false)
+		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true), true
 
 	default:
 		if !canFail {

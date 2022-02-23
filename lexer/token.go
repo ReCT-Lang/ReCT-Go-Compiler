@@ -23,6 +23,7 @@ const (
 	WhileKeyword    TokenKind = "while (Keyword)"
 	ContinueKeyword TokenKind = "continue (keyword)"
 	BreakKeyword    TokenKind = "break (Keyword)"
+	MakeKeyword     TokenKind = "make (Keyword)"
 
 	// Tokens
 	EOF         TokenKind = "EndOfFile"

@@ -59,14 +59,16 @@ const (
 
 	// Expressions
 	// -----------
-	LiteralExpression        NodeType = "Literal Expression"
-	ParenthesisedExpression  NodeType = "Parenthesised Expression"
-	NameExpression           NodeType = "Name Expression"
-	AssignmentExpression     NodeType = "Assignment Expression"
-	CallExpression           NodeType = "Call Expression"
-	UnaryExpression          NodeType = "Unary Expression"
-	BinaryExpression         NodeType = "Binary Expression"
-	VariableEditorExpression NodeType = "VariableEditor Expression"
-	TypeCallExpression       NodeType = "TypeCall Expression"
-	ArrayAccessExpression    NodeType = "ArrayAccess Expression"
+	LiteralExpression         NodeType = "Literal Expression"
+	ParenthesisedExpression   NodeType = "Parenthesised Expression"
+	NameExpression            NodeType = "Name Expression"
+	AssignmentExpression      NodeType = "Assignment Expression"
+	CallExpression            NodeType = "Call Expression"
+	UnaryExpression           NodeType = "Unary Expression"
+	BinaryExpression          NodeType = "Binary Expression"
+	VariableEditorExpression  NodeType = "VariableEditor Expression"
+	TypeCallExpression        NodeType = "TypeCall Expression"
+	ArrayAccessExpression     NodeType = "ArrayAccess Expression"
+	ArrayAssignmentExpression NodeType = "ArrayAssignment Expression"
+	MakeArrayExpression       NodeType = "MakeArray Expression"
 )
