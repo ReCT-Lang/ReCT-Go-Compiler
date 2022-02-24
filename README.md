@@ -75,8 +75,16 @@ For more examples, please refer to the [Documentation](https://docs.rect.ml/).
 - [x] Binder
 - [x] Lowerer
 - [x] Evaluator
-- [ ] IR emitter
-    - [ ] Go modules binding
+- [x] IR emitter
+
+### Version Roadmap
+- [x] ReCT v1.1
+- [ ] ReCT v1.2
+	- [ ] Arrays
+	- [ ] Threading 
+- [ ] ReCT v2.0 (skipping all 1.3 Versions)
+- [ ] ReCT v2.1
+- [ ] ReCT v2.3
 
 See the [open issues](https://github.com/ReCT-Lang/ReCT-Go-Compiler/issues) for a full list of proposed features (and known issues).
 
