@@ -10,10 +10,13 @@ var (
 	String = symbols.CreateTypeSymbol("string", make([]symbols.TypeSymbol, 0), true)
 	Any    = symbols.CreateTypeSymbol("any", make([]symbols.TypeSymbol, 0), true)
 
+	// generic array type so the emitter has something to work with
+	Array = symbols.CreateTypeSymbol("array", make([]symbols.TypeSymbol, 0), true)
+
 	// the cursed one
 	Error = symbols.CreateTypeSymbol("?", make([]symbols.TypeSymbol, 0), false)
 
 	Types = []symbols.TypeSymbol{
-		Void, Bool, Int, Float, String, Any,
+		Void, Bool, Int, Float, String, Any, Array,
 	}
 )

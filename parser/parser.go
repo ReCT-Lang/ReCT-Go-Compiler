@@ -794,9 +794,9 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 
 	prs.consume(lexer.IdToken) // array
 
-	prs.consume(lexer.OpenBracketToken)  // (
-	length := prs.parseExpression()      // We get the length of the new array
-	prs.consume(lexer.CloseBracketToken) // )
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	length := prs.parseExpression()          // We get the length of the new array
+	prs.consume(lexer.CloseParenthesisToken) // )
 
 	// return an array access expression
 	return nodes.CreateMakeArrayExpressionNode(baseType, length)

@@ -4,6 +4,7 @@ import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/symbols"
+	"strings"
 
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
@@ -26,6 +27,11 @@ func (emt *Emitter) IRTypes(fingerprint string) types.Type {
 		return types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type)
 	case builtins.Any.Fingerprint():
 		return types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type)
+	}
+
+	// super janky stuff
+	if strings.HasPrefix(fingerprint, "T_array") {
+		return types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type)
 	}
 
 	return nil

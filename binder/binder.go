@@ -140,7 +140,8 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 		exprStmt := result.(boundnodes.BoundExpressionStatementNode)
 		allowed := exprStmt.Expression.NodeType() == boundnodes.BoundErrorExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundCallExpression ||
-			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression
+			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression ||
+			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression
 
 		if !allowed {
 			//print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")

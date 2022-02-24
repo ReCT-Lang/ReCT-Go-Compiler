@@ -242,3 +242,60 @@ void Bool_public_Die(void* this) {}
 bool Bool_public_GetValue(class_Bool* this) {
 	return this->value;
 }
+
+// -----------------------------------------------------------------------------
+// "array" object type
+// Note: this is an object represents an array, it only holds object types atm
+// The array wont make data copies, it will just hold references
+// -----------------------------------------------------------------------------
+
+// definition for the Bool vTable
+const Array_vTable Array_vTable_Const = {&Any_vTable_Const, "Array", &Array_public_Die};
+
+// definition for the objects constructor
+void Array_public_Constructor(class_Array* this, int length) {
+	this->vtable = &Array_vTable_Const;
+	this->referenceCounter = 0;
+	this->length = length;
+
+	// allocate space needed for our pointers
+	this->elements = (class_Any**)malloc(sizeof(class_Any*)*length);
+}
+
+// definition for the objects destructor
+void Array_public_Die(void* this) {
+	// bitcast the void* into an Array pointer
+	class_Array *me = (class_Array*)this;
+
+	// go through each object and dereference it
+	for (int i = 0; i < me->length; i++) {
+		arc_UnregisterReference(me->elements[i]);
+	}
+
+	// free the allocated space
+	free(me->elements);
+}
+
+// definition for a element access
+class_Any* Array_public_GetElement(class_Array* this, int index) {
+	if (index < 0 || index >= this->length)
+		return NULL;
+
+	return this->elements[index];
+}
+
+// definition for a element assignment
+void Array_public_SetElement(class_Array* this, int index, class_Any *element) {
+	if (index < 0 || index >= this->length)
+		return;
+
+	// increase arc reference count
+	arc_RegisterReference(element);
+
+	*(this->elements + index) = element;
+}
+
+// definition for array length
+int Array_public_GetLength(class_Array* this) {
+	return this->length;
+}

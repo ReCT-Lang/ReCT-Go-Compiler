@@ -335,6 +335,15 @@ func (emt *Emitter) EmitExpression(blk *ir.Block, expr boundnodes.BoundExpressio
 	case boundnodes.BoundAssignmentExpression:
 		return emt.EmitAssignmentExpression(blk, expr.(boundnodes.BoundAssignmentExpressionNode))
 
+	case boundnodes.BoundMakeArrayExpression:
+		return emt.EmitMakeArrayExpression(blk, expr.(boundnodes.BoundMakeArrayExpressionNode))
+
+	case boundnodes.BoundArrayAccessExpression:
+		return emt.EmitArrayAccessExpression(blk, expr.(boundnodes.BoundArrayAccessExpressionNode))
+
+	case boundnodes.BoundArrayAssignmentExpression:
+		return emt.EmitArrayAssignmentExpression(blk, expr.(boundnodes.BoundArrayAssignmentExpressionNode))
+
 	case boundnodes.BoundUnaryExpression:
 		return emt.EmitUnaryExpression(blk, expr.(boundnodes.BoundUnaryExpressionNode))
 
@@ -374,15 +383,19 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 }
 
 func (emt *Emitter) EmitVariableExpression(blk *ir.Block, expr boundnodes.BoundVariableExpressionNode) value.Value {
-	varName := emt.Id(expr.Variable)
+	return emt.EmitVariable(blk, expr.Variable)
+}
+
+func (emt *Emitter) EmitVariable(blk *ir.Block, variable symbols.VariableSymbol) value.Value {
+	varName := emt.Id(variable)
 
 	// parameters
-	if expr.Variable.SymbolType() == symbols.Parameter {
-		paramSymbol := expr.Variable.(symbols.ParameterSymbol)
+	if variable.SymbolType() == symbols.Parameter {
+		paramSymbol := variable.(symbols.ParameterSymbol)
 		return emt.Function.Params[paramSymbol.Ordinal]
 	}
 
-	if expr.Variable.IsGlobal() {
+	if variable.IsGlobal() {
 		return blk.NewLoad(emt.IRTypes(emt.Globals[varName].Type.Fingerprint()), emt.Globals[varName].IRGlobal)
 	} else {
 		return blk.NewLoad(emt.IRTypes(emt.Locals[varName].Type.Fingerprint()), emt.Locals[varName].IRLocal)
@@ -425,6 +438,71 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	}
 
 	return expression
+}
+
+func (emt *Emitter) EmitMakeArrayExpression(blk *ir.Block, expr boundnodes.BoundMakeArrayExpressionNode) value.Value {
+	// get the array length
+	length := emt.EmitExpression(blk, expr.Length)
+
+	// create a new array object
+	array := emt.CreateObject(blk, emt.Id(builtins.Array), length)
+
+	return array
+}
+
+func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode) value.Value {
+	// load the variables value
+	// ------------------------
+	variable := emt.EmitVariable(blk, expr.Variable)
+
+	// index
+	// -----
+	index := emt.EmitExpression(blk, expr.Index)
+
+	// assignment
+	// ----------
+	value := emt.EmitExpression(blk, expr.Value)
+
+	// if this is a primitive -> box it
+	if !expr.Value.Type().IsObject {
+		value = emt.Box(blk, value, expr.Value.Type())
+	}
+
+	// bitcast our pointer to any
+	anyValue := blk.NewBitCast(value, emt.IRTypes(builtins.Any.Fingerprint()))
+
+	// call the array's set element function
+	blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], variable, index, anyValue)
+
+	// return a copy of the value (i really don't think this is necessary but oh well)
+	emt.CreateReference(blk, value, "assign value copy (array assignment)")
+
+	return value
+}
+
+func (emt *Emitter) EmitArrayAccessExpression(blk *ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
+	// load the variables value
+	variable := emt.EmitVariable(blk, expr.Variable)
+
+	// load the index
+	index := emt.EmitExpression(blk, expr.Index)
+
+	// do the access
+	// -------------
+
+	// call the array's get element function
+	element := blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], variable, index)
+
+	// bitcast our pointer to its original class
+	castedElement := blk.NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(expr.Variable.VarType().SubTypes[0])].Type))
+
+	// if this is a primitive -> unbox it
+	if !expr.Variable.VarType().SubTypes[0].IsObject {
+		// call GetValue() to get the original primitive
+		return blk.NewCall(emt.Classes[emt.Id(expr.Variable.VarType().SubTypes[0])].Functions["GetValue"], castedElement)
+	}
+
+	return castedElement
 }
 
 func (emt *Emitter) EmitUnaryExpression(blk *ir.Block, expr boundnodes.BoundUnaryExpressionNode) value.Value {
@@ -673,21 +751,7 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 
 func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundTypeCallExpressionNode) value.Value {
 	// load the variables value
-	// ------------------------
-	var value value.Value
-
-	// parameters
-	if expr.Variable.SymbolType() == symbols.Parameter {
-		paramSymbol := expr.Variable.(symbols.ParameterSymbol)
-		value = emt.Function.Params[paramSymbol.Ordinal]
-	}
-
-	// vars
-	if expr.Variable.IsGlobal() {
-		value = blk.NewLoad(emt.IRTypes(emt.Globals[emt.Id(expr.Variable)].Type.Fingerprint()), emt.Globals[emt.Id(expr.Variable)].IRGlobal)
-	} else {
-		value = blk.NewLoad(emt.IRTypes(emt.Locals[emt.Id(expr.Variable)].Type.Fingerprint()), emt.Locals[emt.Id(expr.Variable)].IRLocal)
-	}
+	value := emt.EmitVariable(blk, expr.Variable)
 
 	switch expr.Function.Fingerprint() {
 	case builtins.GetLength.Fingerprint():

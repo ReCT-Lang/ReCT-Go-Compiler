@@ -8,11 +8,13 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.Int_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Float_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Bool_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
+%struct.Array_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.class_Any = type { %struct.Any_vTable*, i32 }
 %struct.class_String = type { %struct.String_vTable*, i32, i8*, i32, i32, i32 }
 %struct.class_Int = type { %struct.Int_vTable*, i32, i32 }
 %struct.class_Float = type { %struct.Float_vTable*, i32, float }
 %struct.class_Bool = type { %struct.Bool_vTable*, i32, i8 }
+%struct.class_Array = type { %struct.Array_vTable*, i32, %struct.class_Any**, i32 }
 
 @.str = private unnamed_addr constant [4 x i8] c"Any\00", align 1
 @Any_vTable_Const = dso_local constant %struct.Any_vTable { i8* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i32 0, i32 0), void (i8*)* @Any_public_Die }, align 8
@@ -25,6 +27,8 @@ target triple = "x86_64-pc-linux-gnu"
 @Float_vTable_Const = dso_local constant %struct.Float_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.4, i32 0, i32 0), void (i8*)* @Float_public_Die }, align 8
 @.str.5 = private unnamed_addr constant [5 x i8] c"Bool\00", align 1
 @Bool_vTable_Const = dso_local constant %struct.Bool_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.5, i32 0, i32 0), void (i8*)* @Bool_public_Die }, align 8
+@.str.6 = private unnamed_addr constant [6 x i8] c"Array\00", align 1
+@Array_vTable_Const = dso_local constant %struct.Array_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.6, i32 0, i32 0), void (i8*)* @Array_public_Die }, align 8
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Any_public_Die(i8* %0) #0 {
@@ -524,6 +528,170 @@ define dso_local zeroext i1 @Bool_public_GetValue(%struct.class_Bool* %0) #0 {
   ret i1 %6
 }
 
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @Array_public_Die(i8* %0) #0 {
+  %2 = alloca i8*, align 8
+  %3 = alloca %struct.class_Array*, align 8
+  %4 = alloca i32, align 4
+  store i8* %0, i8** %2, align 8
+  %5 = load i8*, i8** %2, align 8
+  %6 = bitcast i8* %5 to %struct.class_Array*
+  store %struct.class_Array* %6, %struct.class_Array** %3, align 8
+  store i32 0, i32* %4, align 4
+  br label %7
+
+7:                                                ; preds = %21, %1
+  %8 = load i32, i32* %4, align 4
+  %9 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %10 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %9, i32 0, i32 3
+  %11 = load i32, i32* %10, align 8
+  %12 = icmp slt i32 %8, %11
+  br i1 %12, label %13, label %24
+
+13:                                               ; preds = %7
+  %14 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %15 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %14, i32 0, i32 2
+  %16 = load %struct.class_Any**, %struct.class_Any*** %15, align 8
+  %17 = load i32, i32* %4, align 4
+  %18 = sext i32 %17 to i64
+  %19 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %16, i64 %18
+  %20 = load %struct.class_Any*, %struct.class_Any** %19, align 8
+  call void @arc_UnregisterReference(%struct.class_Any* %20)
+  br label %21
+
+21:                                               ; preds = %13
+  %22 = load i32, i32* %4, align 4
+  %23 = add nsw i32 %22, 1
+  store i32 %23, i32* %4, align 4
+  br label %7, !llvm.loop !6
+
+24:                                               ; preds = %7
+  %25 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %26 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %25, i32 0, i32 2
+  %27 = load %struct.class_Any**, %struct.class_Any*** %26, align 8
+  %28 = bitcast %struct.class_Any** %27 to i8*
+  call void @free(i8* %28) #5
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @Array_public_Constructor(%struct.class_Array* %0, i32 %1) #0 {
+  %3 = alloca %struct.class_Array*, align 8
+  %4 = alloca i32, align 4
+  store %struct.class_Array* %0, %struct.class_Array** %3, align 8
+  store i32 %1, i32* %4, align 4
+  %5 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %6 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %5, i32 0, i32 0
+  store %struct.Array_vTable* @Array_vTable_Const, %struct.Array_vTable** %6, align 8
+  %7 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %8 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %7, i32 0, i32 1
+  store i32 0, i32* %8, align 8
+  %9 = load i32, i32* %4, align 4
+  %10 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %11 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %10, i32 0, i32 3
+  store i32 %9, i32* %11, align 8
+  %12 = load i32, i32* %4, align 4
+  %13 = sext i32 %12 to i64
+  %14 = mul i64 8, %13
+  %15 = call noalias align 16 i8* @malloc(i64 %14) #5
+  %16 = bitcast i8* %15 to %struct.class_Any**
+  %17 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %18 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %17, i32 0, i32 2
+  store %struct.class_Any** %16, %struct.class_Any*** %18, align 8
+  ret void
+}
+
+declare void @arc_UnregisterReference(%struct.class_Any*) #4
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local %struct.class_Any* @Array_public_GetElement(%struct.class_Array* %0, i32 %1) #0 {
+  %3 = alloca %struct.class_Any*, align 8
+  %4 = alloca %struct.class_Array*, align 8
+  %5 = alloca i32, align 4
+  store %struct.class_Array* %0, %struct.class_Array** %4, align 8
+  store i32 %1, i32* %5, align 4
+  %6 = load i32, i32* %5, align 4
+  %7 = icmp slt i32 %6, 0
+  br i1 %7, label %14, label %8
+
+8:                                                ; preds = %2
+  %9 = load i32, i32* %5, align 4
+  %10 = load %struct.class_Array*, %struct.class_Array** %4, align 8
+  %11 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %10, i32 0, i32 3
+  %12 = load i32, i32* %11, align 8
+  %13 = icmp sge i32 %9, %12
+  br i1 %13, label %14, label %15
+
+14:                                               ; preds = %8, %2
+  store %struct.class_Any* null, %struct.class_Any** %3, align 8
+  br label %23
+
+15:                                               ; preds = %8
+  %16 = load %struct.class_Array*, %struct.class_Array** %4, align 8
+  %17 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %16, i32 0, i32 2
+  %18 = load %struct.class_Any**, %struct.class_Any*** %17, align 8
+  %19 = load i32, i32* %5, align 4
+  %20 = sext i32 %19 to i64
+  %21 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %18, i64 %20
+  %22 = load %struct.class_Any*, %struct.class_Any** %21, align 8
+  store %struct.class_Any* %22, %struct.class_Any** %3, align 8
+  br label %23
+
+23:                                               ; preds = %15, %14
+  %24 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  ret %struct.class_Any* %24
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @Array_public_SetElement(%struct.class_Array* %0, i32 %1, %struct.class_Any* %2) #0 {
+  %4 = alloca %struct.class_Array*, align 8
+  %5 = alloca i32, align 4
+  %6 = alloca %struct.class_Any*, align 8
+  store %struct.class_Array* %0, %struct.class_Array** %4, align 8
+  store i32 %1, i32* %5, align 4
+  store %struct.class_Any* %2, %struct.class_Any** %6, align 8
+  %7 = load i32, i32* %5, align 4
+  %8 = icmp slt i32 %7, 0
+  br i1 %8, label %15, label %9
+
+9:                                                ; preds = %3
+  %10 = load i32, i32* %5, align 4
+  %11 = load %struct.class_Array*, %struct.class_Array** %4, align 8
+  %12 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %11, i32 0, i32 3
+  %13 = load i32, i32* %12, align 8
+  %14 = icmp sge i32 %10, %13
+  br i1 %14, label %15, label %16
+
+15:                                               ; preds = %9, %3
+  br label %25
+
+16:                                               ; preds = %9
+  %17 = load %struct.class_Any*, %struct.class_Any** %6, align 8
+  call void @arc_RegisterReference(%struct.class_Any* %17)
+  %18 = load %struct.class_Any*, %struct.class_Any** %6, align 8
+  %19 = load %struct.class_Array*, %struct.class_Array** %4, align 8
+  %20 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %19, i32 0, i32 2
+  %21 = load %struct.class_Any**, %struct.class_Any*** %20, align 8
+  %22 = load i32, i32* %5, align 4
+  %23 = sext i32 %22 to i64
+  %24 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %21, i64 %23
+  store %struct.class_Any* %18, %struct.class_Any** %24, align 8
+  br label %25
+
+25:                                               ; preds = %16, %15
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local i32 @Array_public_GetLength(%struct.class_Array* %0) #0 {
+  %2 = alloca %struct.class_Array*, align 8
+  store %struct.class_Array* %0, %struct.class_Array** %2, align 8
+  %3 = load %struct.class_Array*, %struct.class_Array** %2, align 8
+  %4 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %3, i32 0, i32 3
+  %5 = load i32, i32* %4, align 8
+  ret i32 %5
+}
+
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #2 = { nounwind readonly willreturn "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
@@ -541,3 +709,5 @@ attributes #6 = { nounwind readonly willreturn }
 !3 = !{i32 7, !"uwtable", i32 1}
 !4 = !{i32 7, !"frame-pointer", i32 2}
 !5 = !{!"clang version 13.0.0"}
+!6 = distinct !{!6, !7}
+!7 = !{!"llvm.loop.mustprogress"}

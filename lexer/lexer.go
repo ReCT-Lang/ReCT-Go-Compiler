@@ -392,6 +392,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return BreakKeyword
 	case "continue":
 		return ContinueKeyword
+	case "make":
+		return MakeKeyword
 	default:
 		return IdToken
 	}
