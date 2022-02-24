@@ -39,7 +39,7 @@ type Emitter struct {
 	Labels      map[string]*ir.Block
 }
 
-const verboseARC = false
+const verboseARC = true
 
 func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	emitter := Emitter{
@@ -473,6 +473,11 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes
 
 	// call the array's set element function
 	blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], variable, index, anyValue)
+
+	// if the element wasnt a variable -> decrease its reference counter
+	if !expr.Value.IsPersistent() && expr.Value.Type().IsObject {
+		emt.DestroyReference(blk, value, "array assignment cleanup")
+	}
 
 	// return a copy of the value (i really don't think this is necessary but oh well)
 	emt.CreateReference(blk, value, "assign value copy (array assignment)")

@@ -260,6 +260,11 @@ void Array_public_Constructor(class_Array* this, int length) {
 
 	// allocate space needed for our pointers
 	this->elements = (class_Any**)malloc(sizeof(class_Any*)*length);
+
+	// null everything
+	for (int i = 0; i < this->length; i++) {
+		*(this->elements + i) = NULL;
+	}
 }
 
 // definition for the objects destructor
@@ -291,6 +296,9 @@ void Array_public_SetElement(class_Array* this, int index, class_Any *element) {
 
 	// increase arc reference count
 	arc_RegisterReference(element);
+
+	// decrease arc reference count for the previous element
+	arc_UnregisterReference((class_Any*)this->elements[index]);
 
 	*(this->elements + index) = element;
 }

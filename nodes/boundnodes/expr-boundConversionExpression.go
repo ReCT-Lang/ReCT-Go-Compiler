@@ -23,7 +23,25 @@ func (node BoundConversionExpressionNode) Print(indent string) {
 	node.Expression.Print(indent + "    ")
 }
 
-func (node BoundConversionExpressionNode) IsPersistent() bool { return node.Expression.IsPersistent() }
+func (node BoundConversionExpressionNode) IsPersistent() bool {
+	// object -> object ---> persistent, if the object is
+	if node.Expression.Type().IsObject && node.ToType.IsObject {
+		return node.Expression.IsPersistent()
+	}
+
+	// object -> primitive ---> not persistent, primitives dont need cleanup
+	if node.Expression.Type().IsObject && node.ToType.IsObject {
+		return false
+	}
+
+	// primitive -> object ---> never persistent, objects are created and need cleanup
+	// (a converted object can be made persistent by handing it to a variable for management)
+	if node.Expression.Type().IsObject && node.ToType.IsObject {
+		return false
+	}
+
+	return false
+}
 
 // implement the expression node interface
 func (node BoundConversionExpressionNode) Type() symbols.TypeSymbol { return node.ToType }

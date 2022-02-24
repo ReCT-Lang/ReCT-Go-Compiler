@@ -99,7 +99,7 @@ func InterpretFile(file string) {
 func CompileFile(file string) {
 	boundProgram := Prepare(file)
 	//print.PrintC(print.Cyan, "-> Emitting!")
-	module := emitter.Emit(boundProgram, false)
+	module := emitter.Emit(boundProgram, true)
 	//fmt.Println(module)
 	os.WriteFile("./out.ll", []byte(module.String()), 0644)
 }

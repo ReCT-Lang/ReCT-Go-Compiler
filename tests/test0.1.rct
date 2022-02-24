@@ -1,3 +1,6 @@
-var coolArray <- make string array(10);
+var any loopCounter <- "aaaaa";
 
-Print(coolArray[0]);
+while (true)
+{
+	Print(string(loopCounter));
+}

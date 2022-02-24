@@ -29,6 +29,7 @@ target triple = "x86_64-pc-linux-gnu"
 @Bool_vTable_Const = dso_local constant %struct.Bool_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.5, i32 0, i32 0), void (i8*)* @Bool_public_Die }, align 8
 @.str.6 = private unnamed_addr constant [6 x i8] c"Array\00", align 1
 @Array_vTable_Const = dso_local constant %struct.Array_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.6, i32 0, i32 0), void (i8*)* @Array_public_Die }, align 8
+@.str.7 = private unnamed_addr constant [6 x i8] c"death\00", align 1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Any_public_Die(i8* %0) #0 {
@@ -578,26 +579,55 @@ define dso_local void @Array_public_Die(i8* %0) #0 {
 define dso_local void @Array_public_Constructor(%struct.class_Array* %0, i32 %1) #0 {
   %3 = alloca %struct.class_Array*, align 8
   %4 = alloca i32, align 4
+  %5 = alloca i32, align 4
   store %struct.class_Array* %0, %struct.class_Array** %3, align 8
   store i32 %1, i32* %4, align 4
-  %5 = load %struct.class_Array*, %struct.class_Array** %3, align 8
-  %6 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %5, i32 0, i32 0
-  store %struct.Array_vTable* @Array_vTable_Const, %struct.Array_vTable** %6, align 8
-  %7 = load %struct.class_Array*, %struct.class_Array** %3, align 8
-  %8 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %7, i32 0, i32 1
-  store i32 0, i32* %8, align 8
-  %9 = load i32, i32* %4, align 4
-  %10 = load %struct.class_Array*, %struct.class_Array** %3, align 8
-  %11 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %10, i32 0, i32 3
-  store i32 %9, i32* %11, align 8
-  %12 = load i32, i32* %4, align 4
-  %13 = sext i32 %12 to i64
-  %14 = mul i64 8, %13
-  %15 = call noalias align 16 i8* @malloc(i64 %14) #5
-  %16 = bitcast i8* %15 to %struct.class_Any**
-  %17 = load %struct.class_Array*, %struct.class_Array** %3, align 8
-  %18 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %17, i32 0, i32 2
-  store %struct.class_Any** %16, %struct.class_Any*** %18, align 8
+  %6 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %7 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %6, i32 0, i32 0
+  store %struct.Array_vTable* @Array_vTable_Const, %struct.Array_vTable** %7, align 8
+  %8 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %9 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %8, i32 0, i32 1
+  store i32 0, i32* %9, align 8
+  %10 = load i32, i32* %4, align 4
+  %11 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %12 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %11, i32 0, i32 3
+  store i32 %10, i32* %12, align 8
+  %13 = load i32, i32* %4, align 4
+  %14 = sext i32 %13 to i64
+  %15 = mul i64 8, %14
+  %16 = call noalias align 16 i8* @malloc(i64 %15) #5
+  %17 = bitcast i8* %16 to %struct.class_Any**
+  %18 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %19 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %18, i32 0, i32 2
+  store %struct.class_Any** %17, %struct.class_Any*** %19, align 8
+  store i32 0, i32* %5, align 4
+  br label %20
+
+20:                                               ; preds = %33, %2
+  %21 = load i32, i32* %5, align 4
+  %22 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %23 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %22, i32 0, i32 3
+  %24 = load i32, i32* %23, align 8
+  %25 = icmp slt i32 %21, %24
+  br i1 %25, label %26, label %36
+
+26:                                               ; preds = %20
+  %27 = load %struct.class_Array*, %struct.class_Array** %3, align 8
+  %28 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %27, i32 0, i32 2
+  %29 = load %struct.class_Any**, %struct.class_Any*** %28, align 8
+  %30 = load i32, i32* %5, align 4
+  %31 = sext i32 %30 to i64
+  %32 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %29, i64 %31
+  store %struct.class_Any* null, %struct.class_Any** %32, align 8
+  br label %33
+
+33:                                               ; preds = %26
+  %34 = load i32, i32* %5, align 4
+  %35 = add nsw i32 %34, 1
+  store i32 %35, i32* %5, align 4
+  br label %20, !llvm.loop !8
+
+36:                                               ; preds = %20
   ret void
 }
 
@@ -663,24 +693,34 @@ define dso_local void @Array_public_SetElement(%struct.class_Array* %0, i32 %1, 
   br i1 %14, label %15, label %16
 
 15:                                               ; preds = %9, %3
-  br label %25
+  br label %32
 
 16:                                               ; preds = %9
   %17 = load %struct.class_Any*, %struct.class_Any** %6, align 8
   call void @arc_RegisterReference(%struct.class_Any* %17)
-  %18 = load %struct.class_Any*, %struct.class_Any** %6, align 8
-  %19 = load %struct.class_Array*, %struct.class_Array** %4, align 8
-  %20 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %19, i32 0, i32 2
-  %21 = load %struct.class_Any**, %struct.class_Any*** %20, align 8
-  %22 = load i32, i32* %5, align 4
-  %23 = sext i32 %22 to i64
-  %24 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %21, i64 %23
-  store %struct.class_Any* %18, %struct.class_Any** %24, align 8
-  br label %25
+  %18 = load %struct.class_Array*, %struct.class_Array** %4, align 8
+  %19 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %18, i32 0, i32 2
+  %20 = load %struct.class_Any**, %struct.class_Any*** %19, align 8
+  %21 = load i32, i32* %5, align 4
+  %22 = sext i32 %21 to i64
+  %23 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %20, i64 %22
+  %24 = load %struct.class_Any*, %struct.class_Any** %23, align 8
+  call void @arc_UnregisterReferenceVerbose(%struct.class_Any* %24, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.7, i64 0, i64 0))
+  %25 = load %struct.class_Any*, %struct.class_Any** %6, align 8
+  %26 = load %struct.class_Array*, %struct.class_Array** %4, align 8
+  %27 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %26, i32 0, i32 2
+  %28 = load %struct.class_Any**, %struct.class_Any*** %27, align 8
+  %29 = load i32, i32* %5, align 4
+  %30 = sext i32 %29 to i64
+  %31 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %28, i64 %30
+  store %struct.class_Any* %25, %struct.class_Any** %31, align 8
+  br label %32
 
-25:                                               ; preds = %16, %15
+32:                                               ; preds = %16, %15
   ret void
 }
+
+declare void @arc_UnregisterReferenceVerbose(%struct.class_Any*, i8*) #4
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local i32 @Array_public_GetLength(%struct.class_Array* %0) #0 {
@@ -711,3 +751,4 @@ attributes #6 = { nounwind readonly willreturn }
 !5 = !{!"clang version 13.0.0"}
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
+!8 = distinct !{!8, !7}
