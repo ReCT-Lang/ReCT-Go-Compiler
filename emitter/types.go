@@ -4,8 +4,6 @@ import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/symbols"
-	"strings"
-
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
 	"github.com/llir/llvm/ir/value"
@@ -13,8 +11,8 @@ import (
 
 // this file is just keeping track of how ReCT types map to LLVM types
 
-func (emt *Emitter) IRTypes(fingerprint string) types.Type {
-	switch fingerprint {
+func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
+	switch typ.Fingerprint() {
 	case builtins.Void.Fingerprint():
 		return types.Void
 	case builtins.Bool.Fingerprint():
@@ -29,9 +27,12 @@ func (emt *Emitter) IRTypes(fingerprint string) types.Type {
 		return types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type)
 	}
 
-	// super janky stuff
-	if strings.HasPrefix(fingerprint, "T_array") {
-		return types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type)
+	if typ.Name == builtins.Array.Name {
+		if typ.SubTypes[0].IsObject {
+			return types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type)
+		} else {
+			return types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type)
+		}
 	}
 
 	return nil

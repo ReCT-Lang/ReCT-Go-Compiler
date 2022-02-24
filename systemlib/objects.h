@@ -16,6 +16,8 @@ typedef struct Bool_vTable   Bool_vTable;
 typedef struct class_Bool    class_Bool;
 typedef struct Array_vTable  Array_vTable;
 typedef struct class_Array   class_Array;
+typedef struct pArray_vTable  pArray_vTable;
+typedef struct class_pArray   class_pArray;
 
 // declare destructor function pointer
 typedef void (*DiePointer)(void*);
@@ -27,6 +29,7 @@ void Int_public_Die    (void*);
 void Float_public_Die  (void*);
 void Bool_public_Die   (void*);
 void Array_public_Die  (void*);
+void pArray_public_Die (void*);
 
 // declare all constructors
 void Any_public_Constructor(class_Any*);
@@ -35,6 +38,7 @@ void Int_public_Constructor(class_Int*, int);
 void Float_public_Constructor(class_Float*, float);
 void Bool_public_Constructor(class_Bool*, bool);
 void Array_public_Constructor(class_Array*, int);
+void pArray_public_Constructor(class_pArray*, int, int);
 
 // delcare string loading function
 void String_public_Load(class_String*, char*);
@@ -155,6 +159,32 @@ struct class_Array {
 	int referenceCounter;        // implementation of the reference counter
 	class_Any **elements;        // marks the start of our array
 	int length;					 // the length of this array
+	int maxLen;                  // buffer length
+	int factor;                  // growth factor 
 };
+
+// -----------------------------------------------------------------------------
+// "parray" object type
+// Note: this is a primitive version of "array"
+// -----------------------------------------------------------------------------
+
+// the object's vtable (for method lookup and method overriding)
+struct pArray_vTable {
+	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
+	const char* className;          // will be "pArray"
+	DiePointer dieFunction;         // destructor function pointer
+};
+
+// the objects struct
+struct class_pArray {
+	const pArray_vTable* vtable;  // our vTable
+	int referenceCounter;         // implementation of the reference counter
+	void *elements;               // marks the start of our array
+	int length;                   // array length
+	int maxLen;                   // buffer length
+	int factor;                   // growth factor 
+	int elemSize;                 // growth factor 
+};
+
 
 #endif

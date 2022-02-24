@@ -1,0 +1,30 @@
+{
+	"files.associations": {
+		"array": "c",
+		"hash_map": "c",
+		"deque": "c",
+		"forward_list": "c",
+		"list": "c",
+		"string": "c",
+		"unordered_map": "c",
+		"unordered_set": "c",
+		"vector": "c",
+		"string_view": "c",
+		"initializer_list": "c",
+		"valarray": "c",
+		"chrono": "c",
+		"variant": "c",
+		"string.h": "c",
+		"math.h": "c",
+		"optional": "c",
+		"istream": "c",
+		"ostream": "c",
+		"ratio": "c",
+		"system_error": "c",
+		"functional": "c",
+		"tuple": "c",
+		"type_traits": "c",
+		"utility": "c",
+		"bitset": "c"
+	}
+}

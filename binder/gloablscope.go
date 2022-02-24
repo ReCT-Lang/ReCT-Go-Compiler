@@ -109,6 +109,8 @@ func BindRootScope() Scope {
 	scope.TryDeclareSymbol(builtins.Random)
 	scope.TryDeclareSymbol(builtins.Sleep)
 	scope.TryDeclareSymbol(builtins.Version)
+	scope.TryDeclareSymbol(builtins.Sqrt)
+	scope.TryDeclareSymbol(builtins.Now)
 
 	return scope
 }

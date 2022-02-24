@@ -110,7 +110,23 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
+	Sqrt = symbols.CreateBuiltInFunctionSymbol(
+		"Sqrt",
+		[]symbols.ParameterSymbol{
+			symbols.CreateParameterSymbol("num", 0, Int),
+		},
+		Int,
+		nodes.FunctionDeclarationMember{},
+	)
+
+	Now = symbols.CreateBuiltInFunctionSymbol(
+		"Now",
+		[]symbols.ParameterSymbol{},
+		Int,
+		nodes.FunctionDeclarationMember{},
+	)
+
 	Functions = []symbols.FunctionSymbol{
-		Print, Write, Input, InputKey, Clear, SetCursor, GetSizeX, GetSizeY, SetCursorVisible, GetCursorVisible, Random, Sleep, Version,
+		Print, Write, Input, InputKey, Clear, SetCursor, GetSizeX, GetSizeY, SetCursorVisible, GetCursorVisible, Random, Sleep, Version, Sqrt, Now,
 	}
 )

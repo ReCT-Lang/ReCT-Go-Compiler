@@ -6,6 +6,7 @@ import (
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
+
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/constant"
 	"github.com/llir/llvm/ir/enum"
@@ -39,7 +40,7 @@ type Emitter struct {
 	Labels      map[string]*ir.Block
 }
 
-const verboseARC = true
+const verboseARC = false
 
 func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	emitter := Emitter{
@@ -92,11 +93,11 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 		paramName := emt.Id(param)
 
 		// create it
-		params = append(params, ir.NewParam(paramName, emt.IRTypes(param.Type.Fingerprint())))
+		params = append(params, ir.NewParam(paramName, emt.IRTypes(param.Type)))
 	}
 
 	// figure out the return type
-	returnType := emt.IRTypes(sym.Type.Fingerprint())
+	returnType := emt.IRTypes(sym.Type)
 
 	// the function name
 	functionName := emt.Id(sym)
@@ -123,7 +124,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 			varName := emt.Id(declStatement.Variable)
 
 			// create local variable
-			local := root.NewAlloca(emt.IRTypes(declStatement.Variable.VarType().Fingerprint()))
+			local := root.NewAlloca(emt.IRTypes(declStatement.Variable.VarType()))
 			local.SetName(varName)
 
 			// save it for referencing later
@@ -282,7 +283,7 @@ func (emt *Emitter) EmitReturnStatement(blk *ir.Block, stmt boundnodes.BoundRetu
 		// only clean up things that actually need it (any and string)
 		if local.Type.IsObject {
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+name+"'"))
-			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(local.Type.Fingerprint()), local.IRLocal), "ReturnGC variable '"+local.IRLocal.Ident()+"' (leaving '"+emt.Function.Name()+"')")
+			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(local.Type), local.IRLocal), "ReturnGC variable '"+local.IRLocal.Ident()+"' (leaving '"+emt.Function.Name()+"')")
 		}
 	}
 
@@ -312,10 +313,10 @@ func (emt *Emitter) EmitGarbageCollectionStatement(blk *ir.Block, stmt boundnode
 			varName := emt.Id(variable)
 			blk.Insts = append(blk.Insts, NewComment(" -> destroying reference to '%"+varName+"'"))
 
-			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(variable.VarType().Fingerprint()), emt.Locals[varName].IRLocal), "GC statement (end of block)")
+			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(variable.VarType()), emt.Locals[varName].IRLocal), "GC statement (end of block)")
 
 			// write NULL to the pointer
-			blk.NewStore(constant.NewNull(emt.IRTypes(variable.VarType().Fingerprint()).(*types.PointerType)), emt.Locals[varName].IRLocal)
+			blk.NewStore(constant.NewNull(emt.IRTypes(variable.VarType()).(*types.PointerType)), emt.Locals[varName].IRLocal)
 		}
 	}
 	blk.Insts = append(blk.Insts, NewComment("</GC - ARC>"))
@@ -396,9 +397,9 @@ func (emt *Emitter) EmitVariable(blk *ir.Block, variable symbols.VariableSymbol)
 	}
 
 	if variable.IsGlobal() {
-		return blk.NewLoad(emt.IRTypes(emt.Globals[varName].Type.Fingerprint()), emt.Globals[varName].IRGlobal)
+		return blk.NewLoad(emt.IRTypes(emt.Globals[varName].Type), emt.Globals[varName].IRGlobal)
 	} else {
-		return blk.NewLoad(emt.IRTypes(emt.Locals[varName].Type.Fingerprint()), emt.Locals[varName].IRLocal)
+		return blk.NewLoad(emt.IRTypes(emt.Locals[varName].Type), emt.Locals[varName].IRLocal)
 	}
 }
 
@@ -414,7 +415,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	if expr.Variable.IsGlobal() {
 		// if this variable already contained an object -> destroy the reference
 		if expr.Variable.VarType().IsObject {
-			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(expr.Variable.VarType().Fingerprint()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
+			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(expr.Variable.VarType()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
 		}
 
 		// assign the value to the global variable
@@ -423,7 +424,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk *ir.Block, expr boundnodes.Boun
 	} else {
 		// if this variable already contained an object -> destroy there reference
 		if expr.Variable.VarType().IsObject {
-			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(expr.Variable.VarType().Fingerprint()), emt.Locals[varName].IRLocal), "destroying reference previously stored in '"+varName+"'")
+			emt.DestroyReference(blk, blk.NewLoad(emt.IRTypes(expr.Variable.VarType()), emt.Locals[varName].IRLocal), "destroying reference previously stored in '"+varName+"'")
 		}
 
 		// assign the value to the local variable
@@ -444,10 +445,17 @@ func (emt *Emitter) EmitMakeArrayExpression(blk *ir.Block, expr boundnodes.Bound
 	// get the array length
 	length := emt.EmitExpression(blk, expr.Length)
 
-	// create a new array object
-	array := emt.CreateObject(blk, emt.Id(builtins.Array), length)
+	// check if this is an object array or a primitive array
+	if expr.BaseType.IsObject {
+		// create a new object array object
+		return emt.CreateObject(blk, emt.Id(builtins.Array), length)
+	} else {
+		// get the size of the primitive we want to allocate
+		size := emt.SizeOf(blk, expr.BaseType)
 
-	return array
+		// create a new primitive array object
+		return emt.CreateObject(blk, emt.Id(builtins.PArray), length, size)
+	}
 }
 
 func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode) value.Value {
@@ -463,26 +471,35 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes
 	// ----------
 	value := emt.EmitExpression(blk, expr.Value)
 
-	// if this is a primitive -> box it
-	if !expr.Value.Type().IsObject {
-		value = emt.Box(blk, value, expr.Value.Type())
+	// decide if we should do object or primitive array access
+	if expr.Variable.VarType().SubTypes[0].IsObject {
+		// bitcast our pointer to any
+		anyValue := blk.NewBitCast(value, emt.IRTypes(builtins.Any))
+
+		// call the array's set element function
+		blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], variable, index, anyValue)
+
+		// if the element wasnt a variable -> decrease its reference counter
+		if !expr.Value.IsPersistent() && expr.Value.Type().IsObject {
+			emt.DestroyReference(blk, value, "array assignment cleanup")
+		}
+
+		// return a copy of the value (i really don't think this is necessary but oh well)
+		emt.CreateReference(blk, value, "assign value copy (array assignment)")
+
+		return value
+	} else {
+		// get the elements pointer
+		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], variable, index)
+
+		// bitcast the pointer to our type
+		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Variable.VarType().SubTypes[0])))
+
+		blk.NewStore(value, castedPtr)
+
+		// return a copy of the value
+		return value
 	}
-
-	// bitcast our pointer to any
-	anyValue := blk.NewBitCast(value, emt.IRTypes(builtins.Any.Fingerprint()))
-
-	// call the array's set element function
-	blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], variable, index, anyValue)
-
-	// if the element wasnt a variable -> decrease its reference counter
-	if !expr.Value.IsPersistent() && expr.Value.Type().IsObject {
-		emt.DestroyReference(blk, value, "array assignment cleanup")
-	}
-
-	// return a copy of the value (i really don't think this is necessary but oh well)
-	emt.CreateReference(blk, value, "assign value copy (array assignment)")
-
-	return value
 }
 
 func (emt *Emitter) EmitArrayAccessExpression(blk *ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
@@ -495,19 +512,25 @@ func (emt *Emitter) EmitArrayAccessExpression(blk *ir.Block, expr boundnodes.Bou
 	// do the access
 	// -------------
 
-	// call the array's get element function
-	element := blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], variable, index)
+	// decide if we should do object or primitive array access
+	if expr.Variable.VarType().SubTypes[0].IsObject {
+		// call the array's get element function
+		element := blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], variable, index)
 
-	// bitcast our pointer to its original class
-	castedElement := blk.NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(expr.Variable.VarType().SubTypes[0])].Type))
+		// bitcast our pointer to its original class
+		castedElement := blk.NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(expr.Variable.VarType().SubTypes[0])].Type))
 
-	// if this is a primitive -> unbox it
-	if !expr.Variable.VarType().SubTypes[0].IsObject {
-		// call GetValue() to get the original primitive
-		return blk.NewCall(emt.Classes[emt.Id(expr.Variable.VarType().SubTypes[0])].Functions["GetValue"], castedElement)
+		return castedElement
+	} else {
+		// get the elements pointer
+		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], variable, index)
+
+		// bitcast the pointer to our type
+		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Variable.VarType().SubTypes[0])))
+
+		// load the value
+		return blk.NewLoad(emt.IRTypes(expr.Variable.VarType().SubTypes[0]), castedPtr)
 	}
-
-	return castedElement
 }
 
 func (emt *Emitter) EmitUnaryExpression(blk *ir.Block, expr boundnodes.BoundUnaryExpressionNode) value.Value {
@@ -768,6 +791,46 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 
 		// call the substring function on the string
 		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], value, start, length)
+	case builtins.GetArrayLength.Fingerprint():
+		// call the get length function on the array
+
+		// object arrays
+		if expr.Variable.VarType().SubTypes[0].IsObject {
+			return blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], value)
+		} else {
+			// primitive arrays
+			return blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], value)
+		}
+
+	case builtins.Push.Fingerprint():
+		element := emt.EmitExpression(blk, expr.Arguments[0])
+
+		// Push() for object arrays
+		// call the array's push function
+		blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["Push"], value, element)
+
+		// if the element wasn't a variable -> decrease its reference counter
+		if !expr.Arguments[0].IsPersistent() {
+			emt.DestroyReference(blk, element, "array push cleanup")
+		}
+
+		// no need for a return value, this is a void
+		return nil
+
+	case builtins.PPush.Fingerprint():
+		element := emt.EmitExpression(blk, expr.Arguments[0])
+
+		// Push() for primitive arrays
+		// grow the array and get the elem pointer
+		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["Grow"], value)
+
+		// bitcast the pointer to our type
+		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Variable.VarType().SubTypes[0])))
+
+		blk.NewStore(element, castedPtr)
+
+		// no need for a return value, this is a void
+		return nil
 	}
 
 	return nil
@@ -783,12 +846,12 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 		// if this is a string we only need to change the pointer type as it's already an object
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// change the pointer type
-			return blk.NewBitCast(value, emt.IRTypes(builtins.Any.Fingerprint()))
+			return blk.NewBitCast(value, emt.IRTypes(builtins.Any))
 
 		} else {
 			// if it's not a string it needs to be boxed
 			boxedValue := emt.Box(blk, value, expr.Expression.Type())
-			return blk.NewBitCast(boxedValue, emt.IRTypes(builtins.Any.Fingerprint()))
+			return blk.NewBitCast(boxedValue, emt.IRTypes(builtins.Any))
 		}
 
 		// to string conversion
@@ -796,7 +859,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 		switch expr.Expression.Type().Fingerprint() {
 		case builtins.Any.Fingerprint():
 			// change the pointer type from any to string
-			return blk.NewBitCast(value, emt.IRTypes(builtins.String.Fingerprint()))
+			return blk.NewBitCast(value, emt.IRTypes(builtins.String))
 		case builtins.Bool.Fingerprint():
 			trueStr := emt.GetStringConstant(blk, "true")
 			falseStr := emt.GetStringConstant(blk, "false")
@@ -949,7 +1012,11 @@ func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) const
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, 0)
 	case builtins.String.Fingerprint():
-		return constant.NewNull(emt.IRTypes(builtins.String.Fingerprint()).(*types.PointerType))
+		return constant.NewNull(emt.IRTypes(builtins.String).(*types.PointerType))
+	}
+
+	if typ.Name == builtins.Array.Name {
+		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
 	}
 
 	return nil
@@ -998,6 +1065,16 @@ func (emt *Emitter) CreateObject(blk *ir.Block, typ string, args ...value.Value)
 	emt.CreateReference(blk, instancePointer, "initial instance")
 
 	return instancePointer
+}
+
+func (emt *Emitter) SizeOf(blk *ir.Block, typ symbols.TypeSymbol) value.Value {
+	// calculate the size by calculating the position of the second array element in an array starting at NULL
+	size := blk.NewGetElementPtr(emt.IRTypes(typ), constant.NewNull(types.NewPointer(emt.IRTypes(typ))), CI32(1))
+
+	// convert the size to an integer
+	sizeInt := blk.NewPtrToInt(size, types.I32)
+
+	return sizeInt
 }
 
 func (emt *Emitter) Box(blk *ir.Block, val value.Value, typ symbols.TypeSymbol) value.Value {

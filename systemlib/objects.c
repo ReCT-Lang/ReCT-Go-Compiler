@@ -194,6 +194,10 @@ void Int_public_Die(void* this) {}
 
 // definition for a string.Resize() method
 int Int_public_GetValue(class_Int* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return 0;
+
+	// if not -> return the stored value
 	return this->value;
 }
 
@@ -217,6 +221,10 @@ void Float_public_Die(void* this) {}
 
 // definition for a string.Resize() method
 float Float_public_GetValue(class_Float* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return 0.0;
+
+	// if not -> return the stored value
 	return this->value;
 }
 
@@ -240,6 +248,10 @@ void Bool_public_Die(void* this) {}
 
 // definition for a string.Resize() method
 bool Bool_public_GetValue(class_Bool* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return false;
+
+	// if not -> return the stored value
 	return this->value;
 }
 
@@ -257,14 +269,11 @@ void Array_public_Constructor(class_Array* this, int length) {
 	this->vtable = &Array_vTable_Const;
 	this->referenceCounter = 0;
 	this->length = length;
+	this->maxLen = length;
+	this->factor = 5;
 
 	// allocate space needed for our pointers
-	this->elements = (class_Any**)malloc(sizeof(class_Any*)*length);
-
-	// null everything
-	for (int i = 0; i < this->length; i++) {
-		*(this->elements + i) = NULL;
-	}
+	this->elements = (class_Any**)calloc(length, sizeof(class_Any*));
 }
 
 // definition for the objects destructor
@@ -306,4 +315,111 @@ void Array_public_SetElement(class_Array* this, int index, class_Any *element) {
 // definition for array length
 int Array_public_GetLength(class_Array* this) {
 	return this->length;
+}
+
+// definition for a push function
+void Array_public_Push(class_Array* this, class_Any *element) {
+
+	// if the array buffer needs to grow
+	if (this->length == this->maxLen) {
+		int newLength = this->length + this->factor;
+
+		// allocate a new buffer
+		class_Any **newBuffer = (class_Any**)malloc(sizeof(class_Any*) * newLength);
+
+		// copy over the old one
+		memcpy(newBuffer, this->elements, sizeof(class_Any*) * this->length);
+
+		// free the old buffer
+		free(this->elements);
+
+		// change our pointer
+		this->elements = newBuffer;
+
+		// NULL the new array slots
+		for (int i = 0; i < this->factor; i++)
+			*(this->elements + this->length + i) = NULL;
+
+		// update our max length 
+		this->maxLen = newLength;
+
+	}
+
+	// update our length
+	this->length++;
+
+	// assign the given element to the new slot
+	Array_public_SetElement(this, this->length - 1, element);
+}
+
+// -----------------------------------------------------------------------------
+// "parray" object type
+// Note: this is a primitive version of "array"
+// -----------------------------------------------------------------------------
+
+// definition for the Bool vTable
+const pArray_vTable pArray_vTable_Const = {&Any_vTable_Const, "pArray", &pArray_public_Die};
+
+// definition for the objects constructor
+void pArray_public_Constructor(class_pArray* this, int length, int elemSize) {
+	this->vtable   = &pArray_vTable_Const;
+	this->referenceCounter = 0;
+	this->length   = length;
+	this->maxLen   = length;
+	this->factor   = 5;
+	this->elemSize = elemSize;
+
+	this->elements = calloc(length, elemSize);
+}
+
+// definition for the objects destructor
+void pArray_public_Die(void* this) {
+	// bitcast the void* into an Array pointer
+	class_pArray *me = (class_pArray*)this;
+
+	// free the allocated space
+	free(me->elements);
+}
+
+// definition for array length
+int pArray_public_GetLength(class_pArray* this) {
+	return this->length;
+}
+
+// definition for a string.Resize() method
+void *pArray_public_Grow(class_pArray* this) {
+
+	// check if growing is actually needed
+	if (this->length == this->maxLen)
+	{
+		int newLength = (this->length + this->factor) * this->elemSize;
+
+		// allocate a new buffer
+		char* output = malloc(newLength);
+
+		// copy over the old one
+		memcpy(output, this->elements, this->length * this->elemSize);
+
+		// free the old buffer
+		free(this->elements);
+
+		// change our pointer
+		this->elements = output;
+
+		// update our new max length!
+		this->maxLen = this->length + this->factor;
+	}
+
+	// increase the length variable as grow being called means something will be pushed
+	this->length++;
+
+	// return a pointer where the new element is supposed to go
+	return (void*)(this->elements + (this->length-1) * this->elemSize);
+}
+
+void *pArray_public_GetElementPtr(class_pArray* this, int index) {
+	if (index < 0 || index >= this->length)
+		return NULL;
+
+	return (void*)(this->elements + index * this->elemSize);
 }

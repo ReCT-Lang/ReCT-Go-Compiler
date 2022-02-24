@@ -1,4 +1,0 @@
-var someString <- "this is so cringe";
-Print("String: '"+someString+"'");
-Print("Length of string: " + string(someString->GetLength()));
-Print("Substring: " + someString->Substring(11, 6));

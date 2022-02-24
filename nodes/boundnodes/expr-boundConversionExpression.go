@@ -30,13 +30,13 @@ func (node BoundConversionExpressionNode) IsPersistent() bool {
 	}
 
 	// object -> primitive ---> not persistent, primitives dont need cleanup
-	if node.Expression.Type().IsObject && node.ToType.IsObject {
+	if node.Expression.Type().IsObject && !node.ToType.IsObject {
 		return false
 	}
 
 	// primitive -> object ---> never persistent, objects are created and need cleanup
 	// (a converted object can be made persistent by handing it to a variable for management)
-	if node.Expression.Type().IsObject && node.ToType.IsObject {
+	if !node.Expression.Type().IsObject && node.ToType.IsObject {
 		return false
 	}
 

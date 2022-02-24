@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <time.h>
 
 #include "objects.h"
 #include "arc.h"
@@ -89,6 +91,16 @@ void rct_Sleep(int ms)
     #ifdef _WIN32
 	Sleep(ms);
     #else
-	sleep(ms / 1000);
+	sleep(ms / 1000.0);
     #endif
+}
+
+int rct_Sqrt(int num)
+{
+    return (int)floor(sqrt((double)num));
+}
+
+int rct_Now()
+{
+    return (int)clock();
 }

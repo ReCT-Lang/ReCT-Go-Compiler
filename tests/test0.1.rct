@@ -1,6 +1,0 @@
-var any loopCounter <- "aaaaa";
-
-while (true)
-{
-	Print(string(loopCounter));
-}

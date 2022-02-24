@@ -37,6 +37,12 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 		return IdentityConversion
 	}
 
+	// converting anything to identity -> no cast
+	if from.Fingerprint() != builtins.Void.Fingerprint() &&
+		to.Fingerprint() == builtins.Identity.Fingerprint() {
+		return IdentityConversion
+	}
+
 	// converting to "any" is always allowed, even without a cast
 	if from.Fingerprint() != builtins.Void.Fingerprint() &&
 		to.Fingerprint() == builtins.Any.Fingerprint() {

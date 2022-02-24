@@ -45,7 +45,7 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %2 = alloca i8*, align 8
   %3 = alloca i32, align 4
   %4 = alloca %struct.class_String*, align 8
-  %5 = call noalias align 16 i8* @malloc(i64 1042) #3
+  %5 = call noalias align 16 i8* @malloc(i64 1042) #4
   store i8* %5, i8** %1, align 8
   store i32 0, i32* %3, align 4
   br label %6
@@ -84,14 +84,14 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %28 = add nsw i32 %27, 1
   %29 = sext i32 %28 to i64
   %30 = mul i64 1, %29
-  %31 = call align 16 i8* @realloc(i8* %25, i64 %30) #3
+  %31 = call align 16 i8* @realloc(i8* %25, i64 %30) #4
   store i8* %31, i8** %2, align 8
   %32 = icmp eq i8* %31, null
   br i1 %32, label %33, label %35
 
 33:                                               ; preds = %24
   %34 = load i8*, i8** %1, align 8
-  call void @free(i8* %34) #3
+  call void @free(i8* %34) #4
   br label %35
 
 35:                                               ; preds = %33, %24
@@ -122,7 +122,7 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   br label %49
 
 49:                                               ; preds = %44, %41
-  %50 = call noalias align 16 i8* @malloc(i64 40) #3
+  %50 = call noalias align 16 i8* @malloc(i64 40) #4
   %51 = bitcast i8* %50 to %struct.class_String*
   store %struct.class_String* %51, %struct.class_String** %4, align 8
   %52 = load %struct.class_String*, %struct.class_String** %4, align 8
@@ -139,7 +139,7 @@ define dso_local %struct.class_String* @rct_Input() #0 {
 
 59:                                               ; preds = %49
   %60 = load i8*, i8** %1, align 8
-  call void @free(i8* %60) #3
+  call void @free(i8* %60) #4
   br label %61
 
 61:                                               ; preds = %59, %49
@@ -218,7 +218,7 @@ define dso_local zeroext i1 @rct_GetCursorVisible() #0 {
 define dso_local i32 @rct_Random(i32 %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
-  %3 = call i32 @rand() #3
+  %3 = call i32 @rand() #4
   %4 = load i32, i32* %2, align 4
   %5 = srem i32 %3, %4
   ret i32 %5
@@ -232,17 +232,38 @@ define dso_local void @rct_Sleep(i32 %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
-  %4 = sdiv i32 %3, 1000
-  %5 = call i32 @sleep(i32 %4)
+  %4 = sitofp i32 %3 to double
+  %5 = fdiv double %4, 1.000000e+03
+  %6 = fptoui double %5 to i32
+  %7 = call i32 @sleep(i32 %6)
   ret void
 }
 
 declare i32 @sleep(i32) #1
 
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local i32 @rct_Sqrt(i32 %0) #0 {
+  %2 = alloca i32, align 4
+  store i32 %0, i32* %2, align 4
+  %3 = load i32, i32* %2, align 4
+  %4 = sitofp i32 %3 to double
+  %5 = call double @sqrt(double %4) #4
+  %6 = call double @llvm.floor.f64(double %5)
+  %7 = fptosi double %6 to i32
+  ret i32 %7
+}
+
+; Function Attrs: nounwind
+declare double @sqrt(double) #2
+
+; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
+declare double @llvm.floor.f64(double) #3
+
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #2 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #3 = { nounwind }
+attributes #3 = { nofree nosync nounwind readnone speculatable willreturn }
+attributes #4 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

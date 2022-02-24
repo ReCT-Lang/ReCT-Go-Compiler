@@ -140,6 +140,7 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 		exprStmt := result.(boundnodes.BoundExpressionStatementNode)
 		allowed := exprStmt.Expression.NodeType() == boundnodes.BoundErrorExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundCallExpression ||
+			exprStmt.Expression.NodeType() == boundnodes.BoundTypeCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression
 
@@ -153,7 +154,7 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 				column,
 				length,
 				"cannot use \"%s\" as statement, only call and assignment expressions can be used as statements!",
-				exprStmt,
+				exprStmt.NodeType(),
 			)
 			os.Exit(-1)
 		}
@@ -591,7 +592,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 
 	// This line will error out because CallIdentifier.RealValue is nil (interface)
 	// I've replaced it with CallIdentifier.Value which seems to do the trick.
-	function := bin.LookupTypeFunction(expr.CallIdentifier.Value) // Should be a string anyway
+	function := bin.LookupTypeFunction(expr.CallIdentifier.Value, variable.VarType()) // Should be a string anyway
 	if function.OriginType.Name != variable.VarType().Name {
 		line, column, length := expr.Position()
 		print.Error(
@@ -817,12 +818,28 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 	return typ, true
 }
 
-func (bin *Binder) LookupTypeFunction(name string) symbols.TypeFunctionSymbol {
+func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) symbols.TypeFunctionSymbol {
 	switch name {
 	case "GetLength":
-		return builtins.GetLength
+		if baseType.Fingerprint() == builtins.String.Fingerprint() {
+			// string length
+			return builtins.GetLength
+		} else {
+			// array length
+			return builtins.GetArrayLength
+		}
 	case "Substring":
 		return builtins.Substring
+	case "Push":
+		if baseType.Name == builtins.Array.Name {
+			if baseType.SubTypes[0].IsObject {
+				// push function for object arrays
+				return builtins.Push
+			} else {
+				// push function for primitive arrays
+				return builtins.PPush
+			}
+		}
 	default:
 		/*print.PrintC(
 			print.Red,

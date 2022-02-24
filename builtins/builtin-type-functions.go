@@ -14,6 +14,14 @@ var (
 		String,
 	)
 
+	GetArrayLength = symbols.CreateBuiltInTypeFunctionSymbol(
+		"GetLength",
+		[]symbols.ParameterSymbol{},
+		Int,
+		nodes.FunctionDeclarationMember{},
+		Array,
+	)
+
 	Substring = symbols.CreateBuiltInTypeFunctionSymbol(
 		"Substring",
 		[]symbols.ParameterSymbol{
@@ -23,5 +31,25 @@ var (
 		String,
 		nodes.FunctionDeclarationMember{},
 		String,
+	)
+
+	Push = symbols.CreateBuiltInTypeFunctionSymbol(
+		"Push",
+		[]symbols.ParameterSymbol{
+			symbols.CreateParameterSymbol("object", 0, Any),
+		},
+		Void,
+		nodes.FunctionDeclarationMember{},
+		Array,
+	)
+
+	PPush = symbols.CreateBuiltInTypeFunctionSymbol(
+		"PPush",
+		[]symbols.ParameterSymbol{
+			symbols.CreateParameterSymbol("element", 0, Identity),
+		},
+		Void,
+		nodes.FunctionDeclarationMember{},
+		Array,
 	)
 )

@@ -1,0 +1,48 @@
+var start <- Now();
+
+// number of cycles we are going to do
+set cycles <- 100_000;
+
+// string pointer
+set stringPointer <- 0;
+
+// a set of strings we can use
+set stringSet <- make string array(5);
+stringSet[0] <- "aaaaa";
+stringSet[1] <- "bbbbb";
+stringSet[2] <- "ccccc";
+stringSet[3] <- "ddddd";
+stringSet[4] <- "eeeee";
+
+// our string array
+var strings <- make string array(0);
+strings->Push(GetString());
+
+// the biggest prime factor will be less than the square root of our max value
+from (i <- 0) to cycles
+{
+	// add a new elements that is the last elements end + a new string from our set
+	var last <- strings[strings->GetLength() - 1];
+	strings->Push(last->Substring(last->GetLength() - 5, 5) + GetString());
+}
+
+from (i <- 0) to strings->GetLength() -1 
+	Print(strings[i]);
+
+
+var end <- Now();
+var mills <- (end - start) / 1000;
+
+
+Print("CYCLES: " + string(cycles));
+Print("TOOK: " + string(mills) + "ms (~"+string(mills / 1000)+"s)");
+
+function GetString() string
+{
+	var str <- stringSet[stringPointer];
+
+	stringPointer++;
+	if (stringPointer >= stringSet->GetLength()) stringPointer <- 0;
+
+	return str;
+}
