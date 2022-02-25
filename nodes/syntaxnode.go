@@ -56,6 +56,7 @@ const (
 	ContinueStatement   NodeType = "Continue Statement"
 	FromToStatement     NodeType = "FromTo Statement"
 	ExpressionStatement NodeType = "Expression Statement"
+	ThreadStatement     NodeType = "Thread Statement"
 
 	// Expressions
 	// -----------

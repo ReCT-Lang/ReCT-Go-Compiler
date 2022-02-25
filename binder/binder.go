@@ -248,6 +248,45 @@ func (bin *Binder) BindElseClause(clause nodes.ElseClauseNode) boundnodes.BoundS
 	return bin.BindStatement(clause.ElseStatement)
 }
 
+func (bin *Binder) BindThreadStatement(stmt nodes.ThreadStatementNode) boundnodes.BoundThreadStatementNode {
+	symbol := bin.ActiveScope.TryLookupSymbol(stmt.Expression.Identifier.Value)
+
+	if symbol == nil || symbol.SymbolType() != symbols.Function {
+		line, column, length := stmt.Expression.Position()
+		print.Error(
+			"BINDER",
+			print.UndefinedFunctionCallError,
+			line+1,
+			column,
+			length,
+			"Function \"%s\" does not exit! (THREAD)",
+			stmt.Expression.Identifier.Value,
+		)
+		os.Exit(-1)
+	}
+
+	functionSymbol := symbol.(symbols.FunctionSymbol)
+
+	// This technically shouldn't be possible, but never underestimate the human spirit... And shitty code.
+	if len(functionSymbol.Parameters) > 0 {
+		line, column, length := stmt.Expression.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"type function \"%s\" expects %d arguments but got %d!",
+			stmt.Expression.Identifier,
+			0,
+			len(functionSymbol.Parameters),
+		)
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreateBoundThreadStatementNode(functionSymbol)
+}
+
 func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnodes.BoundReturnStatementNode {
 	var expression boundnodes.BoundExpressionNode = nil
 
@@ -439,6 +478,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindArrayAccessExpression(expr.(nodes.ArrayAccessExpressionNode))
 	case nodes.ArrayAssignmentExpression:
 		return bin.BindArrayAssignmentExpression(expr.(nodes.ArrayAssignmentExpressionNode))
+	case nodes.ThreadStatement: // :(
+		return bin.BindThreadStatement(expr.(nodes.ThreadStatementNode))
 	case nodes.MakeArrayExpression:
 		return bin.BindMakeArrayExpression(expr.(nodes.MakeArrayExpressionNode))
 	case nodes.CallExpression:
@@ -449,6 +490,7 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindTypeCallExpression(expr.(nodes.TypeCallExpressionNode))
 	case nodes.BinaryExpression:
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
+
 	default:
 		//print.PrintC(print.Red, "Not implemented!")
 		line, column, length := expr.Position()
@@ -474,9 +516,16 @@ func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressio
 	return bin.BindExpression(expr.Expression)
 }
 
-func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.BoundVariableExpressionNode {
-	variable := bin.BindVariableReference(expr.Identifier.Value)
-	return boundnodes.CreateBoundVariableExpressionNode(variable)
+func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.BoundExpressionNode {
+	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
+	if symbol == nil || symbol.SymbolType() != symbols.Function {
+		variable := bin.BindVariableReference(expr.Identifier.Value)
+		return boundnodes.CreateBoundVariableExpressionNode(variable)
+	} else {
+		functionSymbol := symbol.(symbols.FunctionSymbol)
+		return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol)
+	}
+
 }
 
 func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
@@ -677,7 +726,16 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
 	if symbol == nil ||
 		symbol.SymbolType() != symbols.Function {
-		print.PrintC(print.Red, "Cannot find function '"+expr.Identifier.Value+"'!")
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.UndefinedFunctionCallError,
+			line+1,
+			column,
+			length,
+			"Function \"%s\" does not exit!",
+			expr.Identifier.Value,
+		)
 		os.Exit(-1)
 	}
 

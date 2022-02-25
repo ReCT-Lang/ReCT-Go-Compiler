@@ -357,6 +357,7 @@ func handleFileOpen(filename string) []rune {
 	}
 	// Offload a copy of contents for error handling
 	// Also split at new lines because that makes referencing easier
+	print.CodeReference = make([]string, 0)
 	print.CodeReference = strings.Split(string(contents), "\n")
 	return []rune(string(contents))
 }
@@ -394,6 +395,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return ContinueKeyword
 	case "make":
 		return MakeKeyword
+	case "Thread":
+		return ThreadKeyword
 	default:
 		return IdToken
 	}

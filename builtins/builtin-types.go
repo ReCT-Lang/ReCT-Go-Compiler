@@ -10,6 +10,9 @@ var (
 	String = symbols.CreateTypeSymbol("string", make([]symbols.TypeSymbol, 0), true)
 	Any    = symbols.CreateTypeSymbol("any", make([]symbols.TypeSymbol, 0), true)
 
+	// lambda/functionExpression/action/etc
+	Action = symbols.CreateTypeSymbol("action", make([]symbols.TypeSymbol, 0), true)
+
 	// generic array types so the emitter has something to work with
 	Array  = symbols.CreateTypeSymbol("array", make([]symbols.TypeSymbol, 0), true)
 	PArray = symbols.CreateTypeSymbol("parray", make([]symbols.TypeSymbol, 0), true)
@@ -19,6 +22,6 @@ var (
 	Identity = symbols.CreateTypeSymbol("¯\\_(ツ)_/¯", make([]symbols.TypeSymbol, 0), false)
 
 	Types = []symbols.TypeSymbol{
-		Void, Bool, Int, Float, String, Any, Array, PArray,
+		Void, Bool, Int, Float, String, Any, Action, Array, PArray,
 	}
 )

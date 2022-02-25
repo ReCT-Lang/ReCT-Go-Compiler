@@ -46,6 +46,7 @@ const (
 	BoundReturnStatement            BoundType = "BoundReturnStatement"
 	BoundExpressionStatement        BoundType = "BoundExpressionStatement"
 	BoundGarbageCollectionStatement BoundType = "BoundGarbageCollectionStatement"
+	BoundThreadStatement            BoundType = "BoundThreadStatement"
 
 	// Expressions
 	BoundErrorExpression           BoundType = "BoundErrorExpression"
@@ -60,4 +61,5 @@ const (
 	BoundArrayAccessExpression     BoundType = "BoundArrayAccessExpression"
 	BoundArrayAssignmentExpression BoundType = "BoundArrayAssignmentExpression"
 	BoundMakeArrayExpression       BoundType = "BoundMakeArrayExpression"
+	BoundFunctionExpression        BoundType = "BoundCuntionExpression"
 )

@@ -24,6 +24,7 @@ const (
 	ContinueKeyword TokenKind = "continue (keyword)"
 	BreakKeyword    TokenKind = "break (Keyword)"
 	MakeKeyword     TokenKind = "make (Keyword)"
+	ThreadKeyword   TokenKind = "Thread (keyword)"
 
 	// Tokens
 	EOF         TokenKind = "EndOfFile"

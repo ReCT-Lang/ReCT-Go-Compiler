@@ -307,6 +307,9 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 	} else if cur == lexer.FromKeyword {
 		statement = prs.parseFromToStatement()
 
+	} else if cur == lexer.ThreadKeyword {
+		statement = prs.parseThreadStatement()
+
 	} else {
 		// Lastly we process an expression
 		statement = prs.parseExpressionStatement()
@@ -379,6 +382,16 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 	initializer := prs.parseExpression()
 
 	return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, initializer)
+}
+
+func (prs *Parser) parseThreadStatement() nodes.ThreadStatementNode {
+	keyword := prs.consume(lexer.ThreadKeyword)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	expression := prs.parseNameExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	return nodes.CreateThreadStatementNode(keyword, expression)
 }
 
 // parseIfStatement as you can probably guess, this function is called when parseStatement gets an IfKeyword Token.
@@ -580,6 +593,13 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// array creating
 	if prs.current().Kind == lexer.MakeKeyword {
 		return prs.parseMakeArrayExpression()
+	}
+
+	// thread creating
+	// Okay I admit I made thread a statement even though it makes more sense for it to be an
+	// expression... *maybe* I'll change it... One day... Or Red will hehehehe
+	if prs.current().Kind == lexer.ThreadKeyword {
+		return prs.parseThreadStatement()
 	}
 
 	// if none of the above are what we want, it must be a binary expression!

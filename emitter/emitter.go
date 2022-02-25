@@ -230,6 +230,10 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 	}
 }
 
+func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThreadStatementNode) {
+	// hecc
+}
+
 func (emt *Emitter) EmitGotoStatement(blk *ir.Block, stmt boundnodes.BoundGotoStatementNode) {
 	blk.NewBr(emt.Labels[string(stmt.Label)])
 }

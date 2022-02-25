@@ -1,0 +1,7 @@
+
+function epicFunction() int {
+    return 100;
+}
+
+Print("hello");
+var t <- Thread(epicFunction);
