@@ -4,9 +4,11 @@ import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/symbols"
+	"fmt"
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
 	"github.com/llir/llvm/ir/value"
+	"os"
 )
 
 // this file is just keeping track of how ReCT types map to LLVM types
@@ -35,6 +37,8 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		}
 	}
 
+	fmt.Println(typ.Fingerprint())
+	os.Exit(-1)
 	return nil
 }
 

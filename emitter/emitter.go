@@ -380,6 +380,8 @@ func (emt *Emitter) EmitLiteralExpression(blk *ir.Block, expr boundnodes.BoundLi
 		return strObj
 	}
 
+	fmt.Println("Unknown literal!")
+
 	return nil
 }
 
@@ -459,9 +461,9 @@ func (emt *Emitter) EmitMakeArrayExpression(blk *ir.Block, expr boundnodes.Bound
 }
 
 func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode) value.Value {
-	// load the variables value
-	// ------------------------
-	variable := emt.EmitVariable(blk, expr.Variable)
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
 
 	// index
 	// -----
@@ -472,12 +474,12 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes
 	value := emt.EmitExpression(blk, expr.Value)
 
 	// decide if we should do object or primitive array access
-	if expr.Variable.VarType().SubTypes[0].IsObject {
+	if expr.Base.Type().SubTypes[0].IsObject {
 		// bitcast our pointer to any
 		anyValue := blk.NewBitCast(value, emt.IRTypes(builtins.Any))
 
 		// call the array's set element function
-		blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], variable, index, anyValue)
+		blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], base, index, anyValue)
 
 		// if the element wasnt a variable -> decrease its reference counter
 		if !expr.Value.IsPersistent() && expr.Value.Type().IsObject {
@@ -490,10 +492,10 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes
 		return value
 	} else {
 		// get the elements pointer
-		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], variable, index)
+		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
 
 		// bitcast the pointer to our type
-		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Variable.VarType().SubTypes[0])))
+		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
 
 		blk.NewStore(value, castedPtr)
 
@@ -503,8 +505,9 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes
 }
 
 func (emt *Emitter) EmitArrayAccessExpression(blk *ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
-	// load the variables value
-	variable := emt.EmitVariable(blk, expr.Variable)
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
 
 	// load the index
 	index := emt.EmitExpression(blk, expr.Index)
@@ -513,23 +516,35 @@ func (emt *Emitter) EmitArrayAccessExpression(blk *ir.Block, expr boundnodes.Bou
 	// -------------
 
 	// decide if we should do object or primitive array access
-	if expr.Variable.VarType().SubTypes[0].IsObject {
+	if expr.Base.Type().SubTypes[0].IsObject {
 		// call the array's get element function
-		element := blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], variable, index)
+		element := blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], base, index)
+
+		originalType := expr.Base.Type().SubTypes[0]
+
+		// if the original type is an array it'll need a little help to pick the correct type
+		if originalType.Name == builtins.Array.Name {
+			if originalType.SubTypes[0].IsObject {
+				originalType = builtins.Array
+			} else {
+				originalType = builtins.PArray
+			}
+		}
 
 		// bitcast our pointer to its original class
-		castedElement := blk.NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(expr.Variable.VarType().SubTypes[0])].Type))
+		castedElement := blk.NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(originalType)].Type))
 
 		return castedElement
 	} else {
 		// get the elements pointer
-		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], variable, index)
+		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
 
 		// bitcast the pointer to our type
-		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Variable.VarType().SubTypes[0])))
+		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
 
 		// load the value
-		return blk.NewLoad(emt.IRTypes(expr.Variable.VarType().SubTypes[0]), castedPtr)
+		val := blk.NewLoad(emt.IRTypes(expr.Base.Type().SubTypes[0]), castedPtr)
+		return val
 	}
 }
 
@@ -555,6 +570,7 @@ func (emt *Emitter) EmitUnaryExpression(blk *ir.Block, expr boundnodes.BoundUnar
 		return xor
 	}
 
+	fmt.Println("Unknown Unary!")
 	return nil
 }
 
@@ -739,6 +755,7 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 	}
 
+	fmt.Println("Unknown Binary!")
 	return nil
 }
 
@@ -778,28 +795,29 @@ func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallE
 }
 
 func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundTypeCallExpressionNode) value.Value {
-	// load the variables value
-	value := emt.EmitVariable(blk, expr.Variable)
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
 
 	switch expr.Function.Fingerprint() {
 	case builtins.GetLength.Fingerprint():
 		// call the get length function on the string
-		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], value)
+		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
 	case builtins.Substring.Fingerprint():
 		start := emt.EmitExpression(blk, expr.Arguments[0])
 		length := emt.EmitExpression(blk, expr.Arguments[1])
 
 		// call the substring function on the string
-		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], value, start, length)
+		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], base, start, length)
 	case builtins.GetArrayLength.Fingerprint():
 		// call the get length function on the array
 
 		// object arrays
-		if expr.Variable.VarType().SubTypes[0].IsObject {
-			return blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], value)
+		if expr.Base.Type().SubTypes[0].IsObject {
+			return blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], base)
 		} else {
 			// primitive arrays
-			return blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], value)
+			return blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], base)
 		}
 
 	case builtins.Push.Fingerprint():
@@ -807,7 +825,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 
 		// Push() for object arrays
 		// call the array's push function
-		blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["Push"], value, element)
+		blk.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["Push"], base, element)
 
 		// if the element wasn't a variable -> decrease its reference counter
 		if !expr.Arguments[0].IsPersistent() {
@@ -822,10 +840,10 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 
 		// Push() for primitive arrays
 		// grow the array and get the elem pointer
-		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["Grow"], value)
+		elementPtr := blk.NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["Grow"], base)
 
 		// bitcast the pointer to our type
-		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Variable.VarType().SubTypes[0])))
+		castedPtr := blk.NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
 
 		blk.NewStore(element, castedPtr)
 
@@ -833,6 +851,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 		return nil
 	}
 
+	fmt.Println("Unknown TypeCall!")
 	return nil
 }
 
@@ -844,7 +863,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 	if expr.ToType.Fingerprint() == builtins.Any.Fingerprint() {
 
 		// if this is a string we only need to change the pointer type as it's already an object
-		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
+		if expr.Expression.Type().IsObject {
 			// change the pointer type
 			return blk.NewBitCast(value, emt.IRTypes(builtins.Any))
 
@@ -995,8 +1014,20 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 
 			return primitive
 		}
+	} else if expr.ToType.Name == builtins.Array.Name {
+		if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// object arrays
+			if expr.ToType.SubTypes[0].IsObject {
+				// change the pointer type
+				return blk.NewBitCast(value, emt.IRTypes(builtins.Array))
+			} else {
+				// change the pointer type
+				return blk.NewBitCast(value, emt.IRTypes(builtins.PArray))
+			}
+		}
 	}
 
+	fmt.Println("Unknown Conversion!")
 	return nil
 }
 
@@ -1019,6 +1050,7 @@ func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) const
 		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
 	}
 
+	fmt.Println("Unknown Constant!")
 	return nil
 }
 

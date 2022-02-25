@@ -25,6 +25,7 @@
 		"tuple": "c",
 		"type_traits": "c",
 		"utility": "c",
-		"bitset": "c"
+		"bitset": "c",
+		"sstream": "c"
 	}
 }

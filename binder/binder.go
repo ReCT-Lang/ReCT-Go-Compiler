@@ -531,13 +531,13 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 }
 
 func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
-	// bind the variable
-	variable := bin.BindVariableReference(expr.Identifier.Value)
+	// bind the value
+	baseExpression := bin.BindExpression(expr.Base)
 
 	// check if the variable is an array
-	if variable.VarType().Name != "array" {
+	if baseExpression.Type().Name != "array" {
 		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol
-		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", variable.VarType().Name)
+		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", baseExpression.Type().Name)
 		os.Exit(-1)
 	}
 
@@ -545,17 +545,17 @@ func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNod
 	index := bin.BindExpression(expr.Index)
 
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAccessExpressionNode(variable, index)
+	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index)
 }
 
 func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
-	// bind the variable
-	variable := bin.BindVariableReference(expr.Identifier.Value)
+	// bind the value
+	baseExpression := bin.BindExpression(expr.Base)
 
 	// check if the variable is an array
-	if variable.VarType().Name != "array" {
+	if baseExpression.Type().Name != "array" {
 		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol #2
-		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", variable.VarType().Name)
+		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", baseExpression.Type().Name)
 		os.Exit(-1)
 	}
 
@@ -566,14 +566,14 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 	value := bin.BindExpression(expr.Value)
 
 	// check if the value matches the array's type
-	if value.Type().Fingerprint() != variable.VarType().SubTypes[0].Fingerprint() {
+	if value.Type().Fingerprint() != baseExpression.Type().SubTypes[0].Fingerprint() {
 		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol #3
-		print.PrintCF(print.Red, "Array assignment types dont match! (trying to put %s into %s-Array)", value.Type().Name, variable.VarType().SubTypes[0].Name)
+		print.PrintCF(print.Red, "Array assignment types dont match! (trying to put %s into %s-Array)", value.Type().Name, baseExpression.Type().SubTypes[0].Name)
 		os.Exit(-1)
 	}
 
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAssignmentExpressionNode(variable, index, value)
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value)
 }
 
 func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
@@ -588,12 +588,12 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 }
 
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
-	variable := bin.BindVariableReference(expr.Identifier.Value)
+	baseExpression := bin.BindExpression(expr.Base)
 
 	// This line will error out because CallIdentifier.RealValue is nil (interface)
 	// I've replaced it with CallIdentifier.Value which seems to do the trick.
-	function := bin.LookupTypeFunction(expr.CallIdentifier.Value, variable.VarType()) // Should be a string anyway
-	if function.OriginType.Name != variable.VarType().Name {
+	function := bin.LookupTypeFunction(expr.CallIdentifier.Value, baseExpression.Type()) // Should be a string anyway
+	if function.OriginType.Name != baseExpression.Type().Name {
 		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
@@ -603,7 +603,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 			length,
 			"the use of builtin function \"%s\" on \"%s\" datatype is undefined!",
 			function.Name,
-			variable.VarType().Name,
+			baseExpression.Type().Name,
 		)
 		os.Exit(-1)
 	}
@@ -627,7 +627,8 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 			length,
 			"type function \"%s\" expects %d arguments but got %d!",
 			function.Name,
-			variable.VarType().Name,
+			len(function.Parameters),
+			len(boundArguments),
 		)
 		os.Exit(-1)
 	}
@@ -637,7 +638,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false)
 	}
 
-	return boundnodes.CreateBoundTypeCallExpressionNode(variable, function, boundArguments)
+	return boundnodes.CreateBoundTypeCallExpressionNode(baseExpression, function, boundArguments)
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
@@ -919,18 +920,32 @@ func LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymb
 	case "any":
 		return builtins.Any, true
 	case "array":
+		if len(typeClause.SubClauses) != 1 {
+			line, column, length := typeClause.Position()
+			print.Error(
+				"BINDER",
+				print.ExplicitConversionError,
+				line,
+				column, // needs extra data added and passed into the function
+				length, // Probably wrong, but it works - that's the tokorv guarantee
+				"Datatype \"%s\" takes in exactly one subtype!",
+				typeClause.TypeIdentifier.Value,
+			)
+			os.Exit(-1)
+		}
+
 		baseType, _ := LookupType(typeClause.SubClauses[0], false)
 		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true), true
 
 	default:
 		if !canFail {
-			//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+			line, column, length := typeClause.Position()
 			print.Error(
 				"BINDER",
 				print.ExplicitConversionError,
-				0,
-				0, // needs extra data added and passed into the function
-				0, // Probably wrong, but it works - that's the tokorv guarantee
+				line,
+				column, // needs extra data added and passed into the function
+				length, // Probably wrong, but it works - that's the tokorv guarantee
 				"Couldn't find datatype \"%s\"! Are you sure it exists?",
 				typeClause.TypeIdentifier.Value,
 			)

@@ -9,17 +9,17 @@ import (
 type BoundArrayAssignmentExpressionNode struct {
 	BoundExpressionNode
 
-	Variable symbols.VariableSymbol
-	Index    BoundExpressionNode
-	Value    BoundExpressionNode
+	Base  BoundExpressionNode
+	Index BoundExpressionNode
+	Value BoundExpressionNode
 }
 
 func (BoundArrayAssignmentExpressionNode) NodeType() BoundType { return BoundArrayAssignmentExpression }
 
 func (node BoundArrayAssignmentExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundArrayAssignmentExpression")
-	fmt.Println(indent + "  └ Variable: ")
-	node.Variable.Print(indent + "    ")
+	fmt.Println(indent + "  └ Base: ")
+	node.Base.Print(indent + "    ")
 	fmt.Println(indent + "  └ Index: ")
 	node.Index.Print(indent + "    ")
 	fmt.Println(indent + "  └ Value: ")
@@ -30,13 +30,13 @@ func (BoundArrayAssignmentExpressionNode) IsPersistent() bool { return true }
 
 // implement the expression node interface
 func (node BoundArrayAssignmentExpressionNode) Type() symbols.TypeSymbol {
-	return node.Variable.VarType().SubTypes[0]
+	return node.Base.Type().SubTypes[0]
 }
 
-func CreateBoundArrayAssignmentExpressionNode(variable symbols.VariableSymbol, index BoundExpressionNode, value BoundExpressionNode) BoundArrayAssignmentExpressionNode {
+func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode) BoundArrayAssignmentExpressionNode {
 	return BoundArrayAssignmentExpressionNode{
-		Variable: variable,
-		Index:    index,
-		Value:    value,
+		Base:  base,
+		Index: index,
+		Value: value,
 	}
 }

@@ -1459,6 +1459,36 @@ define dso_local i32 @rct_Now() #0 {
 ; Function Attrs: nounwind
 declare i64 @clock() #1
 
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local %struct.class_String* @rct_Char(i32 %0) #0 {
+  %2 = alloca i32, align 4
+  %3 = alloca i8*, align 8
+  %4 = alloca %struct.class_String*, align 8
+  store i32 %0, i32* %2, align 4
+  %5 = call noalias align 16 i8* @malloc(i64 1) #6
+  store i8* %5, i8** %3, align 8
+  %6 = load i32, i32* %2, align 4
+  %7 = trunc i32 %6 to i8
+  %8 = load i8*, i8** %3, align 8
+  %9 = getelementptr inbounds i8, i8* %8, i64 0
+  store i8 %7, i8* %9, align 1
+  %10 = call noalias align 16 i8* @malloc(i64 40) #6
+  %11 = bitcast i8* %10 to %struct.class_String*
+  store %struct.class_String* %11, %struct.class_String** %4, align 8
+  %12 = load %struct.class_String*, %struct.class_String** %4, align 8
+  call void @String_public_Constructor(%struct.class_String* %12)
+  %13 = load %struct.class_String*, %struct.class_String** %4, align 8
+  %14 = load i8*, i8** %3, align 8
+  call void @String_public_Load(%struct.class_String* %13, i8* %14)
+  %15 = load %struct.class_String*, %struct.class_String** %4, align 8
+  %16 = bitcast %struct.class_String* %15 to %struct.class_Any*
+  call void @arc_RegisterReference(%struct.class_Any* %16)
+  %17 = load i8*, i8** %3, align 8
+  call void @free(i8* %17) #6
+  %18 = load %struct.class_String*, %struct.class_String** %4, align 8
+  ret %struct.class_String* %18
+}
+
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

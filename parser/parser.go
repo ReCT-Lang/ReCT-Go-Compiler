@@ -600,6 +600,16 @@ func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionN
 		// if not, start by parsing our left expression
 	} else {
 		left = prs.parsePrimaryExpression()
+
+		// check if there's an array access going on here
+		if prs.current().Kind == lexer.OpenBracketToken {
+			left = prs.parseArrayAccessExpressionFromValue(left)
+		}
+
+		// check if there's a type call going on here
+		if prs.current().Kind == lexer.AccessToken {
+			left = prs.parseTypeCallExpressionFromValue(left)
+		}
 	}
 
 	// funky while(true) but go-style
@@ -759,8 +769,17 @@ func (prs *Parser) parseComplexCastExpression() nodes.ExpressionNode {
 // we need to get the identifier and index we want to access
 func (prs *Parser) parseArrayAccessExpression() nodes.ExpressionNode {
 
-	// We need the identifier to know what variable to access
-	identifier := prs.consume(lexer.IdToken)
+	// the variable we're accessing
+	// we aren't using the symbol directly, we are using a variable expression
+	base := prs.parseNameExpression()
+
+	return prs.parseArrayAccessExpressionFromValue(base)
+}
+
+// parseArrayAccessExpressionFromValue this for accessing arrays!
+// For example: someArray[1]
+// we need to get the identifier and index we want to access
+func (prs *Parser) parseArrayAccessExpressionFromValue(expr nodes.ExpressionNode) nodes.ExpressionNode {
 
 	prs.consume(lexer.OpenBracketToken)  // [
 	index := prs.parseExpression()       // We get the index expression
@@ -771,11 +790,11 @@ func (prs *Parser) parseArrayAccessExpression() nodes.ExpressionNode {
 		prs.consume(lexer.AssignToken) // <-
 		value := prs.parseExpression() // the value to store in the array
 		// return an array assignment expression
-		return nodes.CreateArrayAssignmentExpressionNode(identifier, index, value)
+		return nodes.CreateArrayAssignmentExpressionNode(expr, index, value)
 	}
 
 	// return an array access expression
-	return nodes.CreateArrayAccessExpressionNode(identifier, index)
+	return nodes.CreateArrayAccessExpressionNode(expr, index)
 }
 
 // parseMakeArrayExpression this for creating arrays
@@ -809,8 +828,19 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 // Anything in the ( ... ) we need to get as arguments
 func (prs *Parser) parseTypeCallExpression() nodes.TypeCallExpressionNode {
 
-	identifier := prs.consume(lexer.IdToken) // the variable we're calling the function on
+	// the variable we're calling the function on
+	// we aren't using the symbol directly, we are using a variable expression
+	base := prs.parseNameExpression()
 
+	return prs.parseTypeCallExpressionFromValue(base)
+}
+
+// parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)
+// Example: string->GetLength()
+// the data type is string (though in a program it's going to be a variable with the type string)
+// GetLength is the exact function call we need
+// Anything in the ( ... ) we need to get as arguments
+func (prs *Parser) parseTypeCallExpressionFromValue(expr nodes.ExpressionNode) nodes.TypeCallExpressionNode {
 	prs.consume(lexer.AccessToken)               // ->
 	callIdentifier := prs.consume(lexer.IdToken) // now we need the name of the call (like "GetLength()")
 
@@ -818,7 +848,7 @@ func (prs *Parser) parseTypeCallExpression() nodes.TypeCallExpressionNode {
 	args := prs.parseArguments()             // any arguments in the function call itself
 	prs.consume(lexer.CloseParenthesisToken) // )
 
-	return nodes.CreateTypeCallExpressionNode(identifier, callIdentifier, args)
+	return nodes.CreateTypeCallExpressionNode(expr, callIdentifier, args)
 }
 
 // parseArguments this is when we want to get a series of arguments in a function call function definition.

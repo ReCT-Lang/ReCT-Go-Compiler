@@ -104,3 +104,18 @@ int rct_Now()
 {
     return (int)clock();
 }
+
+class_String *rct_Char(int index)
+{
+	char *singleChar = (char*)malloc(1);
+	singleChar[0] = (char)index;
+
+	class_String *strInstance = (class_String*)malloc(sizeof(class_String));
+	String_public_Constructor(strInstance);
+	String_public_Load(strInstance, singleChar);
+	arc_RegisterReference((class_Any*)strInstance);
+
+	free(singleChar);
+
+    return strInstance;
+}

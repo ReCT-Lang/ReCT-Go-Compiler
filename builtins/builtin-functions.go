@@ -126,7 +126,16 @@ var (
 		nodes.FunctionDeclarationMember{},
 	)
 
+	Char = symbols.CreateBuiltInFunctionSymbol(
+		"Char",
+		[]symbols.ParameterSymbol{
+			symbols.CreateParameterSymbol("index", 0, Int),
+		},
+		String,
+		nodes.FunctionDeclarationMember{},
+	)
+
 	Functions = []symbols.FunctionSymbol{
-		Print, Write, Input, InputKey, Clear, SetCursor, GetSizeX, GetSizeY, SetCursorVisible, GetCursorVisible, Random, Sleep, Version, Sqrt, Now,
+		Print, Write, Input, InputKey, Clear, SetCursor, GetSizeX, GetSizeY, SetCursorVisible, GetCursorVisible, Random, Sleep, Version, Sqrt, Now, Char,
 	}
 )

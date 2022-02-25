@@ -111,6 +111,7 @@ func BindRootScope() Scope {
 	scope.TryDeclareSymbol(builtins.Version)
 	scope.TryDeclareSymbol(builtins.Sqrt)
 	scope.TryDeclareSymbol(builtins.Now)
+	scope.TryDeclareSymbol(builtins.Char)
 
 	return scope
 }

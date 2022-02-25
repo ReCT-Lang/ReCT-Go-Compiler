@@ -481,7 +481,7 @@ func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpression
 
 func (evl *Evaluator) EvaluateTypeCallExpression(expr boundnodes.BoundTypeCallExpressionNode) interface{} {
 	// get value of variable
-	varValue := evl.Read(expr.Variable)
+	varValue := evl.EvaluateExpression(expr.Base)
 
 	// check if the given functions fingerprint matches the GetLength() function's fingerprint
 	if expr.Function.Fingerprint() == builtins.GetLength.Fingerprint() {
