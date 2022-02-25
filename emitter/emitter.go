@@ -230,10 +230,6 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 	}
 }
 
-func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThreadStatementNode) {
-	// hecc
-}
-
 func (emt *Emitter) EmitGotoStatement(blk *ir.Block, stmt boundnodes.BoundGotoStatementNode) {
 	blk.NewBr(emt.Labels[string(stmt.Label)])
 }
@@ -363,6 +359,9 @@ func (emt *Emitter) EmitExpression(blk *ir.Block, expr boundnodes.BoundExpressio
 
 	case boundnodes.BoundConversionExpression:
 		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
+
+	case boundnodes.BoundThreadStatement:
+		return emt.EmitThreadStatement(blk, expr.(boundnodes.BoundThreadStatementNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -462,6 +461,18 @@ func (emt *Emitter) EmitMakeArrayExpression(blk *ir.Block, expr boundnodes.Bound
 		// create a new primitive array object
 		return emt.CreateObject(blk, emt.Id(builtins.PArray), length, size)
 	}
+}
+
+func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThreadStatementNode) value.Value {
+
+	functionName := emt.Id(stmt.Function)
+
+	call := blk.NewCall(emt.Functions[functionName].IRFunction)
+
+	// Not sure how to approach passing arguments to the constructor in CreateObject (class_Action)
+	obj := emt.CreateObject(blk, emt.Id(builtins.Action), call, constant.NewNull(types.I8Ptr))
+
+	return obj
 }
 
 func (emt *Emitter) EmitArrayAssignmentExpression(blk *ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode) value.Value {
@@ -807,6 +818,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 	case builtins.GetLength.Fingerprint():
 		// call the get length function on the string
 		return blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
+
 	case builtins.Substring.Fingerprint():
 		start := emt.EmitExpression(blk, expr.Arguments[0])
 		length := emt.EmitExpression(blk, expr.Arguments[1])
@@ -853,6 +865,12 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 
 		// no need for a return value, this is a void
 		return nil
+
+	case builtins.Kill.Fingerprint():
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Kill"])
+
+	case builtins.Start.Fingerprint():
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Start"])
 	}
 
 	fmt.Println("Unknown TypeCall!")

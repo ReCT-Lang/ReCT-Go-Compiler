@@ -52,4 +52,20 @@ var (
 		nodes.FunctionDeclarationMember{},
 		Array,
 	)
+
+	Start = symbols.CreateBuiltInTypeFunctionSymbol(
+		"Start",
+		[]symbols.ParameterSymbol{},
+		Void,
+		nodes.FunctionDeclarationMember{},
+		Action,
+	)
+
+	Kill = symbols.CreateBuiltInTypeFunctionSymbol(
+		"Kill",
+		[]symbols.ParameterSymbol{},
+		Void,
+		nodes.FunctionDeclarationMember{},
+		Action,
+	)
 )

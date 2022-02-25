@@ -436,10 +436,10 @@ void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 // -----------------------------------------------------------------------------
 
 // definition for the Thread vTable
-const Thread_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread", &Thread_public_Die};
+const Action_vTable Thread_vTable_Const = {&Any_vTable_Const, "Action", &Thread_public_Die};
 
 // definition for the objects constructor
-void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
+void Action_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
 	this->vtable = &Thread_vTable_Const;
 	this->referenceCounter = 0;
 	this->__routine = __routine;
@@ -447,10 +447,10 @@ void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), v
 }
 
 // definition for the objects destructor
-void Thread_public_Die(void* this) {}
+void Action_public_Die(void* this) {}
 
 // start thread
-void Thread_public_StartThread(class_Thread *this) {
+void Action_public_Start(class_Action *this) {
 
     // Args: thread id, attributes, function, arguments
     // if attributes are NULL, they are set to default.
@@ -459,6 +459,6 @@ void Thread_public_StartThread(class_Thread *this) {
 }
 
 // end thread
-void Thead_public_KillThread(class_Thread *this) {
+void Action_public_Kill(class_Action *this) {
     pthread_exit(NULL);
 }

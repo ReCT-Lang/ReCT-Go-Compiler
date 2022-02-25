@@ -1,4 +1,5 @@
 #include<stdbool.h>
+#include "pthreads.h"
 
 #ifndef OBJECTS_H
 #define OBJECTS_H
@@ -19,7 +20,7 @@ typedef struct class_Array   class_Array;
 typedef struct pArray_vTable  pArray_vTable;
 typedef struct class_pArray   class_pArray;
 typedef struct class_Thread class_Thread;
-typedef struct Thread_vTable Thread_vTable;
+typedef struct Action_vTable Thread_vTable;
 
 // declare destructor function pointer
 typedef void (*DiePointer)(void*);
@@ -32,7 +33,7 @@ void Float_public_Die  (void*);
 void Bool_public_Die   (void*);
 void Array_public_Die  (void*);
 void pArray_public_Die (void*);
-void Thread_public_Die (void*);
+void Action_public_Die (void*);
 
 // declare all constructors
 void Any_public_Constructor(class_Any*);
@@ -42,7 +43,7 @@ void Float_public_Constructor(class_Float*, float);
 void Bool_public_Constructor(class_Bool*, bool);
 void Array_public_Constructor(class_Array*, int);
 void pArray_public_Constructor(class_pArray*, int, int);
-void Thread_public_Constructor(class_Thread*, void *(*)(void *), void *);
+void Action_public_Constructor(class_Thread*, void *(*)(void *), void *);
 
 // delcare string loading function
 void String_public_Load(class_String*, char*);
@@ -199,14 +200,14 @@ struct class_pArray {
 // Thread are a recreation using the old documentation: https://docs.rect.ml/threading
 
 // the object's vtable (for method lookup and method overriding)
-struct Thread_vTable {
+struct Action_vTable {
 	const void* parentVTable; // will be a pointer to the "any" vTable
 	const char* className;                 // will be "Thread" (I think)
 	DiePointer dieFunction;                 // destructor function pointer
 };
 
 // the objects struct
-struct class_Thread {
+struct class_Action {
 	const Any_vTable* vtable;   // the epic vTable
 	int referenceCounter;       // you guessed it, reference counter for the ARc
 	void *(*__routine)(void*);  // thread routine (this is the function the thread runs)

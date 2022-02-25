@@ -6,7 +6,7 @@ import (
 )
 
 type BoundThreadStatementNode struct {
-	BoundStatementNode
+	BoundExpressionNode
 
 	Function symbols.FunctionSymbol
 }

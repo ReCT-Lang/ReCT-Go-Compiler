@@ -27,8 +27,9 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		return types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type)
 	case builtins.Any.Fingerprint():
 		return types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type)
+	case builtins.Action.Fingerprint():
+		return types.NewPointer(emt.Classes[emt.Id(builtins.Action)].Type)
 	}
-
 	if typ.Name == builtins.Array.Name {
 		if typ.SubTypes[0].IsObject {
 			return types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type)
