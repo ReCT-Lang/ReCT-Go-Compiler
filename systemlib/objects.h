@@ -32,7 +32,7 @@ void Float_public_Die  (void*);
 void Bool_public_Die   (void*);
 void Array_public_Die  (void*);
 void pArray_public_Die (void*);
-void Thread_vTable_Die (void*);
+void Thread_public_Die (void*);
 
 // declare all constructors
 void Any_public_Constructor(class_Any*);
@@ -42,7 +42,7 @@ void Float_public_Constructor(class_Float*, float);
 void Bool_public_Constructor(class_Bool*, bool);
 void Array_public_Constructor(class_Array*, int);
 void pArray_public_Constructor(class_pArray*, int, int);
-void Thread_public_Constructor(class_Thread*, void *(*__routine)(void *), void *arg))
+void Thread_public_Constructor(class_Thread*, void *(*)(void *), void *);
 
 // delcare string loading function
 void String_public_Load(class_String*, char*);

@@ -443,19 +443,19 @@ void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), v
 	this->vtable = &Thread_vTable_Const;
 	this->referenceCounter = 0;
 	this->__routine = __routine;
-	this->args = args
+	this->args = args;
 }
 
 // definition for the objects destructor
 void Thread_public_Die(void* this) {}
 
 // start thread
-void Thread_public_StartThread(class_Thead *this) {
+void Thread_public_StartThread(class_Thread *this) {
 
     // Args: thread id, attributes, function, arguments
     // if attributes are NULL, they are set to default.
-    pthread_create(&this->id, NULL, Thread_private_modify_call, this->args)
-    pthread_join(this->id, NULL)
+    pthread_create(&this->id, NULL, this->__routine, this->args);
+    pthread_join(this->id, NULL);
 }
 
 // end thread
