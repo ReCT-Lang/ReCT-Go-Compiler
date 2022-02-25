@@ -12,7 +12,7 @@ import (
 
 func (emt *Emitter) EmitBuiltInFunctions() {
 
-	// link referecnes to the C standard libs
+	// link references to the C standard libs
 	emt.EmitCLibReferences()
 
 	// read the system lib module

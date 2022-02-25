@@ -2,6 +2,7 @@
 #include<string.h>
 #include<stdbool.h>
 #include<stdio.h>
+#include "pthread.h" // For thread object UwU
 #include "objects.h"
 #include "arc.h"
 
@@ -422,4 +423,42 @@ void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 		return NULL;
 
 	return (void*)(this->elements + index * this->elemSize);
+}
+
+// -----------------------------------------------------------------------------
+// "thread" object type
+// Note: this uses the pthread library. Make sure executable is compiled with flag -lpthread
+// Information: Want to know more about function pointers and pthreads?:
+//      (ALL GUIDES ARE IN ENGLISH)
+//      Function pointers:  https://www.cprogramming.com/tutorial/function-pointers.html
+//      Multithreading:     https://www.geeksforgeeks.org/thread-functions-in-c-c/
+//      Multithreading 2:   https://www.geeksforgeeks.org/multithreading-c-2/
+// -----------------------------------------------------------------------------
+
+// definition for the Thread vTable
+const Thread_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread", &Thread_public_Die};
+
+// definition for the objects constructor
+void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
+	this->vtable = &Thread_vTable_Const;
+	this->referenceCounter = 0;
+	this->__routine = __routine;
+	this->args = args
+}
+
+// definition for the objects destructor
+void Thread_public_Die(void* this) {}
+
+// start thread
+void Thread_public_StartThread(class_Thead *this) {
+
+    // Args: thread id, attributes, function, arguments
+    // if attributes are NULL, they are set to default.
+    pthread_create(&this->id, NULL, Thread_private_modify_call, this->args)
+    pthread_join(this->id, NULL)
+}
+
+// end thread
+void Thead_public_KillThread(class_Thread *this) {
+    pthread_exit(NULL);
 }
