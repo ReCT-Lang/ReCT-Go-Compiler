@@ -58,7 +58,7 @@ var (
 		[]symbols.ParameterSymbol{},
 		Void,
 		nodes.FunctionDeclarationMember{},
-		Action,
+		Thread,
 	)
 
 	Join = symbols.CreateBuiltInTypeFunctionSymbol(
@@ -66,7 +66,7 @@ var (
 		[]symbols.ParameterSymbol{},
 		Void,
 		nodes.FunctionDeclarationMember{},
-		Action,
+		Thread,
 	)
 
 	Kill = symbols.CreateBuiltInTypeFunctionSymbol(
@@ -74,6 +74,6 @@ var (
 		[]symbols.ParameterSymbol{},
 		Void,
 		nodes.FunctionDeclarationMember{},
-		Action,
+		Thread,
 	)
 )

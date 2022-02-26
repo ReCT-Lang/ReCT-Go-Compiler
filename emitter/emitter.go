@@ -478,7 +478,7 @@ func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThre
 	pointer := blk.NewLoad(wrapper.Typ, wrapperPointer)
 
 	// Not sure how to approach passing arguments to the constructor in CreateObject (class_Action)
-	obj := emt.CreateObject(blk, emt.Id(builtins.Action), pointer, constant.NewNull(types.I8Ptr))
+	obj := emt.CreateObject(blk, emt.Id(builtins.Thread), pointer, constant.NewNull(types.I8Ptr))
 
 	return obj
 }
@@ -875,13 +875,13 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 		return nil
 
 	case builtins.Kill.Fingerprint():
-		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Kill"], base)
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Kill"], base)
 
 	case builtins.Start.Fingerprint():
-		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Start"], base)
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Start"], base)
 
 	case builtins.Join.Fingerprint():
-		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Join"], base)
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Join"], base)
 	}
 
 	fmt.Println("Unknown TypeCall!")

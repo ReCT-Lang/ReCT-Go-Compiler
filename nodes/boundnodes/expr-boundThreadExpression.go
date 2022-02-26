@@ -21,7 +21,7 @@ func (node BoundThreadExpressionNode) Print(indent string) {
 func (BoundThreadExpressionNode) IsPersistent() bool { return true }
 
 // implement the expression node interface
-func (node BoundThreadExpressionNode) Type() symbols.TypeSymbol { return builtins.Action }
+func (node BoundThreadExpressionNode) Type() symbols.TypeSymbol { return builtins.Thread }
 
 func CreateBoundThreadExpressionNode(function symbols.FunctionSymbol) BoundThreadExpressionNode {
 	return BoundThreadExpressionNode{

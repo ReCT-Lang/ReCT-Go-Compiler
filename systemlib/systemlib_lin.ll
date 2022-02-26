@@ -12,7 +12,7 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.class_Int = type { %struct.String_vTable*, i32, i32 }
 %struct.class_Float = type { %struct.String_vTable*, i32, float }
 %struct.class_Bool = type { %struct.String_vTable*, i32, i8 }
-%struct.class_Action = type { %struct.Any_vTable*, i32, i8* (i8*)*, i8*, i64 }
+%struct.class_Thread = type { %struct.Any_vTable*, i32, i8* (i8*)*, i8*, i64 }
 %union.pthread_attr_t = type { i64, [48 x i8] }
 
 @.str = private unnamed_addr constant [59 x i8] c"\1B[36mARC \1B[0m- \1B[32mRegistered %s reference [%d] - %s\1B[0m\0A\00", align 1
@@ -34,8 +34,8 @@ target triple = "x86_64-pc-linux-gnu"
 @Array_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.6, i32 0, i32 0), void (i8*)* @Array_public_Die }, align 8
 @.str.7 = private unnamed_addr constant [7 x i8] c"pArray\00", align 1
 @pArray_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.7, i32 0, i32 0), void (i8*)* @pArray_public_Die }, align 8
-@.str.8 = private unnamed_addr constant [7 x i8] c"Action\00", align 1
-@Action_vTable_Const = dso_local constant %struct.Any_vTable { i8* bitcast (%struct.Any_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.8, i32 0, i32 0), void (i8*)* @Action_public_Die }, align 8
+@.str.8 = private unnamed_addr constant [7 x i8] c"Thread\00", align 1
+@Thread_vTable_Const = dso_local constant %struct.Any_vTable { i8* bitcast (%struct.Any_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.8, i32 0, i32 0), void (i8*)* @Thread_public_Die }, align 8
 @isCursorVisible = dso_local global i8 1, align 1
 @.str.9 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @.str.1.10 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
@@ -318,7 +318,7 @@ define dso_local void @pArray_public_Die(i8* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Action_public_Die(i8* %0) #0 {
+define dso_local void @Thread_public_Die(i8* %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   ret void
@@ -1231,41 +1231,41 @@ define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* %0, i32 
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Action_public_Constructor(%struct.class_Action* %0, i8* (i8*)* %1, i8* %2) #0 {
-  %4 = alloca %struct.class_Action*, align 8
+define dso_local void @Thread_public_Constructor(%struct.class_Thread* %0, i8* (i8*)* %1, i8* %2) #0 {
+  %4 = alloca %struct.class_Thread*, align 8
   %5 = alloca i8* (i8*)*, align 8
   %6 = alloca i8*, align 8
-  store %struct.class_Action* %0, %struct.class_Action** %4, align 8
+  store %struct.class_Thread* %0, %struct.class_Thread** %4, align 8
   store i8* (i8*)* %1, i8* (i8*)** %5, align 8
   store i8* %2, i8** %6, align 8
-  %7 = load %struct.class_Action*, %struct.class_Action** %4, align 8
-  %8 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %7, i32 0, i32 0
-  store %struct.Any_vTable* @Action_vTable_Const, %struct.Any_vTable** %8, align 8
-  %9 = load %struct.class_Action*, %struct.class_Action** %4, align 8
-  %10 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %9, i32 0, i32 1
+  %7 = load %struct.class_Thread*, %struct.class_Thread** %4, align 8
+  %8 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %7, i32 0, i32 0
+  store %struct.Any_vTable* @Thread_vTable_Const, %struct.Any_vTable** %8, align 8
+  %9 = load %struct.class_Thread*, %struct.class_Thread** %4, align 8
+  %10 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %9, i32 0, i32 1
   store i32 0, i32* %10, align 8
   %11 = load i8* (i8*)*, i8* (i8*)** %5, align 8
-  %12 = load %struct.class_Action*, %struct.class_Action** %4, align 8
-  %13 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %12, i32 0, i32 2
+  %12 = load %struct.class_Thread*, %struct.class_Thread** %4, align 8
+  %13 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %12, i32 0, i32 2
   store i8* (i8*)* %11, i8* (i8*)** %13, align 8
   %14 = load i8*, i8** %6, align 8
-  %15 = load %struct.class_Action*, %struct.class_Action** %4, align 8
-  %16 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %15, i32 0, i32 3
+  %15 = load %struct.class_Thread*, %struct.class_Thread** %4, align 8
+  %16 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %15, i32 0, i32 3
   store i8* %14, i8** %16, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Action_public_Start(%struct.class_Action* %0) #0 {
-  %2 = alloca %struct.class_Action*, align 8
-  store %struct.class_Action* %0, %struct.class_Action** %2, align 8
-  %3 = load %struct.class_Action*, %struct.class_Action** %2, align 8
-  %4 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %3, i32 0, i32 4
-  %5 = load %struct.class_Action*, %struct.class_Action** %2, align 8
-  %6 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %5, i32 0, i32 2
+define dso_local void @Thread_public_Start(%struct.class_Thread* %0) #0 {
+  %2 = alloca %struct.class_Thread*, align 8
+  store %struct.class_Thread* %0, %struct.class_Thread** %2, align 8
+  %3 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
+  %4 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %3, i32 0, i32 4
+  %5 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
+  %6 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %5, i32 0, i32 2
   %7 = load i8* (i8*)*, i8* (i8*)** %6, align 8
-  %8 = load %struct.class_Action*, %struct.class_Action** %2, align 8
-  %9 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %8, i32 0, i32 3
+  %8 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
+  %9 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %8, i32 0, i32 3
   %10 = load i8*, i8** %9, align 8
   %11 = call i32 @pthread_create(i64* %4, %union.pthread_attr_t* null, i8* (i8*)* %7, i8* %10) #7
   ret void
@@ -1275,11 +1275,11 @@ define dso_local void @Action_public_Start(%struct.class_Action* %0) #0 {
 declare i32 @pthread_create(i64*, %union.pthread_attr_t*, i8* (i8*)*, i8*) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Action_public_Join(%struct.class_Action* %0) #0 {
-  %2 = alloca %struct.class_Action*, align 8
-  store %struct.class_Action* %0, %struct.class_Action** %2, align 8
-  %3 = load %struct.class_Action*, %struct.class_Action** %2, align 8
-  %4 = getelementptr inbounds %struct.class_Action, %struct.class_Action* %3, i32 0, i32 4
+define dso_local void @Thread_public_Join(%struct.class_Thread* %0) #0 {
+  %2 = alloca %struct.class_Thread*, align 8
+  store %struct.class_Thread* %0, %struct.class_Thread** %2, align 8
+  %3 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
+  %4 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %3, i32 0, i32 4
   %5 = load i64, i64* %4, align 8
   %6 = call i32 @pthread_join(i64 %5, i8** null)
   ret void
@@ -1288,9 +1288,9 @@ define dso_local void @Action_public_Join(%struct.class_Action* %0) #0 {
 declare i32 @pthread_join(i64, i8**) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Action_public_Kill(%struct.class_Action* %0) #0 {
-  %2 = alloca %struct.class_Action*, align 8
-  store %struct.class_Action* %0, %struct.class_Action** %2, align 8
+define dso_local void @Thread_public_Kill(%struct.class_Thread* %0) #0 {
+  %2 = alloca %struct.class_Thread*, align 8
+  store %struct.class_Thread* %0, %struct.class_Thread** %2, align 8
   call void @pthread_exit(i8* null) #9
   unreachable
 }
