@@ -436,11 +436,11 @@ void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 // -----------------------------------------------------------------------------
 
 // definition for the Thread vTable
-const Action_vTable Thread_vTable_Const = {&Any_vTable_Const, "Action", &Thread_public_Die};
+const Action_vTable Action_vTable_Const = {&Any_vTable_Const, "Action", &Action_public_Die};
 
 // definition for the objects constructor
-void Action_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
-	this->vtable = &Thread_vTable_Const;
+void Action_public_Constructor(class_Action *this, void *(*__routine) (void*), void *args) {
+	this->vtable = &Action_vTable_Const;
 	this->referenceCounter = 0;
 	this->__routine = __routine;
 	this->args = args;
