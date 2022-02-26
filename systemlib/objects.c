@@ -2,7 +2,7 @@
 #include<string.h>
 #include<stdbool.h>
 #include<stdio.h>
-#include "pthread.h" // For thread object UwU
+#include<pthread.h> // For thread object UwU
 #include "objects.h"
 #include "arc.h"
 
@@ -455,7 +455,11 @@ void Action_public_Start(class_Action *this) {
     // Args: thread id, attributes, function, arguments
     // if attributes are NULL, they are set to default.
     pthread_create(&this->id, NULL, this->__routine, this->args);
-    pthread_join(this->id, NULL);
+}
+
+// join thread
+void Action_public_Join(class_Action *this) {
+	pthread_join(this->id, NULL);
 }
 
 // end thread

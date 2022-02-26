@@ -27,11 +27,12 @@ type Emitter struct {
 	Classes map[string]Class
 
 	// global variables
-	Globals        map[string]Global
-	Functions      map[string]Function
-	FunctionLocals map[string]map[string]Local
-	StrConstants   map[string]value.Value
-	StrNameCounter int
+	Globals          map[string]Global
+	Functions        map[string]Function
+	FunctionWrappers map[string]*ir.Func
+	FunctionLocals   map[string]map[string]Local
+	StrConstants     map[string]value.Value
+	StrNameCounter   int
 
 	// local things for this current function
 	Function    *ir.Func
@@ -44,16 +45,17 @@ const verboseARC = false
 
 func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	emitter := Emitter{
-		Program:         program,
-		Module:          ir.NewModule(),
-		UseFingerprints: useFingerprints,
-		Globals:         make(map[string]Global),
-		Functions:       make(map[string]Function),
-		CFuncs:          make(map[string]*ir.Func),
-		ArcFuncs:        make(map[string]*ir.Func),
-		FunctionLocals:  make(map[string]map[string]Local),
-		StrConstants:    make(map[string]value.Value),
-		Classes:         make(map[string]Class),
+		Program:          program,
+		Module:           ir.NewModule(),
+		UseFingerprints:  useFingerprints,
+		Globals:          make(map[string]Global),
+		Functions:        make(map[string]Function),
+		CFuncs:           make(map[string]*ir.Func),
+		ArcFuncs:         make(map[string]*ir.Func),
+		FunctionLocals:   make(map[string]map[string]Local),
+		StrConstants:     make(map[string]value.Value),
+		Classes:          make(map[string]Class),
+		FunctionWrappers: make(map[string]*ir.Func),
 	}
 
 	emitter.EmitBuiltInFunctions()
@@ -465,12 +467,18 @@ func (emt *Emitter) EmitMakeArrayExpression(blk *ir.Block, expr boundnodes.Bound
 
 func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThreadStatementNode) value.Value {
 
-	functionName := emt.Id(stmt.Function)
+	// get this function's thread wrapper
+	wrapper := emt.GetThreadWrapper(stmt.Function)
 
-	call := blk.NewCall(emt.Functions[functionName].IRFunction)
+	// get a pointer to the thread wrapper
+	wrapperPointer := blk.NewAlloca(wrapper.Typ)
+	blk.NewStore(wrapper, wrapperPointer)
+
+	// load the pointer again
+	pointer := blk.NewLoad(wrapper.Typ, wrapperPointer)
 
 	// Not sure how to approach passing arguments to the constructor in CreateObject (class_Action)
-	obj := emt.CreateObject(blk, emt.Id(builtins.Action), call, constant.NewNull(types.I8Ptr))
+	obj := emt.CreateObject(blk, emt.Id(builtins.Action), pointer, constant.NewNull(types.I8Ptr))
 
 	return obj
 }
@@ -867,10 +875,13 @@ func (emt *Emitter) EmitTypeCallExpression(blk *ir.Block, expr boundnodes.BoundT
 		return nil
 
 	case builtins.Kill.Fingerprint():
-		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Kill"])
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Kill"], base)
 
 	case builtins.Start.Fingerprint():
-		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Start"])
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Start"], base)
+
+	case builtins.Join.Fingerprint():
+		return blk.NewCall(emt.Classes[emt.Id(builtins.Action)].Functions["Join"], base)
 	}
 
 	fmt.Println("Unknown TypeCall!")
@@ -1096,6 +1107,31 @@ func (emt *Emitter) GetStringConstant(blk *ir.Block, literal string) value.Value
 	emt.StrConstants[literal] = global
 
 	return pointer
+}
+
+func (emt *Emitter) GetThreadWrapper(source symbols.FunctionSymbol) *ir.Func {
+	wrapper, ok := emt.FunctionWrappers[emt.Id(source)]
+
+	// if there's already a wrapper for this function, return it
+	if ok {
+		return wrapper
+	}
+
+	// if there's no wrapper -> create one
+	newWrapper := emt.Module.NewFunc(emt.Id(source)+"_ThreadWrapper", types.I8Ptr, ir.NewParam("param", types.I8Ptr))
+
+	// create a root block
+	root := newWrapper.NewBlock("")
+
+	// add its instructions
+	root.NewCall(emt.Functions[emt.Id(source)].IRFunction)
+	root.NewRet(constant.NewNull(types.I8Ptr))
+
+	// register the wrapper if we need to use it again later
+	emt.FunctionWrappers[emt.Id(source)] = newWrapper
+
+	// return the new wrapper
+	return newWrapper
 }
 
 func (emt *Emitter) CreateObject(blk *ir.Block, typ string, args ...value.Value) value.Value {

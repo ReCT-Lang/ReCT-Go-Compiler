@@ -1,7 +1,13 @@
 
 function epicFunction() int {
+	Print("aaaaaaa");
     return 100;
 }
 
 Print("hello");
 var t <- Thread(epicFunction);
+t->Start();
+
+Print("we threadin");
+
+t->Join();

@@ -899,6 +899,12 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) 
 				return builtins.PPush
 			}
 		}
+	case "Start":
+		return builtins.Start
+	case "Join":
+		return builtins.Join
+	case "Kill":
+		return builtins.Kill
 	default:
 		/*print.PrintC(
 			print.Red,

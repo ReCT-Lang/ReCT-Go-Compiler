@@ -61,6 +61,14 @@ var (
 		Action,
 	)
 
+	Join = symbols.CreateBuiltInTypeFunctionSymbol(
+		"Join",
+		[]symbols.ParameterSymbol{},
+		Void,
+		nodes.FunctionDeclarationMember{},
+		Action,
+	)
+
 	Kill = symbols.CreateBuiltInTypeFunctionSymbol(
 		"Kill",
 		[]symbols.ParameterSymbol{},
