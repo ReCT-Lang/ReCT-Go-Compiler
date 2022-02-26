@@ -56,7 +56,6 @@ const (
 	ContinueStatement   NodeType = "Continue Statement"
 	FromToStatement     NodeType = "FromTo Statement"
 	ExpressionStatement NodeType = "Expression Statement"
-	ThreadStatement     NodeType = "Thread Statement"
 
 	// Expressions
 	// -----------
@@ -72,4 +71,5 @@ const (
 	ArrayAccessExpression     NodeType = "ArrayAccess Expression"
 	ArrayAssignmentExpression NodeType = "ArrayAssignment Expression"
 	MakeArrayExpression       NodeType = "MakeArray Expression"
+	ThreadExpression          NodeType = "Thread Expression"
 )

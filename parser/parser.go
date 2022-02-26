@@ -384,14 +384,14 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 	return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, initializer)
 }
 
-func (prs *Parser) parseThreadStatement() nodes.ThreadStatementNode {
+func (prs *Parser) parseThreadStatement() nodes.ThreadExpressionNode {
 	keyword := prs.consume(lexer.ThreadKeyword)
 
 	prs.consume(lexer.OpenParenthesisToken)
 	expression := prs.parseNameExpression()
 	prs.consume(lexer.CloseParenthesisToken)
 
-	return nodes.CreateThreadStatementNode(keyword, expression)
+	return nodes.CreateThreadExpressionNode(keyword, expression)
 }
 
 // parseIfStatement as you can probably guess, this function is called when parseStatement gets an IfKeyword Token.

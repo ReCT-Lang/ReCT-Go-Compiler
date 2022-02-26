@@ -248,7 +248,7 @@ func (bin *Binder) BindElseClause(clause nodes.ElseClauseNode) boundnodes.BoundS
 	return bin.BindStatement(clause.ElseStatement)
 }
 
-func (bin *Binder) BindThreadStatement(stmt nodes.ThreadStatementNode) boundnodes.BoundThreadStatementNode {
+func (bin *Binder) BindThreadStatement(stmt nodes.ThreadExpressionNode) boundnodes.BoundThreadExpressionNode {
 	symbol := bin.ActiveScope.TryLookupSymbol(stmt.Expression.Identifier.Value)
 
 	if symbol == nil || symbol.SymbolType() != symbols.Function {
@@ -284,7 +284,7 @@ func (bin *Binder) BindThreadStatement(stmt nodes.ThreadStatementNode) boundnode
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundThreadStatementNode(functionSymbol)
+	return boundnodes.CreateBoundThreadExpressionNode(functionSymbol)
 }
 
 func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnodes.BoundReturnStatementNode {
@@ -478,8 +478,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindArrayAccessExpression(expr.(nodes.ArrayAccessExpressionNode))
 	case nodes.ArrayAssignmentExpression:
 		return bin.BindArrayAssignmentExpression(expr.(nodes.ArrayAssignmentExpressionNode))
-	case nodes.ThreadStatement: // :(
-		return bin.BindThreadStatement(expr.(nodes.ThreadStatementNode))
+	case nodes.ThreadExpression: // :(  // :) - RedCube
+		return bin.BindThreadStatement(expr.(nodes.ThreadExpressionNode))
 	case nodes.MakeArrayExpression:
 		return bin.BindMakeArrayExpression(expr.(nodes.MakeArrayExpressionNode))
 	case nodes.CallExpression:

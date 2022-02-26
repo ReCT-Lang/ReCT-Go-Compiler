@@ -362,8 +362,8 @@ func (emt *Emitter) EmitExpression(blk *ir.Block, expr boundnodes.BoundExpressio
 	case boundnodes.BoundConversionExpression:
 		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
 
-	case boundnodes.BoundThreadStatement:
-		return emt.EmitThreadStatement(blk, expr.(boundnodes.BoundThreadStatementNode))
+	case boundnodes.BoundThreadExpression:
+		return emt.EmitThreadStatement(blk, expr.(boundnodes.BoundThreadExpressionNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -465,7 +465,7 @@ func (emt *Emitter) EmitMakeArrayExpression(blk *ir.Block, expr boundnodes.Bound
 	}
 }
 
-func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThreadStatementNode) value.Value {
+func (emt *Emitter) EmitThreadStatement(blk *ir.Block, stmt boundnodes.BoundThreadExpressionNode) value.Value {
 
 	// get this function's thread wrapper
 	wrapper := emt.GetThreadWrapper(stmt.Function)

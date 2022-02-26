@@ -7,7 +7,7 @@ import (
 )
 
 // ThreadStatementNode I was not told of this before I tried to implement it
-type ThreadStatementNode struct {
+type ThreadExpressionNode struct {
 	StatementNode
 
 	Keyword    lexer.Token
@@ -15,18 +15,18 @@ type ThreadStatementNode struct {
 }
 
 // NodeType Copy + Paste
-func (ThreadStatementNode) NodeType() NodeType { return ThreadStatement }
+func (ThreadExpressionNode) NodeType() NodeType { return ThreadExpression }
 
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient. (this sucks gonna change it one day)
-func (node ThreadStatementNode) Position() (int, int, int) {
+func (node ThreadExpressionNode) Position() (int, int, int) {
 	return 0, 0, 0 // l8r
 }
 
 // Print Prints beautiful stuff in console
-func (node ThreadStatementNode) Print(indent string) {
-	print.PrintC(print.Green, indent+"└ ThreadStatementNode")
+func (node ThreadExpressionNode) Print(indent string) {
+	print.PrintC(print.Green, indent+"└ ThreadExpressionNode")
 	fmt.Printf("%s  └ Keyword: %s\n", indent, node.Keyword.Kind)
 
 	if node.Expression.ExpressionNode == nil {
@@ -38,8 +38,8 @@ func (node ThreadStatementNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain - Same -_-
-func CreateThreadStatementNode(keyword lexer.Token, expression NameExpressionNode) ThreadStatementNode {
-	return ThreadStatementNode{
+func CreateThreadExpressionNode(keyword lexer.Token, expression NameExpressionNode) ThreadExpressionNode {
+	return ThreadExpressionNode{
 		Keyword:    keyword,
 		Expression: expression,
 	}
