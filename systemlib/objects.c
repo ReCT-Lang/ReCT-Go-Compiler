@@ -325,15 +325,22 @@ void Array_public_Push(class_Array* this, class_Any *element) {
 	if (this->length == this->maxLen) {
 		int newLength = this->length + this->factor;
 
-		// allocate a new buffer
-		class_Any **newBuffer = (class_Any**)malloc(sizeof(class_Any*) * newLength);
+		// try to use realloc() first bc its faster
+		class_Any **newBuffer = realloc(this->elements, sizeof(class_Any*) * newLength);
 
-		// copy over the old one
-		memcpy(newBuffer, this->elements, sizeof(class_Any*) * this->length);
+		// if that failed, do it the long way
+		if (newBuffer == NULL) {
+			// allocate a new buffer
+			newBuffer = (class_Any**)malloc(sizeof(class_Any*) * newLength);
 
-		// free the old buffer
-		free(this->elements);
+			// copy over the old one
+			memcpy(newBuffer, this->elements, sizeof(class_Any*) * this->length);
 
+			// free the old buffer
+			free(this->elements);
+
+		}
+		
 		// change our pointer
 		this->elements = newBuffer;
 
@@ -367,7 +374,7 @@ void pArray_public_Constructor(class_pArray* this, int length, int elemSize) {
 	this->referenceCounter = 0;
 	this->length   = length;
 	this->maxLen   = length;
-	this->factor   = 5;
+	this->factor   = 4;
 	this->elemSize = elemSize;
 
 	this->elements = calloc(length, elemSize);
@@ -387,7 +394,7 @@ int pArray_public_GetLength(class_pArray* this) {
 	return this->length;
 }
 
-// definition for a string.Resize() method
+// definition for an array.Grow() method
 void *pArray_public_Grow(class_pArray* this) {
 
 	// check if growing is actually needed
@@ -395,14 +402,21 @@ void *pArray_public_Grow(class_pArray* this) {
 	{
 		int newLength = (this->length + this->factor) * this->elemSize;
 
-		// allocate a new buffer
-		char* output = malloc(newLength);
+		// try to use realloc() first bc its faster
+		void *output = realloc(this->elements, newLength);
 
-		// copy over the old one
-		memcpy(output, this->elements, this->length * this->elemSize);
+		// if that failed, do it the long way
+		if (output == NULL) {
+			// allocate a new buffer
+			output = malloc(newLength);
 
-		// free the old buffer
-		free(this->elements);
+			// copy over the old one
+			memcpy(output, this->elements, this->length * this->elemSize);
+
+			// free the old buffer
+			free(this->elements);
+
+		}
 
 		// change our pointer
 		this->elements = output;
