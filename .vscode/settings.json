@@ -26,6 +26,7 @@
 		"type_traits": "c",
 		"utility": "c",
 		"bitset": "c",
-		"sstream": "c"
+		"sstream": "c",
+		"execinfo.h": "c"
 	}
 }

@@ -2,9 +2,11 @@
 #include<string.h>
 #include<stdbool.h>
 #include<stdio.h>
-#include<pthread.h> // For thread object UwU
-#include "objects.h"
+#include<pthread.h>  // For thread object UwU
+
+#include "objects.h" // ReCT stdlib headers
 #include "arc.h"
+#include "exceptions.h"
 
 // NOTE: I made all class names capitalised, this is to distinguish primitives
 //       like int, float, etc from they "boxed" (objectified) versions
@@ -153,8 +155,16 @@ class_String *String_public_Substring(class_String* this, int start, int length)
 	char *subBuffer;
 
 	// make sure the substring is valid
-	if (start < 0 || length < 0 || start + length > this->length)
-		subBuffer = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+	if (start < 0)
+		exc_Throw("Substring start-index cannot be negative!");
+
+	else if (length < 0)
+		exc_Throw("Substring length cannot be negative!");
+
+	else if (start + length > this->length)
+		exc_Throw("Substring out of range!");
+
+	// if everything is alright:
 	else
 	{
 		subBuffer = (char*)malloc(length + 1);
@@ -294,7 +304,7 @@ void Array_public_Die(void* this) {
 // definition for a element access
 class_Any* Array_public_GetElement(class_Array* this, int index) {
 	if (index < 0 || index >= this->length)
-		return NULL;
+		exc_Throw("Array index out of range!");
 
 	return this->elements[index];
 }
@@ -302,7 +312,7 @@ class_Any* Array_public_GetElement(class_Array* this, int index) {
 // definition for a element assignment
 void Array_public_SetElement(class_Array* this, int index, class_Any *element) {
 	if (index < 0 || index >= this->length)
-		return;
+		exc_Throw("Array index out of range!");
 
 	// increase arc reference count
 	arc_RegisterReference(element);
@@ -434,7 +444,7 @@ void *pArray_public_Grow(class_pArray* this) {
 
 void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 	if (index < 0 || index >= this->length)
-		return NULL;
+		exc_Throw("Array index out of range!");
 
 	return (void*)(this->elements + index * this->elemSize);
 }
