@@ -244,6 +244,7 @@ const (
 	UnaryOperatorTypeError             = "UnaryOperatorType"
 	UnknownDataTypeError               = "UnknownDataType"
 	UnknownStatementError              = "UnknownStatement"
+	IllegalVariableDeclaration         = "IllegalVariableDeclaration"
 )
 
 // ErrorCode the numerical representation of an Error, this allows it to be "looked up"

@@ -365,7 +365,7 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 	keyword := prs.consume(prs.current().Kind)
 
 	// Next we check if there is a type in the variable declaration like:
-	// var x string;
+	// var string x;
 	// We assign typeClause and empty node and check, this means the typeClause will remain empty
 	// if there is no type in the declaration.
 	typeClause := nodes.TypeClauseNode{}
@@ -374,14 +374,25 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 		typeClause = prs.parseTypeClause()
 	}
 
-	// We consume the variable name, the assign token (<-) and then parse the value as an expression.
+	// We consume the variable name, and check for an end of statement (;)
+	// if the statement ends here, the variable doesn't have an initializer
 	identifier := prs.consume(lexer.IdToken)
-	assign := prs.consume(lexer.AssignToken)
 
-	// parsing an expression allows variable to be defined as 1*2/5+3 or string + string, instead of a single simple value
-	initializer := prs.parseExpression()
+	assign := lexer.Token{}
 
-	return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, initializer)
+	if prs.current().Kind != lexer.Semicolon {
+		assign = prs.consume(lexer.AssignToken)
+
+		// parsing an expression allows variable to be defined as 1*2/5+3 or string + string, instead of a single simple value
+		initializer := prs.parseExpression()
+
+		// return our newly parsed variable declaration
+		return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, initializer)
+	} else {
+		// if theres no initializer, we'll just null it
+		return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, nil)
+	}
+
 }
 
 func (prs *Parser) parseThreadStatement() nodes.ThreadExpressionNode {

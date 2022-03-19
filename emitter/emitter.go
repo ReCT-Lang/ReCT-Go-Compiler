@@ -206,11 +206,19 @@ func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func,
 
 func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundnodes.BoundVariableDeclarationStatementNode) {
 	varName := emt.Id(stmt.Variable)
-	expression := emt.EmitExpression(blk, stmt.Initializer)
+	var expression value.Value
 
-	// if the expression is a variable and contains an object -> increase reference counter
-	if stmt.Initializer.IsPersistent() && stmt.Initializer.Type().IsObject {
-		emt.CreateReference(blk, expression, "variable declaration ["+varName+"]")
+	// if there's an initializer given
+	if stmt.Initializer != nil {
+		expression := emt.EmitExpression(blk, stmt.Initializer)
+
+		// if the expression is a variable and contains an object -> increase reference counter
+		if stmt.Initializer.IsPersistent() && stmt.Initializer.Type().IsObject {
+			emt.CreateReference(blk, expression, "variable declaration ["+varName+"]")
+		}
+	} else {
+		// if there's no initializer -> use the type's default
+		expression = emt.DefaultConstant(blk, stmt.Variable.VarType())
 	}
 
 	if stmt.Variable.IsGlobal() {
@@ -1132,6 +1140,8 @@ func (emt *Emitter) DefaultConstant(blk *ir.Block, typ symbols.TypeSymbol) const
 	switch typ.Fingerprint() {
 	case builtins.Bool.Fingerprint():
 		return constant.NewBool(false)
+	case builtins.Byte.Fingerprint():
+		return constant.NewInt(types.I8, 0)
 	case builtins.Int.Fingerprint():
 		return constant.NewInt(types.I32, 0)
 	case builtins.Float.Fingerprint():

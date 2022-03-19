@@ -1,4 +1,7 @@
-var int  coolInt  <- 10;
-var byte coolByte <- 20;
+var int  coolInt;
+var byte coolByte;
+
+coolInt  <- 10;
+coolByte <- 20;
 
 Print(string(coolInt + coolByte));

@@ -217,15 +217,39 @@ func (bin *Binder) BindVariableDeclaration(stmt nodes.VariableDeclarationStateme
 	isGlobal := stmt.Keyword.Kind == lexer.SetKeyword
 	typeClause, clauseExists := bin.BindTypeClause(stmt.TypeClause)
 
-	initializer := bin.BindExpression(stmt.Initializer)
+	var initializer boundnodes.BoundExpressionNode
+	var convertedInitializer boundnodes.BoundExpressionNode
+	var variableType symbols.TypeSymbol
 
-	variableType := initializer.Type()
+	// if there's an initializer -> bind and use it
+	if stmt.Initializer != nil {
+		initializer = bin.BindExpression(stmt.Initializer)
+		variableType = initializer.Type()
+	}
+
 	if clauseExists {
 		variableType = typeClause
 	}
 
+	// if there's no clause but also no initializer -> throw error!
+	if variableType.Name == "" && stmt.Initializer == nil {
+		line, column, length := stmt.Position()
+		print.Error(
+			"BINDER",
+			print.IllegalVariableDeclaration,
+			line+1,
+			column,
+			length,
+			"Variable declaration is neither given a type, nor an ",
+		)
+		os.Exit(-1)
+	}
+
 	variable := bin.BindVariableCreation(stmt.Identifier, false, isGlobal, variableType)
-	convertedInitializer := bin.BindConversion(initializer, variableType, false)
+
+	if initializer != nil {
+		convertedInitializer = bin.BindConversion(initializer, variableType, false)
+	}
 
 	return boundnodes.CreateBoundVariableDeclarationStatementNode(variable, convertedInitializer)
 }
@@ -259,7 +283,7 @@ func (bin *Binder) BindThreadStatement(stmt nodes.ThreadExpressionNode) boundnod
 			line+1,
 			column,
 			length,
-			"Function \"%s\" does not exit! (THREAD)",
+			"Function \"%s\" does not exist! (THREAD)",
 			stmt.Expression.Identifier.Value,
 		)
 		os.Exit(-1)

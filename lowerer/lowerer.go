@@ -137,8 +137,12 @@ func RewriteBlockStatement(stmt boundnodes.BoundBlockStatementNode) boundnodes.B
 }
 
 func RewriteVariableDeclaration(stmt boundnodes.BoundVariableDeclarationStatementNode) boundnodes.BoundVariableDeclarationStatementNode {
-	initializer := RewriteExpression(stmt.Initializer)
-	return boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, initializer)
+	if stmt.Initializer != nil {
+		initializer := RewriteExpression(stmt.Initializer)
+		return boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, initializer)
+	}
+
+	return stmt
 }
 
 func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundStatementNode {

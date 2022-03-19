@@ -20,7 +20,11 @@ func (node BoundVariableDeclarationStatementNode) Print(indent string) {
 	fmt.Println(indent + "  └ Variable: ")
 	node.Variable.Print(indent + "    ")
 	fmt.Println(indent + "  └ Initializer: ")
-	node.Initializer.Print(indent + "    ")
+	if node.Initializer != nil {
+		node.Initializer.Print(indent + "    ")
+	} else {
+		fmt.Println(indent + "      none")
+	}
 }
 
 // constructor
