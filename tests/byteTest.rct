@@ -1,7 +1,18 @@
-var int  coolInt;
 var byte coolByte;
+var int  coolInt;
 
-coolInt  <- 10;
 coolByte <- 20;
+coolInt  <- 10;
 
-Print(string(coolInt + coolByte));
+var varSelect <- false;
+
+Print(string(varSelect ? coolByte : byte(coolInt)));
+
+var str0 <- "yes";
+var str1 <- "nah";
+
+while(true)
+{
+	Print(varSelect ? "yes" : "nah");
+	Sleep(1);
+}

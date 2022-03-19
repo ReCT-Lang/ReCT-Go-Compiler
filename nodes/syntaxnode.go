@@ -72,4 +72,5 @@ const (
 	ArrayAssignmentExpression NodeType = "ArrayAssignment Expression"
 	MakeArrayExpression       NodeType = "MakeArray Expression"
 	ThreadExpression          NodeType = "Thread Expression"
+	TernaryExpression         NodeType = "Ternary Expression"
 )

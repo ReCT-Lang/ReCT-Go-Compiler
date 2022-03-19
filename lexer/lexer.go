@@ -251,6 +251,10 @@ func (lxr *Lexer) getOperator() {
 		_token = CloseBracketToken
 	case ';':
 		_token = Semicolon
+	case '?':
+		_token = QuestionMarkToken
+	case ':':
+		_token = ColonToken
 	case ',':
 		_token = CommaToken
 	case '<':

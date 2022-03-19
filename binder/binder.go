@@ -514,6 +514,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindTypeCallExpression(expr.(nodes.TypeCallExpressionNode))
 	case nodes.BinaryExpression:
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
+	case nodes.TernaryExpression:
+		return bin.BindTernaryExpression(expr.(nodes.TernaryExpressionNode))
 
 	default:
 		//print.PrintC(print.Red, "Not implemented!")
@@ -831,6 +833,45 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 	}
 
 	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right)
+}
+
+func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) boundnodes.BoundTernaryExpressionNode {
+	// bind condition
+	condition := bin.BindExpression(expr.Condition)
+
+	// the condition needs to be a bool!
+	if condition.Type().Fingerprint() != builtins.Bool.Fingerprint() {
+		line, column, length := expr.Condition.Position()
+		print.Error(
+			"BINDER",
+			print.BinaryOperatorTypeError,
+			line,
+			column,
+			length,
+			"Condition of ternary operation needs to be of type 'bool'!",
+		)
+		os.Exit(-1)
+	}
+
+	// bind the sides
+	left := bin.BindExpression(expr.If)
+	right := bin.BindExpression(expr.Else)
+
+	// check if the left and right types are the same
+	if left.Type().Fingerprint() != right.Type().Fingerprint() {
+		line, column, length := expr.Else.Position()
+		print.Error(
+			"BINDER",
+			print.BinaryOperatorTypeError,
+			line,
+			column,
+			length,
+			"Types of left and right side of ternary need to match!",
+		)
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right)
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------

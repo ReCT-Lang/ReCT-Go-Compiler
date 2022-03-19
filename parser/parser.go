@@ -308,7 +308,7 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 		statement = prs.parseFromToStatement()
 
 	} else if cur == lexer.ThreadKeyword {
-		statement = prs.parseThreadStatement()
+		statement = prs.parseThreadExpression()
 
 	} else {
 		// Lastly we process an expression
@@ -393,16 +393,6 @@ func (prs *Parser) parseVariableDeclaration() nodes.VariableDeclarationStatement
 		return nodes.CreateVariableDeclarationStatementNode(keyword, typeClause, identifier, assign, nil)
 	}
 
-}
-
-func (prs *Parser) parseThreadStatement() nodes.ThreadExpressionNode {
-	keyword := prs.consume(lexer.ThreadKeyword)
-
-	prs.consume(lexer.OpenParenthesisToken)
-	expression := prs.parseNameExpression()
-	prs.consume(lexer.CloseParenthesisToken)
-
-	return nodes.CreateThreadExpressionNode(keyword, expression)
 }
 
 // parseIfStatement as you can probably guess, this function is called when parseStatement gets an IfKeyword Token.
@@ -607,10 +597,8 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	}
 
 	// thread creating
-	// Okay I admit I made thread a statement even though it makes more sense for it to be an
-	// expression... *maybe* I'll change it... One day... Or Red will hehehehe
 	if prs.current().Kind == lexer.ThreadKeyword {
-		return prs.parseThreadStatement()
+		return prs.parseThreadExpression()
 	}
 
 	// if none of the above are what we want, it must be a binary expression!
@@ -640,6 +628,11 @@ func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionN
 		// check if there's a type call going on here
 		if prs.current().Kind == lexer.AccessToken {
 			left = prs.parseTypeCallExpressionFromValue(left)
+		}
+
+		// check if there's a ternary expression going on here
+		if prs.current().Kind == lexer.QuestionMarkToken {
+			left = prs.parseTernaryExpression(left)
 		}
 	}
 
@@ -828,6 +821,21 @@ func (prs *Parser) parseArrayAccessExpressionFromValue(expr nodes.ExpressionNode
 	return nodes.CreateArrayAccessExpressionNode(expr, index)
 }
 
+// parseTernaryExpression this for the one and only ternary
+// For example: a == b ? c : d
+// (the condition is given to us by parseBinaryExpression)
+func (prs *Parser) parseTernaryExpression(condition nodes.ExpressionNode) nodes.ExpressionNode {
+
+	prs.consume(lexer.QuestionMarkToken) // ?
+
+	ifExpression := prs.parseExpression()   // get the left side of the ternary expression
+	prs.consume(lexer.ColonToken)           // :
+	elseExpression := prs.parseExpression() // get the right side of the ternary expression
+
+	// return an array access expression
+	return nodes.CreateTernaryExpressionNode(condition, ifExpression, elseExpression)
+}
+
 // parseMakeArrayExpression this for creating arrays
 // For example: make string array(10)
 // we need to get the type and length of the new array
@@ -850,6 +858,18 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 
 	// return an array access expression
 	return nodes.CreateMakeArrayExpressionNode(baseType, length)
+}
+
+// parseThreadExpression this for creating threads
+// For example: Thread(someFunction)
+func (prs *Parser) parseThreadExpression() nodes.ThreadExpressionNode {
+	keyword := prs.consume(lexer.ThreadKeyword)
+
+	prs.consume(lexer.OpenParenthesisToken)
+	expression := prs.parseNameExpression()
+	prs.consume(lexer.CloseParenthesisToken)
+
+	return nodes.CreateThreadExpressionNode(keyword, expression)
 }
 
 // parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)

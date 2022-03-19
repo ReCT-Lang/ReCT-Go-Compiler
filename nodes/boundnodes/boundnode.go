@@ -62,4 +62,5 @@ const (
 	BoundMakeArrayExpression       BoundType = "BoundMakeArrayExpression"
 	BoundFunctionExpression        BoundType = "BoundFunctionExpression"
 	BoundThreadExpression          BoundType = "BoundThreadExpression"
+	BoundTernaryExpression         BoundType = "BoundTernaryExpression"
 )

@@ -61,6 +61,9 @@ const (
 	OpenParenthesisToken  TokenKind = "OpenParenthesis '('"
 	CloseParenthesisToken TokenKind = "CloseParenthesis ')'"
 
+	QuestionMarkToken TokenKind = "QuestionMark '?'"
+	ColonToken        TokenKind = "Colon ':'"
+
 	BadToken TokenKind = "Token Error (BadToken)" // Naughty ;)
 
 	Semicolon TokenKind = "Semicolon ';'" // Used to separate statements (for now... )

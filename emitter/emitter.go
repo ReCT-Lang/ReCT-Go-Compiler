@@ -210,7 +210,7 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk *ir.Block, stmt boundno
 
 	// if there's an initializer given
 	if stmt.Initializer != nil {
-		expression := emt.EmitExpression(blk, stmt.Initializer)
+		expression = emt.EmitExpression(blk, stmt.Initializer)
 
 		// if the expression is a variable and contains an object -> increase reference counter
 		if stmt.Initializer.IsPersistent() && stmt.Initializer.Type().IsObject {
@@ -360,6 +360,9 @@ func (emt *Emitter) EmitExpression(blk *ir.Block, expr boundnodes.BoundExpressio
 
 	case boundnodes.BoundBinaryExpression:
 		return emt.EmitBinaryExpression(blk, expr.(boundnodes.BoundBinaryExpressionNode))
+
+	case boundnodes.BoundTernaryExpression:
+		return emt.EmitTernaryExpression(blk, expr.(boundnodes.BoundTernaryExpressionNode))
 
 	case boundnodes.BoundCallExpression:
 		return emt.EmitCallExpression(blk, expr.(boundnodes.BoundCallExpressionNode))
@@ -831,6 +834,16 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 	fmt.Println(left)
 	fmt.Println(right)
 	return nil
+}
+
+func (emt *Emitter) EmitTernaryExpression(blk *ir.Block, expr boundnodes.BoundTernaryExpressionNode) value.Value {
+	// Emit all of our values
+	cond := emt.EmitExpression(blk, expr.Condition)
+	left := emt.EmitExpression(blk, expr.If)
+	right := emt.EmitExpression(blk, expr.Else)
+
+	// use a select for ternary
+	return blk.NewSelect(cond, left, right)
 }
 
 func (emt *Emitter) EmitCallExpression(blk *ir.Block, expr boundnodes.BoundCallExpressionNode) value.Value {
