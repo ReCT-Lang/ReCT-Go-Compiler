@@ -23,8 +23,10 @@ func (VariableEditorExpressionNode) NodeType() NodeType { return VariableEditorE
 // convenient.
 func (node VariableEditorExpressionNode) Position() (int, int, int) {
 	length := len(node.Operator.Value) + len(node.Operator.Value) + 2 // +2 for spaces and stuff
-	_, _, exprLength := node.Expression.Position()
-	length += exprLength
+	if node.Expression != nil {
+		_, _, exprLength := node.Expression.Position()
+		length += exprLength
+	}
 	return node.Identifier.Line, node.Identifier.Column, length
 }
 

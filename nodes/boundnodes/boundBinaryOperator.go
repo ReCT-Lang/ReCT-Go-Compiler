@@ -89,6 +89,22 @@ var BinaryOperators []BoundBinaryOperator = []BoundBinaryOperator{
 	/* >  */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterThanToken, Greater, builtins.Int, builtins.Bool),
 	/* >= */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterEqualsToken, GreaterOrEquals, builtins.Int, builtins.Bool),
 
+	// byte operations
+	/* +  */ CreateBoundBinaryOperatorAllSame(lexer.PlusToken, Addition, builtins.Byte),
+	/* -  */ CreateBoundBinaryOperatorAllSame(lexer.MinusToken, Subtraction, builtins.Byte),
+	/* *  */ CreateBoundBinaryOperatorAllSame(lexer.StarToken, Multiplication, builtins.Byte),
+	/* /  */ CreateBoundBinaryOperatorAllSame(lexer.SlashToken, Division, builtins.Byte),
+	/* &  */ CreateBoundBinaryOperatorAllSame(lexer.AmpersandToken, BitwiseAnd, builtins.Byte),
+	/* %  */ CreateBoundBinaryOperatorAllSame(lexer.ModulusToken, Modulus, builtins.Byte),
+	/* |  */ CreateBoundBinaryOperatorAllSame(lexer.PipeToken, BitwiseOr, builtins.Byte),
+	/* ^  */ CreateBoundBinaryOperatorAllSame(lexer.HatToken, BitwiseXor, builtins.Byte),
+	/* =  */ CreateBoundBinaryOperatorSameInputs(lexer.EqualsToken, Equals, builtins.Byte, builtins.Bool),
+	/* != */ CreateBoundBinaryOperatorSameInputs(lexer.NotEqualsToken, NotEquals, builtins.Byte, builtins.Bool),
+	/* <  */ CreateBoundBinaryOperatorSameInputs(lexer.LessThanToken, Less, builtins.Byte, builtins.Bool),
+	/* <= */ CreateBoundBinaryOperatorSameInputs(lexer.LessEqualsToken, LessOrEquals, builtins.Byte, builtins.Bool),
+	/* >  */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterThanToken, Greater, builtins.Byte, builtins.Bool),
+	/* >= */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterEqualsToken, GreaterOrEquals, builtins.Byte, builtins.Bool),
+
 	// float operations
 	/* +  */ CreateBoundBinaryOperatorAllSame(lexer.PlusToken, Addition, builtins.Float),
 	/* -  */ CreateBoundBinaryOperatorAllSame(lexer.MinusToken, Subtraction, builtins.Float),

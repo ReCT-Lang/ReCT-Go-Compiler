@@ -19,6 +19,8 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		return types.Void
 	case builtins.Bool.Fingerprint():
 		return types.I1
+	case builtins.Byte.Fingerprint():
+		return types.I8
 	case builtins.Int.Fingerprint():
 		return types.I32
 	case builtins.Float.Fingerprint():

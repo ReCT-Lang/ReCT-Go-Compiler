@@ -548,31 +548,10 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 		expression = bin.BindExpression(expr.Expression)
 	}
 
-	// bind the operator and binary expression for our operation
-	operator := boundnodes.BindBinaryOperator(expr.Operator.Kind, variable.VarType(), expression.Type())
-
-	// check if the operator is valid
-	if !operator.Exists {
-		//print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+variable.VarType().Name+"' and '"+expression.Type().Name+"'!")
-		line, column, length := expr.Position()
-		print.Error(
-			"BINDER",
-			print.BinaryOperatorTypeError,
-			line,
-			column,
-			length,
-			"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
-			expr.Operator.Value,
-			variable.VarType().Name,
-			expression.Type().Name,
-		)
-		os.Exit(-1)
-	}
-
-	binaryExpression := boundnodes.CreateBoundBinaryExpressionNode(
+	binaryExpression := bin.BindBinaryExpressionInternal(
 		boundnodes.CreateBoundVariableExpressionNode(variable),
-		operator,
 		expression,
+		expr.Operator.Kind,
 	)
 
 	// return it as an assignment
@@ -790,23 +769,41 @@ func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnode
 func (bin *Binder) BindBinaryExpression(expr nodes.BinaryExpressionNode) boundnodes.BoundBinaryExpressionNode {
 	left := bin.BindExpression(expr.Left)
 	right := bin.BindExpression(expr.Right)
-	op := boundnodes.BindBinaryOperator(expr.Operator.Kind, left.Type(), right.Type())
+
+	return bin.BindBinaryExpressionInternal(left, right, expr.Operator.Kind)
+}
+
+func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionNode, right boundnodes.BoundExpressionNode, opkind lexer.TokenKind) boundnodes.BoundBinaryExpressionNode {
+	op := boundnodes.BindBinaryOperator(opkind, left.Type(), right.Type())
 
 	if !op.Exists {
-		//print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+left.Type().Name+"' and '"+right.Type().Name+"'!")
-		line, column, length := expr.Position()
-		print.Error(
-			"BINDER",
-			print.BinaryOperatorTypeError,
-			line,
-			column,
-			length,
-			"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
-			expr.Operator.Value,
-			left.Type().Name,
-			right.Type().Name,
-		)
-		os.Exit(-1)
+		// if the operation doesn't exit, see if the right side can be casted to the left
+		conv := ClassifyConversion(right.Type(), left.Type())
+
+		// if the conversion exists and its allowed to be done, do that (this also allows for explicit conversions)
+		if conv.Exists && !conv.IsIdentity {
+			right = bin.BindConversion(right, left.Type(), true)
+			op = boundnodes.BindBinaryOperator(opkind, left.Type(), right.Type())
+		}
+
+		// now that we may or may not have converted our right value -> check the operation again#
+		if !op.Exists {
+			//print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+left.Type().Name+"' and '"+right.Type().Name+"'!")
+			line, column, length := 0, 0, 0
+			print.Error(
+				"BINDER",
+				print.BinaryOperatorTypeError,
+				line,
+				column,
+				length,
+				"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
+				opkind,
+				left.Type().Name,
+				right.Type().Name,
+			)
+			os.Exit(-1)
+		}
+
 	}
 
 	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right)
@@ -975,6 +972,8 @@ func LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymb
 		return builtins.Void, true
 	case "bool":
 		return builtins.Bool, true
+	case "byte":
+		return builtins.Byte, true
 	case "int":
 		return builtins.Int, true
 	case "float":
@@ -1026,6 +1025,8 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 		return builtins.Void, true
 	case "bool":
 		return builtins.Bool, true
+	case "byte":
+		return builtins.Byte, true
 	case "int":
 		return builtins.Int, true
 	case "float":

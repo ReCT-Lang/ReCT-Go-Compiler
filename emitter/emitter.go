@@ -606,6 +606,9 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewAdd(left, right)
 
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewAdd(left, right)
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return blk.NewFAdd(left, right)
 
@@ -628,6 +631,8 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 	case boundnodes.Subtraction:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewSub(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewSub(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return blk.NewFSub(left, right)
@@ -635,6 +640,9 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 
 	case boundnodes.Multiplication:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewMul(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return blk.NewMul(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
@@ -645,12 +653,18 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewSDiv(left, right)
 
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewSDiv(left, right)
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return blk.NewFDiv(left, right)
 		}
 
 	case boundnodes.Modulus:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewSRem(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return blk.NewSRem(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
@@ -661,12 +675,18 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewAnd(left, right)
 
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewAnd(left, right)
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
 			return blk.NewAnd(left, right)
 		}
 
 	case boundnodes.BitwiseOr:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewOr(left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return blk.NewOr(left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Bool.Fingerprint() {
@@ -676,10 +696,15 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 	case boundnodes.BitwiseXor:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewXor(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewXor(left, right)
 		}
 
 	case boundnodes.Equals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredEQ, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return blk.NewICmp(enum.IPredEQ, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
@@ -710,6 +735,9 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewICmp(enum.IPredNE, left, right)
 
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewICmp(enum.IPredNE, left, right)
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return blk.NewFCmp(enum.FPredONE, left, right)
 
@@ -738,12 +766,18 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewICmp(enum.IPredSGT, left, right)
 
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewICmp(enum.IPredSGT, left, right)
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return blk.NewFCmp(enum.FPredOGT, left, right)
 		}
 
 	case boundnodes.GreaterOrEquals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredSGE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return blk.NewICmp(enum.IPredSGE, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
@@ -754,12 +788,18 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return blk.NewICmp(enum.IPredSLT, left, right)
 
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return blk.NewICmp(enum.IPredSLT, left, right)
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
 			return blk.NewFCmp(enum.FPredOLT, left, right)
 		}
 
 	case boundnodes.LessOrEquals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return blk.NewICmp(enum.IPredSLE, left, right)
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return blk.NewICmp(enum.IPredSLE, left, right)
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Float.Fingerprint() {
@@ -779,6 +819,9 @@ func (emt *Emitter) EmitBinaryExpression(blk *ir.Block, expr boundnodes.BoundBin
 	}
 
 	fmt.Println("Unknown Binary!")
+	fmt.Println(expr.Op.OperatorKind)
+	fmt.Println(left)
+	fmt.Println(right)
 	return nil
 }
 
@@ -920,7 +963,7 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			blk.NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, blk.NewSelect(value, trueStr, falseStr))
 
 			return strObj
-		case builtins.Int.Fingerprint():
+		case builtins.Int.Fingerprint(), builtins.Byte.Fingerprint():
 			// find out how much space we need to allocate
 			len := blk.NewCall(emt.CFuncs["snprintf"], constant.NewNull(types.I8Ptr), CI32(0), emt.GetStringConstant(blk, "%d"), value)
 
@@ -1016,6 +1059,20 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			}
 
 			return primitive
+		} else if expr.Expression.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			// extend the byte to an int
+			result := blk.NewSExt(value, emt.IRTypes(builtins.Int))
+			return result
+		} else if expr.Expression.Type().Fingerprint() == builtins.Float.Fingerprint() {
+			// extend the byte to an int
+			result := blk.NewFPToSI(value, emt.IRTypes(builtins.Int))
+			return result
+		}
+	} else if expr.ToType.Fingerprint() == builtins.Byte.Fingerprint() {
+		if expr.Expression.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			// truncate the int to a byte
+			result := blk.NewTrunc(value, emt.IRTypes(builtins.Byte))
+			return result
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Float.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
@@ -1046,6 +1103,10 @@ func (emt *Emitter) EmitConversionExpression(blk *ir.Block, expr boundnodes.Boun
 			}
 
 			return primitive
+		} else if expr.Expression.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			result := blk.NewSIToFP(value, emt.IRTypes(builtins.Float))
+
+			return result
 		}
 	} else if expr.ToType.Name == builtins.Array.Name {
 		if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {

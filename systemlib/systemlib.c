@@ -91,7 +91,7 @@ void rct_Sleep(int ms)
     #ifdef _WIN32
 	Sleep(ms);
     #else
-	sleep(ms / 1000.0);
+	usleep(ms * 1000);
     #endif
 }
 

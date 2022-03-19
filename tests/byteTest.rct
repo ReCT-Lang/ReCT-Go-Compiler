@@ -1,0 +1,4 @@
+var int  coolInt  <- 10;
+var byte coolByte <- 20;
+
+Print(string(coolInt + coolByte));

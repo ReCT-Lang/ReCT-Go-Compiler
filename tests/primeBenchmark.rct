@@ -7,7 +7,7 @@ set primesUpTo <- 10_000_000;
 var ruledOut <- make bool array(primesUpTo); 
 
 // rule out 0 and 1
-ruledOut[0 <- true;
+ruledOut[0] <- true;
 ruledOut[1] <- true;
 
 // the biggest prime factor will be less than the square root of our max value
