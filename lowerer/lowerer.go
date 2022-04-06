@@ -4,8 +4,10 @@ import (
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/nodes/boundnodes"
+	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"os"
 )
 
 var labelCounter int = 0
@@ -329,8 +331,24 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteCallExpression(expr.(boundnodes.BoundCallExpressionNode))
 	case boundnodes.BoundConversionExpression:
 		return RewriteConversionExpression(expr.(boundnodes.BoundConversionExpressionNode))
+	case boundnodes.BoundTypeCallExpression:
+		return RewriteTypeCallExpression(expr.(boundnodes.BoundTypeCallExpressionNode))
+	case boundnodes.BoundArrayAccessExpression:
+		return RewriteArrayAccessExpression(expr.(boundnodes.BoundArrayAccessExpressionNode))
+	case boundnodes.BoundArrayAssignmentExpression:
+		return RewriteArrayAssignmentExpression(expr.(boundnodes.BoundArrayAssignmentExpressionNode))
+	case boundnodes.BoundMakeArrayExpression:
+		return RewriteMakeArrayExpression(expr.(boundnodes.BoundMakeArrayExpressionNode))
+	case boundnodes.BoundFunctionExpression:
+		return RewriteFunctionExpression(expr.(boundnodes.BoundFunctionExpressionNode))
+	case boundnodes.BoundThreadExpression:
+		return RewriteThreadExpression(expr.(boundnodes.BoundThreadExpressionNode))
+	case boundnodes.BoundTernaryExpression:
+		return RewriteTernaryExpression(expr.(boundnodes.BoundTernaryExpressionNode))
 	default:
-		return expr
+		print.PrintC(print.Red, "Expression unaccounted for in lowerer! (stuff being in here is important lol)")
+		os.Exit(-1)
+		return nil
 	}
 }
 
@@ -376,4 +394,80 @@ func RewriteConversionExpression(expr boundnodes.BoundConversionExpressionNode) 
 	expression := RewriteExpression(expr.Expression)
 
 	return boundnodes.CreateBoundConversionExpressionNode(expr.ToType, expression)
+}
+
+func RewriteTypeCallExpression(expr boundnodes.BoundTypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
+	rewrittenBase := RewriteExpression(expr.Base)
+
+	rewrittenArgs := make([]boundnodes.BoundExpressionNode, 0)
+
+	for _, arg := range expr.Arguments {
+		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
+	}
+
+	return boundnodes.CreateBoundTypeCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs)
+}
+
+func RewriteArrayAccessExpression(expr boundnodes.BoundArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
+	rewrittenBase := RewriteExpression(expr.Base)
+	rewrittenIndex := RewriteExpression(expr.Index)
+
+	return boundnodes.CreateBoundArrayAccessExpressionNode(rewrittenBase, rewrittenIndex)
+}
+
+func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
+	rewrittenBase := RewriteExpression(expr.Base)
+	rewrittenIndex := RewriteExpression(expr.Index)
+	rewrittenValue := RewriteExpression(expr.Value)
+
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(rewrittenBase, rewrittenIndex, rewrittenValue)
+}
+
+func RewriteMakeArrayExpression(expr boundnodes.BoundMakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
+	rewrittenLength := RewriteExpression(expr.Length)
+
+	return boundnodes.CreateBoundMakeArrayExpressionNode(expr.BaseType, rewrittenLength)
+}
+
+func RewriteFunctionExpression(expr boundnodes.BoundFunctionExpressionNode) boundnodes.BoundFunctionExpressionNode {
+	return expr
+}
+
+func RewriteThreadExpression(expr boundnodes.BoundThreadExpressionNode) boundnodes.BoundThreadExpressionNode {
+	return expr
+}
+
+func RewriteTernaryExpression(expr boundnodes.BoundTernaryExpressionNode) boundnodes.BoundTernaryExpressionNode {
+	// dissolve the ternary expression into an if statement
+
+	// a ? b : c
+	//
+	// <- gets lowered into: ->
+	//
+	// condGoto <condition> then, else
+	// then:
+	// 	%v = b
+	//  <gc>
+	// goto end
+	// else:
+	//  %v = c
+	// 	<gc>
+	// goto end
+	// end:
+	// a = %v
+
+	//thenLabel := GenerateLabel()
+	//elseLabel := GenerateLabel()
+	//endLabel := GenerateLabel()
+	//
+	//condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, elseLabel)
+	//gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel)
+	//thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel)
+	//elseLabelStatement := boundnodes.CreateBoundLabelStatementNode(elseLabel)
+	//endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel)
+	//result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
+	//	condGoto, thenLabelStatement, stmt.ThenStatement, gotoEnd, elseLabelStatement, stmt.ElseStatement, gotoEnd, endLabelStatement,
+	//})
+
+	return expr
 }
