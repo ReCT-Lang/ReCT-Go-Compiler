@@ -871,7 +871,10 @@ func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) bound
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right)
+	// create a temporary variable symbol to keep track of the result
+	tmp := symbols.CreateLocalVariableSymbol(symbols.GetTempName(), false, left.Type())
+
+	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right, tmp)
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------

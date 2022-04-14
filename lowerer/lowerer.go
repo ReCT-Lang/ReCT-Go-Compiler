@@ -469,5 +469,11 @@ func RewriteTernaryExpression(expr boundnodes.BoundTernaryExpressionNode) boundn
 	//	condGoto, thenLabelStatement, stmt.ThenStatement, gotoEnd, elseLabelStatement, stmt.ElseStatement, gotoEnd, endLabelStatement,
 	//})
 
+	// => was moved to emitter
+
+	expr.IfLabel = GenerateLabel()
+	expr.ElseLabel = GenerateLabel()
+	expr.EndLabel = GenerateLabel()
+
 	return expr
 }

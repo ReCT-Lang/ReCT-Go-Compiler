@@ -1,5 +1,7 @@
 package symbols
 
+import "fmt"
+
 type Symbol interface {
 	SymbolType() SymbolType
 	SymbolName() string
@@ -15,6 +17,13 @@ type VariableSymbol interface {
 	IsReadOnly() bool
 	IsGlobal() bool
 	VarType() TypeSymbol
+}
+
+var tempCounter = 0
+
+func GetTempName() string {
+	tempCounter++
+	return fmt.Sprintf("TMP_%d", tempCounter)
 }
 
 // types of symbols
