@@ -29,4 +29,15 @@ from (y <- 0) to 9
 	Print(""); // newline
 }
 
+// create a string array literal
+var strArr <- make string array { "this ", "is ", "a ", "string ", "array" };
 
+from (i <- 0) to strArr->GetLength() -1
+	Write(strArr[i]);
+Print("");
+
+// create an int array literal
+var intArr <- make int array { 100, 200, 300 };
+from (i <- 0) to intArr->GetLength() -1
+	Write(string(intArr[i]) + ", ");
+Print("");

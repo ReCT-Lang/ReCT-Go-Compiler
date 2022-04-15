@@ -16,6 +16,7 @@ var loopCounter <- 0;
 
 while(true)
 {
+	// ternary template:
 	//var string tmp;
 	//if (varSelect) {
 	//	tmp <- "yes";
@@ -24,6 +25,7 @@ while(true)
 	//}
 	//Print(tmp);
 
+	// nested ternary o.O
 	Print(varSelect 
 	      ? "yes" 
 		  : (varSelect2 ? "hm" : "no"));
