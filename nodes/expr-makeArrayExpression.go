@@ -8,8 +8,10 @@ import (
 type MakeArrayExpressionNode struct {
 	ExpressionNode
 
-	Type   TypeClauseNode
-	Length ExpressionNode
+	IsLiteral     bool
+	Type          TypeClauseNode
+	Length        ExpressionNode
+	LiteralValues []ExpressionNode
 }
 
 // implement node type from interface
@@ -35,7 +37,15 @@ func (node MakeArrayExpressionNode) Print(indent string) {
 // "constructor" / ooga booga OOP cave man brain
 func CreateMakeArrayExpressionNode(typ TypeClauseNode, length ExpressionNode) MakeArrayExpressionNode {
 	return MakeArrayExpressionNode{
-		Type:   typ,
-		Length: length,
+		Type:      typ,
+		Length:    length,
+		IsLiteral: false,
+	}
+}
+func CreateMakeArrayExpressionNodeLiteral(typ TypeClauseNode, literals []ExpressionNode) MakeArrayExpressionNode {
+	return MakeArrayExpressionNode{
+		Type:          typ,
+		LiteralValues: literals,
+		IsLiteral:     true,
 	}
 }

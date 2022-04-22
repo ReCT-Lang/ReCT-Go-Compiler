@@ -424,8 +424,15 @@ func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpres
 }
 
 func RewriteMakeArrayExpression(expr boundnodes.BoundMakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
-	rewrittenLength := RewriteExpression(expr.Length)
+	if expr.IsLiteral {
+		rewrittenLiterals := make([]boundnodes.BoundExpressionNode, 0)
+		for _, literal := range expr.Literals {
+			rewrittenLiterals = append(rewrittenLiterals, RewriteExpression(literal))
+		}
+		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(expr.BaseType, rewrittenLiterals)
+	}
 
+	rewrittenLength := RewriteExpression(expr.Length)
 	return boundnodes.CreateBoundMakeArrayExpressionNode(expr.BaseType, rewrittenLength)
 }
 

@@ -634,11 +634,31 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 	// resolve the type symbol
 	baseType, _ := LookupType(expr.Type, false)
 
-	// bind the length expression
-	length := bin.BindExpression(expr.Length)
+	if !expr.IsLiteral {
+		// bind the length expression
+		length := bin.BindExpression(expr.Length)
 
-	// return the bound node
-	return boundnodes.CreateBoundMakeArrayExpressionNode(baseType, length)
+		// return the bound node
+		return boundnodes.CreateBoundMakeArrayExpressionNode(baseType, length)
+
+	} else {
+		literals := make([]boundnodes.BoundExpressionNode, 0)
+
+		// bind all the literals
+		for _, literal := range expr.LiteralValues {
+			// bind the literal
+			boundLiteral := bin.BindExpression(literal)
+
+			// make sure the literal has the correct type
+			convertedLiteral := bin.BindConversion(boundLiteral, baseType, false)
+
+			// add the literal to the list
+			literals = append(literals, convertedLiteral)
+		}
+
+		// return the bound node
+		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(baseType, literals)
+	}
 }
 
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {

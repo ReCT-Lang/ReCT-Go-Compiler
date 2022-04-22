@@ -467,19 +467,37 @@ func (emt *Emitter) EmitAssignmentExpression(blk **ir.Block, expr boundnodes.Bou
 
 func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.BoundMakeArrayExpressionNode) value.Value {
 	// get the array length
-	length := emt.EmitExpression(blk, expr.Length)
+	var length value.Value
+
+	if !expr.IsLiteral {
+		length = emt.EmitExpression(blk, expr.Length)
+	} else {
+		length = CI32(int32(len(expr.Literals)))
+	}
+
+	// variable for keepong track of the array
+	var arrObject value.Value
 
 	// check if this is an object array or a primitive array
 	if expr.BaseType.IsObject {
 		// create a new object array object
-		return emt.CreateObject(blk, emt.Id(builtins.Array), length)
+		arrObject = emt.CreateObject(blk, emt.Id(builtins.Array), length)
 	} else {
 		// get the size of the primitive we want to allocate
 		size := emt.SizeOf(blk, expr.BaseType)
 
 		// create a new primitive array object
-		return emt.CreateObject(blk, emt.Id(builtins.PArray), length, size)
+		arrObject = emt.CreateObject(blk, emt.Id(builtins.PArray), length, size)
 	}
+
+	// if this is a literal, load its values
+	if expr.IsLiteral {
+		for i, literal := range expr.Literals {
+			emt.EmitArrayAssignment(blk, arrObject, CI32(int32(i)), literal)
+		}
+	}
+
+	return arrObject
 }
 
 func (emt *Emitter) EmitThreadStatement(blk **ir.Block, stmt boundnodes.BoundThreadExpressionNode) value.Value {
@@ -857,8 +875,6 @@ func (emt *Emitter) EmitTernaryExpression(blk **ir.Block, expr boundnodes.BoundT
 	local.SetName(varName)
 	emt.Locals[varName] = Local{IRLocal: local, IRBlock: (*blk), Type: expr.Tmp.VarType()}
 	emt.EmitVariableDeclaration(blk, expr.Tmp, true)
-
-	fmt.Println(varName)
 
 	// emit the conditional jump
 	cond := emt.EmitExpression(blk, expr.Condition)
@@ -1384,6 +1400,42 @@ func (emt *Emitter) EmitAssignment(blk **ir.Block, variable symbols.LocalVariabl
 
 		// assign the value to the local variable
 		(*blk).NewStore(expression, emt.Locals[varName].IRLocal)
+	}
+}
+
+func (emt *Emitter) EmitArrayAssignment(blk **ir.Block, base value.Value, index value.Value, literalValue boundnodes.BoundExpressionNode) {
+	// assignment
+	// ----------
+	value := emt.EmitExpression(blk, literalValue)
+
+	// decide if we should do object or primitive array access
+	if literalValue.Type().IsObject {
+		// bitcast our pointer to any
+		anyValue := (*blk).NewBitCast(value, emt.IRTypes(builtins.Any))
+
+		// call the array's set element function
+		(*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], base, index, anyValue)
+
+		// if the element wasnt a variable -> decrease its reference counter
+		if !literalValue.IsPersistent() && literalValue.Type().IsObject {
+			emt.DestroyReference(blk, value, "array assignment cleanup")
+		}
+
+		// return a copy of the value (i really don't think this is necessary but oh well)
+		//emt.CreateReference(blk, value, "assign value copy (array assignment)")
+
+		//return value
+	} else {
+		// get the elements pointer
+		elementPtr := (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
+
+		// bitcast the pointer to our type
+		castedPtr := (*blk).NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(literalValue.Type())))
+
+		(*blk).NewStore(value, castedPtr)
+
+		// return a copy of the value
+		//return value
 	}
 }
 

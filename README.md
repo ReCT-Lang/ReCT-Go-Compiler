@@ -79,9 +79,7 @@ For more examples, please refer to the [Documentation](https://docs.rect.ml/).
 
 ### Version Roadmap
 - [x] ReCT v1.1
-- [ ] ReCT v1.2
-	- [ ] Arrays
-	- [ ] Threading 
+- [x] ReCT v1.2
 - [ ] ReCT v2.0 (skipping all 1.3 Versions)
 - [ ] ReCT v2.1
 - [ ] ReCT v2.3

@@ -884,7 +884,35 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 	// only problem with that is that it doesn't exist (it's an identifier)
 	// so for now we just consume an IdToken
 
-	prs.consume(lexer.IdToken) // array
+	prs.consume(lexer.IdToken) // "array" keyword
+
+	// if the next character is a "{" this is an array literal
+	if prs.current().Kind == lexer.OpenBraceToken {
+		// list to store values in
+		literals := make([]nodes.ExpressionNode, 0)
+
+		prs.consume(lexer.OpenBraceToken) // {
+
+		// We keep looping to get all our literal values
+		for prs.current().Kind != lexer.CloseBraceToken &&
+			prs.current().Kind != lexer.EOF {
+
+			// get the value
+			expression := prs.parseExpression()
+			literals = append(literals, expression)
+
+			if prs.current().Kind == lexer.CommaToken {
+				prs.consume(lexer.CommaToken) // then we re-loop and get the next argument expression
+			} else {
+				break // if not a comma, we know there are no more values left
+			}
+		}
+
+		prs.consume(lexer.CloseBraceToken) // }
+
+		// create our node object
+		return nodes.CreateMakeArrayExpressionNodeLiteral(baseType, literals)
+	}
 
 	prs.consume(lexer.OpenParenthesisToken)  // (
 	length := prs.parseExpression()          // We get the length of the new array
