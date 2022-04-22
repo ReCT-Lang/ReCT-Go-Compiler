@@ -41,18 +41,26 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	mainScope := CreateScope(&rootScope)
 
 	functionDeclarations := make([]nodes.FunctionDeclarationMember, 0)
+	classDeclarations := make([]nodes.ClassDeclarationMember, 0)
 	globalStatements := make([]nodes.GlobalStatementMember, 0)
 
 	// sort all our members into functions and global statements
 	for _, member := range members {
 		if member.NodeType() == nodes.FunctionDeclaration {
 			functionDeclarations = append(functionDeclarations, member.(nodes.FunctionDeclarationMember))
+		} else if member.NodeType() == nodes.ClassDeclaration {
+			classDeclarations = append(classDeclarations, member.(nodes.ClassDeclarationMember))
 		} else {
 			globalStatements = append(globalStatements, member.(nodes.GlobalStatementMember))
 		}
 	}
 
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
+
+	// declare all our classes
+	for _, cls := range classDeclarations {
+		binder.BindClassDeclaration(cls)
+	}
 
 	// declare all our functions
 	for _, fnc := range functionDeclarations {

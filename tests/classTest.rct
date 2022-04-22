@@ -1,0 +1,9 @@
+// much class
+class SomeClass {
+
+	set int i;
+
+	function coolFunc() {
+
+	}
+}

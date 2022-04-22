@@ -93,7 +93,7 @@ func (prs *Parser) parseMembers() []nodes.MemberNode {
 		startToken := prs.current()
 
 		// parse all our members
-		member := prs.parseMember()
+		member := prs.parseMember(true)
 		members = append(members, member)
 
 		// if we got stuck somewhere, just keep moving
@@ -106,10 +106,14 @@ func (prs *Parser) parseMembers() []nodes.MemberNode {
 }
 
 // parseMember begins parsing either functions or global statements
-func (prs *Parser) parseMember() nodes.MemberNode {
+func (prs *Parser) parseMember(allowClasses bool) nodes.MemberNode {
 	// functions / classes would go here \/
 	if prs.current().Kind == lexer.FunctionKeyword {
 		return prs.parseFunctionDeclaration()
+	}
+
+	if prs.current().Kind == lexer.ClassKeyword && allowClasses {
+		return prs.parseClassDeclaration()
 	}
 
 	// global statements (any statements outside any functions)
@@ -150,6 +154,36 @@ func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
 	body := prs.parseBlockStatement()
 
 	return nodes.CreateFunctionDeclarationMember(identifier, params, typeClause, body)
+}
+
+func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
+	prs.consume(lexer.ClassKeyword)
+	id := prs.consume(lexer.IdToken)
+
+	// beginn class body
+	prs.consume(lexer.OpenBraceToken)
+
+	// list of the classes members
+	members := make([]nodes.MemberNode, 0)
+
+	// loop while the current tokent isnt } or eof
+	for prs.current().Kind != lexer.EOF && prs.current().Kind != lexer.CloseBraceToken {
+
+		startToken := prs.current()
+
+		// parse all our members
+		member := prs.parseMember(false)
+		members = append(members, member)
+
+		// if we got stuck somewhere, just keep moving
+		if startToken == prs.current() {
+			prs.Index++
+		}
+	}
+
+	prs.consume(lexer.CloseBraceToken)
+
+	return nodes.CreateClassDeclarationMember(id, members)
 }
 
 // parseParameterList we parse a list of arguments (usually for a function or functionCall)

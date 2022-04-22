@@ -385,6 +385,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return FalseKeyword
 	case "function":
 		return FunctionKeyword
+	case "class":
+		return ClassKeyword
 	case "from":
 		return FromKeyword
 	case "for":

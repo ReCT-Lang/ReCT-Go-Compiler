@@ -37,6 +37,7 @@ const (
 	// -------
 	GlobalStatement     NodeType = "Global Statement"
 	FunctionDeclaration NodeType = "Function Declaration"
+	ClassDeclaration    NodeType = "Class Declaration"
 
 	// General
 	// -------

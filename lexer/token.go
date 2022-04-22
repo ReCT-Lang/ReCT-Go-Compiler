@@ -17,6 +17,7 @@ const (
 	TrueKeyword     TokenKind = "true (Keyword)"
 	FalseKeyword    TokenKind = "false (Keyword)"
 	FunctionKeyword TokenKind = "function (Keyword)"
+	ClassKeyword    TokenKind = "class (Keyword)"
 	FromKeyword     TokenKind = "from (Keyword)"
 	ForKeyword      TokenKind = "for (Keyword)"
 	ReturnKeyword   TokenKind = "return (Keyword)"
