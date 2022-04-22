@@ -58,9 +58,9 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
 
 	// declare all our classes
-	for _, cls := range classDeclarations {
-		binder.BindClassDeclaration(cls)
-	}
+	//for _, cls := range classDeclarations {
+	//	binder.BindClassDeclaration(cls)
+	//}
 
 	// declare all our functions
 	for _, fnc := range functionDeclarations {
