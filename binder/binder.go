@@ -129,6 +129,97 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 	}
 }
 
+func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember) {
+	rootScope := BindRootScope()
+	classScope := CreateScope(&rootScope)
+
+	functionDeclarations := make([]nodes.FunctionDeclarationMember, 0)
+	globalStatements := make([]nodes.GlobalStatementMember, 0)
+
+	// sort all our members into functions and global statements
+	for _, member := range mem.Members {
+		if member.NodeType() == nodes.FunctionDeclaration {
+			functionDeclarations = append(functionDeclarations, member.(nodes.FunctionDeclarationMember))
+		} else if member.NodeType() == nodes.ClassDeclaration {
+			print.Error(
+				"BINDER",
+				"placeholdererror",
+				0,
+				0,
+				0,
+				// yes
+				"Nested classes = illegal! >:(",
+			)
+			os.Exit(-1)
+		} else {
+			globalStatements = append(globalStatements, member.(nodes.GlobalStatementMember))
+		}
+	}
+
+	binder := CreateBinder(classScope, symbols.FunctionSymbol{})
+
+	// declare all our functions
+	for _, fnc := range functionDeclarations {
+		binder.BindFunctionDeclaration(fnc)
+	}
+
+	// check all our statements, only variable declarations are allowed in here
+	for _, stmt := range globalStatements {
+		if stmt.Statement.NodeType() != nodes.VariableDeclaration {
+			print.Error(
+				"BINDER",
+				"placeholdererror",
+				0,
+				0,
+				0,
+				// yes
+				"Only variable declarations are allowed in a class' global scope!",
+			)
+			os.Exit(-1)
+		}
+
+		// only public vars can be creted here
+		if stmt.Statement.(nodes.VariableDeclarationStatementNode).Keyword.Kind != lexer.SetKeyword {
+			print.Error(
+				"BINDER",
+				"placeholdererror",
+				0,
+				0,
+				0,
+				// yes
+				"Only global variable declarations are allowed in a class' global scope!",
+			)
+			os.Exit(-1)
+		}
+
+		// if everything is alright, we can bind the variable
+		// this is only done to produce a variable symbol
+		binder.BindStatement(stmt.Statement)
+	}
+
+	// Build the ClassSymbol
+	// ---------------------
+	vars := binder.MemberScope.GetAllVariables()
+	funcs := binder.MemberScope.GetAllFunctions()
+
+	classSym := symbols.CreateClassSymbol(mem.Identifier.Value, mem, funcs, vars)
+
+	if !bin.ActiveScope.TryDeclareSymbol(classSym) {
+		line, column, length := mem.Position()
+		print.Error(
+			"BINDER",
+			print.DuplicateFunctionError,
+			line,
+			column,
+			length,
+			"A class with the name \"%s\" already exists! \"%s\" could not be defined!",
+			classSym.Name,
+			classSym.Name,
+		)
+		os.Exit(-1)
+	}
+}
+
 // </MEMBERS> ----------------------------------------------------------------
 // <STATEMENTS> ---------------------------------------------------------------
 func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundStatementNode {
@@ -758,7 +849,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 			line+1,
 			column,
 			length,
-			"Function \"%s\" does not exit!",
+			"Function \"%s\" does not exist!",
 			expr.Identifier.Value,
 		)
 		os.Exit(-1)
@@ -823,7 +914,7 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 	op := boundnodes.BindBinaryOperator(opkind, left.Type(), right.Type())
 
 	if !op.Exists {
-		// if the operation doesn't exit, see if the right side can be casted to the left
+		// if the operation doesn't exist, see if the right side can be casted to the left
 		conv := ClassifyConversion(right.Type(), left.Type())
 
 		// if the conversion exists and its allowed to be done, do that (this also allows for explicit conversions)

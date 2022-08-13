@@ -4,6 +4,22 @@ class SomeClass {
 	set int i;
 
 	function coolFunc() {
-
+		Print("very cool class function inside a class such wow");
 	}
+
+	function anotherFunction() {
+		coolFunc();
+		i++;
+	}
+
+	function aThirdFunction() {
+		anotherFunction();
+		coolFunc();
+
+		Print(string(i));
+	}
+}
+
+class OtherClass {
+	
 }

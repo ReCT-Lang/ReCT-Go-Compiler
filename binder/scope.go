@@ -33,6 +33,18 @@ func (s Scope) TryLookupSymbol(name string) symbols.Symbol {
 	return nil
 }
 
+func (s Scope) InsertFunctionSymbols(symbols []symbols.FunctionSymbol) {
+	for _, sym := range symbols {
+		s.TryDeclareSymbol(sym)
+	}
+}
+
+func (s Scope) InsertVariableSymbols(symbols []symbols.VariableSymbol) {
+	for _, sym := range symbols {
+		s.TryDeclareSymbol(sym)
+	}
+}
+
 func (s Scope) GetAllFunctions() []symbols.FunctionSymbol {
 	functions := make([]symbols.FunctionSymbol, 0)
 
@@ -71,6 +83,25 @@ func (s Scope) GetAllVariables() []symbols.VariableSymbol {
 	variables = append(variables, moreVariables...)
 
 	return variables
+}
+
+func (s Scope) GetAllClasses() []symbols.ClassSymbol {
+	classes := make([]symbols.ClassSymbol, 0)
+
+	for _, sym := range s.Symbols {
+		if sym.SymbolType() == symbols.Class {
+			classes = append(classes, sym.(symbols.ClassSymbol))
+		}
+	}
+
+	moreClasses := make([]symbols.ClassSymbol, 0)
+	if s.Parent != nil {
+		moreClasses = s.Parent.GetAllClasses()
+	}
+
+	classes = append(classes, moreClasses...)
+
+	return classes
 }
 
 // constructor

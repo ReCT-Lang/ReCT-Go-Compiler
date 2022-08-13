@@ -31,6 +31,7 @@ type SymbolType string
 
 const (
 	Function       SymbolType = "FunctionSymbol"
+	Class          SymbolType = "ClassSymbol"
 	GlobalVariable SymbolType = "GlobalVariableSymbol"
 	LocalVariable  SymbolType = "LocalVariableSymbol"
 	Parameter      SymbolType = "ParameterSymbol"

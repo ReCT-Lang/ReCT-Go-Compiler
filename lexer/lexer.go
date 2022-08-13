@@ -332,7 +332,7 @@ func handleFileOpen(filename string) []rune {
 			0,
 			0,
 			0,
-			"file \"%s\" does not exit! Maybe you spelt it wrong?!",
+			"file \"%s\" does not exist! Maybe you spelt it wrong?!",
 			filename,
 		)
 		os.Exit(1)

@@ -13,6 +13,7 @@ type GlobalScope struct {
 
 	Functions  []symbols.FunctionSymbol
 	Variables  []symbols.VariableSymbol
+	Classes    []symbols.ClassSymbol
 	Statements []boundnodes.BoundStatementNode
 }
 
@@ -58,9 +59,9 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
 
 	// declare all our classes
-	//for _, cls := range classDeclarations {
-	//	binder.BindClassDeclaration(cls)
-	//}
+	for _, cls := range classDeclarations {
+		binder.BindClassDeclaration(cls)
+	}
 
 	// declare all our functions
 	for _, fnc := range functionDeclarations {
@@ -77,6 +78,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 		MainFunction: symbols.CreateFunctionSymbol("main", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}),
 		Functions:    binder.ActiveScope.GetAllFunctions(),
 		Variables:    binder.ActiveScope.GetAllVariables(),
+		Classes:      binder.ActiveScope.GetAllClasses(),
 		Statements:   boundStatements,
 	}
 }
