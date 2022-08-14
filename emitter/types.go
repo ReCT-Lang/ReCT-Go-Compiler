@@ -5,10 +5,11 @@ import (
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"os"
+
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
 	"github.com/llir/llvm/ir/value"
-	"os"
 )
 
 // this file is just keeping track of how ReCT types map to LLVM types
@@ -64,7 +65,10 @@ type Function struct {
 
 type Class struct {
 	Type        types.Type
+	vTable      types.Type
+	vConstant   *ir.Global
 	Constructor *ir.Func
 	Functions   map[string]*ir.Func
+	Fields      map[string]int
 	Name        string
 }

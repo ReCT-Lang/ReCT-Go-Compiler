@@ -3,12 +3,14 @@ package emitter
 import (
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/print"
+	"os"
+	"strings"
+
 	"github.com/dlclark/regexp2"
 	"github.com/llir/llvm/asm"
 	"github.com/llir/llvm/ir"
+	"github.com/llir/llvm/ir/enum"
 	"github.com/llir/llvm/ir/types"
-	"os"
-	"strings"
 )
 
 func ReadModule(path string) *ir.Module {
@@ -64,8 +66,16 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 			vTable := FindType(module, vTableType)
 			emt.ImportType(vTable)
 
+			// 3. finding and importing the types vtable constant
+			vConstantName := strings.Split(vTableType, ".")[1] + "_Const"
+			vTableConstant := FindGlobal(module, vConstantName)
+
+			if !GlobalExists(emt.Module, vTableConstant.GlobalName) {
+				emt.Module.NewGlobal(vTableConstant.GlobalName, vTable).Linkage = enum.LinkageExternal
+			}
+
 			// create a class object
-			emt.Classes[emt.Id(typeSymbol)] = Class{Type: typ, Constructor: nil, Functions: make(map[string]*ir.Func), Name: className}
+			emt.Classes[emt.Id(typeSymbol)] = Class{Type: typ, vTable: vTable, vConstant: vTableConstant, Constructor: nil, Functions: make(map[string]*ir.Func), Name: className}
 			emt.ImportType(typ)
 		}
 	}
@@ -103,6 +113,27 @@ func FindFunction(module *ir.Module, name string) *ir.Func {
 
 	print.PrintC(print.Red, "Couldnt find function '"+name+"'")
 	return nil
+}
+
+func FindGlobal(module *ir.Module, name string) *ir.Global {
+	for _, glb := range module.Globals {
+		if glb.Name() == name {
+			return glb
+		}
+	}
+
+	print.PrintC(print.Red, "Couldnt find global '"+name+"'")
+	return nil
+}
+
+func GlobalExists(module *ir.Module, name string) bool {
+	for _, glb := range module.Globals {
+		if glb.Name() == name {
+			return true
+		}
+	}
+
+	return false
 }
 
 func FindFunctionsWithPrefix(module *ir.Module, prefix string) []*ir.Func {

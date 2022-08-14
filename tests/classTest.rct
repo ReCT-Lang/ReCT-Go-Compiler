@@ -3,23 +3,23 @@ class SomeClass {
 
 	set int i;
 
-	function coolFunc() {
-		Print("very cool class function inside a class such wow");
+	function coolFunc(suffix string) {
+		var someMessage <- "very cool class function inside a class such wow";
+		Print(someMessage);
+		Print(suffix);
 	}
 
 	function anotherFunction() {
-		coolFunc();
+		coolFunc("much wow");
 		i++;
 	}
 
 	function aThirdFunction() {
 		anotherFunction();
-		coolFunc();
+		coolFunc("yes");
 
 		Print(string(i));
 	}
 }
 
-class OtherClass {
-	
-}
+
