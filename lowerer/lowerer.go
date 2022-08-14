@@ -333,10 +333,14 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteConversionExpression(expr.(boundnodes.BoundConversionExpressionNode))
 	case boundnodes.BoundTypeCallExpression:
 		return RewriteTypeCallExpression(expr.(boundnodes.BoundTypeCallExpressionNode))
+	case boundnodes.BoundClassCallExpression:
+		return RewriteClassCallExpression(expr.(boundnodes.BoundClassCallExpressionNode))
 	case boundnodes.BoundArrayAccessExpression:
 		return RewriteArrayAccessExpression(expr.(boundnodes.BoundArrayAccessExpressionNode))
 	case boundnodes.BoundArrayAssignmentExpression:
 		return RewriteArrayAssignmentExpression(expr.(boundnodes.BoundArrayAssignmentExpressionNode))
+	case boundnodes.BoundMakeExpression:
+		return RewriteMakeExpression(expr.(boundnodes.BoundMakeExpressionNode))
 	case boundnodes.BoundMakeArrayExpression:
 		return RewriteMakeArrayExpression(expr.(boundnodes.BoundMakeArrayExpressionNode))
 	case boundnodes.BoundFunctionExpression:
@@ -408,6 +412,18 @@ func RewriteTypeCallExpression(expr boundnodes.BoundTypeCallExpressionNode) boun
 	return boundnodes.CreateBoundTypeCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs)
 }
 
+func RewriteClassCallExpression(expr boundnodes.BoundClassCallExpressionNode) boundnodes.BoundClassCallExpressionNode {
+	rewrittenBase := RewriteExpression(expr.Base)
+
+	rewrittenArgs := make([]boundnodes.BoundExpressionNode, 0)
+
+	for _, arg := range expr.Arguments {
+		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
+	}
+
+	return boundnodes.CreateBoundClassCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs)
+}
+
 func RewriteArrayAccessExpression(expr boundnodes.BoundArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
 	rewrittenBase := RewriteExpression(expr.Base)
 	rewrittenIndex := RewriteExpression(expr.Index)
@@ -421,6 +437,16 @@ func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpres
 	rewrittenValue := RewriteExpression(expr.Value)
 
 	return boundnodes.CreateBoundArrayAssignmentExpressionNode(rewrittenBase, rewrittenIndex, rewrittenValue)
+}
+
+func RewriteMakeExpression(expr boundnodes.BoundMakeExpressionNode) boundnodes.BoundMakeExpressionNode {
+	rewrittenArgs := make([]boundnodes.BoundExpressionNode, 0)
+
+	for _, arg := range expr.Arguments {
+		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
+	}
+
+	return boundnodes.CreateBoundMakeExpressionNode(expr.BaseType, rewrittenArgs)
 }
 
 func RewriteMakeArrayExpression(expr boundnodes.BoundMakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {

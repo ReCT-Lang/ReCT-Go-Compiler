@@ -5,31 +5,57 @@ class SomeClass {
 	set string s;
 	set any a;
 
-	function Constructor() {
-		Print("Much Construction");
+	set OtherClass oc;
+
+	set function Constructor(index int) {
+		i <- index;
+		var coolString <- string(i) + "iteration";
+
+		s <- coolString;
+		a <- s;
+
+		//oc <- make OtherClass();
 	}
 
-	function Die() {
-		Print("amogus");
+	function SomePrivateFunc() int {
+		return 99;
 	}
 
-	function coolFunc(suffix string) {
-		var someMessage <- "very cool class function inside a class such wow";
-		Print(someMessage);
-		Print(suffix);
+	set function SomePublicFunc() int {
+		return 100;
 	}
 
-	function anotherFunction() {
-		coolFunc("much wow");
-		i++;
-	}
-
-	function aThirdFunction() {
-		anotherFunction();
-		coolFunc("yes");
-
-		Print(string(i));
+	set function GetOtherClass() OtherClass {
+		return oc;
 	}
 }
 
+class OtherClass {
+	set function GetNumber() int {
+		return 500;
+	}
+}
 
+// much non-classy main function
+var count <- 0;
+var SomeClass sc;
+var OtherClass oc;
+
+//var someInstance <- make SomeClass(0);
+
+//while (true) {
+//	count++;
+//	Print("creating 100 objects for the " + string(count) + "th time");
+
+//	var objectArray <- make SomeClass array(0);
+
+//	from (i <- 0) to 100
+//	{
+//		objectArray->Push(make SomeClass(count));
+//	}
+//}
+
+//function cringe() {
+//	var i <- 0;
+//	var s <- string(i);
+//}

@@ -10,6 +10,8 @@ type ClassSymbol struct {
 
 	Exists bool
 
+	Type TypeSymbol
+
 	Name        string
 	Declaration nodes.ClassDeclarationMember
 	Functions   []FunctionSymbol
@@ -37,5 +39,6 @@ func CreateClassSymbol(name string, declration nodes.ClassDeclarationMember, fun
 		Declaration: declration,
 		Functions:   functions,
 		Fields:      fields,
+		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), true, true),
 	}
 }

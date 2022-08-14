@@ -15,6 +15,7 @@ type FunctionDeclarationMember struct {
 	Parameters []ParameterNode
 	TypeClause TypeClauseNode
 	Body       BlockStatementNode
+	IsPublic   bool
 }
 
 // implement node type from interface
@@ -40,6 +41,7 @@ func (node FunctionDeclarationMember) Position() (int, int, int) {
 func (node FunctionDeclarationMember) Print(indent string) {
 	print.PrintC(print.Cyan, indent+"- FunctionDeclarationMember")
 	fmt.Printf("%s  └ Identifier: %s\n", indent, node.Identifier.Kind)
+	fmt.Printf("%s  └ IsPublic: %t\n", indent, node.IsPublic)
 
 	fmt.Println(indent + "  └ Parameters: ")
 	for _, param := range node.Parameters {
@@ -58,11 +60,12 @@ func (node FunctionDeclarationMember) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateFunctionDeclarationMember(id lexer.Token, params []ParameterNode, typeClause TypeClauseNode, body BlockStatementNode) FunctionDeclarationMember {
+func CreateFunctionDeclarationMember(id lexer.Token, params []ParameterNode, typeClause TypeClauseNode, body BlockStatementNode, public bool) FunctionDeclarationMember {
 	return FunctionDeclarationMember{
 		Identifier: id,
 		Parameters: params,
 		TypeClause: typeClause,
 		Body:       body,
+		IsPublic:   public,
 	}
 }

@@ -29,7 +29,7 @@ func (BoundMakeArrayExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
 func (node BoundMakeArrayExpressionNode) Type() symbols.TypeSymbol {
-	return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{node.BaseType}, true)
+	return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{node.BaseType}, true, false)
 }
 
 func CreateBoundMakeArrayExpressionNode(baseType symbols.TypeSymbol, length BoundExpressionNode) BoundMakeArrayExpressionNode {

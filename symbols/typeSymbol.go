@@ -7,9 +7,10 @@ import (
 type TypeSymbol struct {
 	Symbol
 
-	Name     string
-	SubTypes []TypeSymbol
-	IsObject bool
+	Name          string
+	SubTypes      []TypeSymbol
+	IsObject      bool
+	IsUserDefined bool
 }
 
 // implement the interface
@@ -32,10 +33,11 @@ func (sym TypeSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreateTypeSymbol(name string, subTypes []TypeSymbol, isObject bool) TypeSymbol {
+func CreateTypeSymbol(name string, subTypes []TypeSymbol, isObject bool, isUserDefined bool) TypeSymbol {
 	return TypeSymbol{
-		Name:     name,
-		SubTypes: subTypes,
-		IsObject: isObject,
+		Name:          name,
+		SubTypes:      subTypes,
+		IsObject:      isObject,
+		IsUserDefined: isUserDefined,
 	}
 }

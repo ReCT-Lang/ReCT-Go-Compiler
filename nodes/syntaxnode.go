@@ -71,6 +71,7 @@ const (
 	TypeCallExpression        NodeType = "TypeCall Expression"
 	ArrayAccessExpression     NodeType = "ArrayAccess Expression"
 	ArrayAssignmentExpression NodeType = "ArrayAssignment Expression"
+	MakeExpression            NodeType = "Make Expression"
 	MakeArrayExpression       NodeType = "MakeArray Expression"
 	ThreadExpression          NodeType = "Thread Expression"
 	TernaryExpression         NodeType = "Ternary Expression"

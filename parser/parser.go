@@ -111,6 +111,9 @@ func (prs *Parser) parseMember(allowClasses bool) nodes.MemberNode {
 	if prs.current().Kind == lexer.FunctionKeyword {
 		return prs.parseFunctionDeclaration()
 	}
+	if prs.current().Kind == lexer.SetKeyword && prs.peek(1).Kind == lexer.FunctionKeyword {
+		return prs.parseFunctionDeclaration()
+	}
 
 	if prs.current().Kind == lexer.ClassKeyword && allowClasses {
 		return prs.parseClassDeclaration()
@@ -131,6 +134,12 @@ func (prs *Parser) parseGlobalStatement() nodes.GlobalStatementMember {
 // parseFunctionDeclaration checks for a valid order of Tokens, parses all the statements inside the function
 // and then returns it as a function declaration member.
 func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
+
+	isPublic := false
+	if prs.current().Kind == lexer.SetKeyword {
+		prs.consume(lexer.SetKeyword)
+		isPublic = true
+	}
 
 	// Example:
 	// function functionName(functionArg1 string) string { ... }
@@ -153,7 +162,7 @@ func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
 	// the block statement will handle multiple statements inside itself
 	body := prs.parseBlockStatement()
 
-	return nodes.CreateFunctionDeclarationMember(identifier, params, typeClause, body)
+	return nodes.CreateFunctionDeclarationMember(identifier, params, typeClause, body, isPublic)
 }
 
 func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
@@ -625,9 +634,9 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseAssignmentExpression()
 	}
 
-	// array creating
+	// object / array creating
 	if prs.current().Kind == lexer.MakeKeyword {
-		return prs.parseMakeArrayExpression()
+		return prs.parseMakeExpression()
 	}
 
 	// thread creating
@@ -868,6 +877,34 @@ func (prs *Parser) parseTernaryExpression(condition nodes.ExpressionNode) nodes.
 
 	// return an array access expression
 	return nodes.CreateTernaryExpressionNode(condition, ifExpression, elseExpression)
+}
+
+// parseMakeExpression this for creating objects
+// For example: make SomeClass()
+// we need to get the name of the class we want to create and its parameters
+func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
+
+	makeKeyword := prs.consume(lexer.MakeKeyword) // make
+
+	// We need the class' Identifier
+	baseType := prs.consume(lexer.IdToken)
+
+	// check if the next token is an open parenthesis
+	// if it is we can be certain that this is an object creation
+	// if we get something else, this might be an array creation
+
+	// if we dont get a '(', try parsing an array creation
+	if prs.current().Kind != lexer.OpenParenthesisToken {
+		prs.rewind(makeKeyword)
+		return prs.parseMakeArrayExpression()
+	}
+
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	args := prs.parseArguments()             // any arguments for the object's constructor
+	prs.consume(lexer.CloseParenthesisToken) // )
+
+	// return an array access expression
+	return nodes.CreateMakeExpressionNode(baseType, args)
 }
 
 // parseMakeArrayExpression this for creating arrays

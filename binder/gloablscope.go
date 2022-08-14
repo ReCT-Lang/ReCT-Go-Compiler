@@ -58,14 +58,14 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
 
-	// declare all our classes
+	// FIRST PASS: declare all our classes as placeholders
 	for _, cls := range classDeclarations {
 		binder.BindClassDeclaration(cls)
 	}
 
 	// declare all our functions
 	for _, fnc := range functionDeclarations {
-		binder.BindFunctionDeclaration(fnc)
+		binder.BindFunctionDeclaration(fnc, false)
 	}
 
 	// bind all our statements
@@ -75,7 +75,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	}
 
 	return GlobalScope{
-		MainFunction: symbols.CreateFunctionSymbol("main", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}),
+		MainFunction: symbols.CreateFunctionSymbol("main", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}, true),
 		Functions:    binder.ActiveScope.GetAllFunctions(),
 		Variables:    binder.ActiveScope.GetAllVariables(),
 		Classes:      binder.ActiveScope.GetAllClasses(),

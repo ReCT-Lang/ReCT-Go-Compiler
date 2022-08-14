@@ -10,6 +10,7 @@ type FunctionSymbol struct {
 
 	Exists  bool
 	BuiltIn bool
+	Public  bool
 
 	Name        string
 	Parameters  []ParameterSymbol
@@ -41,13 +42,14 @@ func (s FunctionSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreateFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, declaration nodes.FunctionDeclarationMember) FunctionSymbol {
+func CreateFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, declaration nodes.FunctionDeclarationMember, public bool) FunctionSymbol {
 	return FunctionSymbol{
 		Exists:      true,
 		Name:        name,
 		Parameters:  params,
 		Type:        typeSymbol,
 		Declaration: declaration,
+		Public:      public,
 	}
 }
 
@@ -59,5 +61,6 @@ func CreateBuiltInFunctionSymbol(name string, params []ParameterSymbol, typeSymb
 		Parameters:  params,
 		Type:        typeSymbol,
 		Declaration: declaration,
+		Public:      true,
 	}
 }

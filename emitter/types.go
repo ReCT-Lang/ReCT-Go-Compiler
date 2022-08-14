@@ -41,6 +41,13 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		}
 	}
 
+	// try looking up a class
+	cls, ok := emt.Classes[emt.Id(typ)]
+	if ok {
+		return types.NewPointer(cls.Type)
+	}
+
+	fmt.Println("Unknown Type")
 	fmt.Println(typ.Fingerprint())
 	os.Exit(-1)
 	return nil

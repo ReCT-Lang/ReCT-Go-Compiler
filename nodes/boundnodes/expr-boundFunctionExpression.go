@@ -20,7 +20,7 @@ func (node BoundFunctionExpressionNode) Print(indent string) {
 	node.Function.Print(indent + "    ")
 }
 
-func (BoundFunctionExpressionNode) IsPersistent() bool { return true }
+func (BoundFunctionExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
 func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }

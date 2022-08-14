@@ -76,7 +76,7 @@ func CreateBinder(parent Scope, functionSymbol symbols.FunctionSymbol) *Binder {
 
 // <MEMBERS> -----------------------------------------------------------------
 
-func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) {
+func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, inClass bool) {
 	boundParameters := make([]symbols.ParameterSymbol, 0)
 
 	for i, param := range mem.Parameters {
@@ -111,7 +111,24 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember) 
 		returnType = builtins.Void
 	}
 
-	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem)
+	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem, mem.IsPublic)
+
+	// make sure reserved functions like Die() meet certain requirements
+	if inClass {
+		if functionSymbol.Name == "Die" && len(boundParameters) > 0 {
+			line, column, length := mem.Position()
+			print.Error(
+				"BINDER",
+				print.DuplicateFunctionError,
+				line,
+				column,
+				length,
+				"reserved function 'Die' is not allowed to take in any parameters!",
+			)
+			os.Exit(-1)
+		}
+	}
+
 	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
 		//print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
 		line, column, length := mem.Position()
@@ -160,7 +177,7 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember) {
 
 	// declare all our functions
 	for _, fnc := range functionDeclarations {
-		binder.BindFunctionDeclaration(fnc)
+		binder.BindFunctionDeclaration(fnc, true)
 	}
 
 	// check all our statements, only variable declarations are allowed in here
@@ -595,6 +612,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindArrayAssignmentExpression(expr.(nodes.ArrayAssignmentExpressionNode))
 	case nodes.ThreadExpression: // :(  // :) - RedCube
 		return bin.BindThreadStatement(expr.(nodes.ThreadExpressionNode))
+	case nodes.MakeExpression:
+		return bin.BindMakeExpression(expr.(nodes.MakeExpressionNode))
 	case nodes.MakeArrayExpression:
 		return bin.BindMakeArrayExpression(expr.(nodes.MakeArrayExpressionNode))
 	case nodes.CallExpression:
@@ -721,9 +740,77 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value)
 }
 
+func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.BoundMakeExpressionNode {
+	// resolve the type symbol
+	baseType, _ := bin.LookupClass(expr.BaseType.Value, false)
+
+	// bind the constructors arguments
+	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
+	for _, arg := range expr.Arguments {
+		boundArg := bin.BindExpression(arg)
+		boundArguments = append(boundArguments, boundArg)
+	}
+
+	var constructor *symbols.FunctionSymbol
+
+	// check if class has a constructor
+	for _, fnc := range baseType.Functions {
+		if fnc.Name == "Constructor" {
+			constructor = &fnc
+			break
+		}
+	}
+
+	// if there is, check if the arguments match up
+	if constructor != nil {
+		fmt.Println(constructor.Parameters)
+		// make sure we got the right number of arguments
+		if len(boundArguments) != len(constructor.Parameters) {
+			//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
+			line, column, length := expr.Position()
+			print.Error(
+				"BINDER",
+				print.BadNumberOfParametersError,
+				line,
+				column,
+				length,
+				"Constructor for class \"%s\" expects %d arguments but got %d!",
+				baseType.Name,
+				len(constructor.Parameters),
+				len(boundArguments),
+			)
+			os.Exit(-1)
+		}
+
+		// make sure all arguments are the right type
+		for i, arg := range boundArguments {
+			boundArguments[i] = bin.BindConversion(arg, constructor.Parameters[i].VarType(), false)
+		}
+	} else {
+		// if there is no constructor, make sure we dont have any arguments
+		if len(boundArguments) != 0 {
+			line, column, length := expr.Position()
+			print.Error(
+				"BINDER",
+				print.BadNumberOfParametersError,
+				line,
+				column,
+				length,
+				"Constructor for class \"%s\" expects %d arguments but got %d!",
+				baseType.Name,
+				0,
+				len(boundArguments),
+			)
+			os.Exit(-1)
+		}
+	}
+
+	return boundnodes.CreateBoundMakeExpressionNode(baseType, boundArguments)
+}
+
 func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
 	// resolve the type symbol
-	baseType, _ := LookupType(expr.Type, false)
+	baseType, _ := bin.LookupType(expr.Type, false)
 
 	if !expr.IsLiteral {
 		// bind the length expression
@@ -752,11 +839,14 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 	}
 }
 
-func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
+func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundExpressionNode {
 	baseExpression := bin.BindExpression(expr.Base)
 
-	// This line will error out because CallIdentifier.RealValue is nil (interface)
-	// I've replaced it with CallIdentifier.Value which seems to do the trick.
+	// if the base type is a class, redirect to BindClassCallExpression
+	if baseExpression.Type().IsUserDefined {
+		return bin.BindClassCallExpression(expr, baseExpression)
+	}
+
 	function := bin.LookupTypeFunction(expr.CallIdentifier.Value, baseExpression.Type()) // Should be a string anyway
 	if function.OriginType.Name != baseExpression.Type().Name {
 		line, column, length := expr.Position()
@@ -806,6 +896,43 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 	return boundnodes.CreateBoundTypeCallExpressionNode(baseExpression, function, boundArguments)
 }
 
+func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, baseExpression boundnodes.BoundExpressionNode) boundnodes.BoundExpressionNode {
+	// try finding the function meant to be called
+	function := bin.LookupClassFunction(expr.CallIdentifier.Value, baseExpression.Type()) // Should be a string anyway
+
+	// bind all given arguments
+	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
+	for _, arg := range expr.Arguments {
+		boundArg := bin.BindExpression(arg)
+		boundArguments = append(boundArguments, boundArg)
+	}
+
+	// make sure we got the right number of arguments
+	if len(boundArguments) != len(function.Parameters) {
+		//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"type function \"%s\" expects %d arguments but got %d!",
+			function.Name,
+			len(function.Parameters),
+			len(boundArguments),
+		)
+		os.Exit(-1)
+	}
+
+	// make sure all arguments are the right type
+	for i, arg := range boundArguments {
+		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false)
+	}
+
+	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments)
+}
+
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
 	// check if this is a cast
 	// -----------------------
@@ -821,7 +948,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	// check if it's a complex cast
-	complexTypeSymbol, exists := LookupType(expr.CastingType, true)
+	complexTypeSymbol, exists := bin.LookupType(expr.CastingType, true)
 
 	// if it worked -> create a complex conversion
 	if exists && len(expr.Arguments) == 1 {
@@ -1049,7 +1176,7 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 		return symbols.TypeSymbol{}, false
 	}
 
-	typ, _ := LookupType(tc, false)
+	typ, _ := bin.LookupType(tc, false)
 	return typ, true
 }
 
@@ -1100,6 +1227,63 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) 
 	return symbols.TypeFunctionSymbol{}
 }
 
+func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol) symbols.FunctionSymbol {
+	// try locating the class
+	clsSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
+
+	// if that failed -> throw an error
+	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
+		print.Error(
+			"BINDER",
+			print.TypeFunctionDoesNotExistError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Could not find class \"%s\" in lookup, did something not load correctly?",
+			baseType.Name,
+		)
+		os.Exit(-1)
+	}
+
+	// get the symbol as a class symbol
+	cls := clsSym.(symbols.ClassSymbol)
+
+	// search through all the class' functions to find the one we're looking for
+	for _, fnc := range cls.Functions {
+		if fnc.Name == name {
+			if !fnc.Public {
+				print.Error(
+					"BINDER",
+					print.TypeFunctionDoesNotExistError,
+					0,
+					0, // needs extra data added and passed into the function
+					0, // Probably wrong, but it works - that's the tokorv guarantee
+					"Function \"%s\" in class \"%s\" is not accessable, is the function intended to be private?",
+					name,
+					baseType.Name,
+				)
+				os.Exit(-1)
+			}
+
+			return fnc
+		}
+	}
+
+	print.Error(
+		"BINDER",
+		print.TypeFunctionDoesNotExistError,
+		0,
+		0, // needs extra data added and passed into the function
+		0, // Probably wrong, but it works - that's the tokorv guarantee
+		"Could not find function \"%s\" in class \"%s\", does the function exist?",
+		name,
+		baseType.Name,
+	)
+	os.Exit(-1)
+
+	return symbols.FunctionSymbol{}
+}
+
 // </IDEK> --------------------------------------------------------------------
 // <TYPES> --------------------------------------------------------------------
 
@@ -1145,7 +1329,7 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 	return boundnodes.CreateBoundConversionExpressionNode(to, expr)
 }
 
-func LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymbol, bool) {
+func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymbol, bool) {
 	switch typeClause.TypeIdentifier.Value {
 	case "void":
 		return builtins.Void, true
@@ -1176,10 +1360,17 @@ func LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymb
 			os.Exit(-1)
 		}
 
-		baseType, _ := LookupType(typeClause.SubClauses[0], false)
-		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true), true
+		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
+		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true, false), true
 
 	default:
+		// check if this might be a class
+		cls, ok := bin.LookupClass(typeClause.TypeIdentifier.Value, true)
+		if ok {
+			return cls.Type, true
+		}
+
+		// otherwise, die()
 		if !canFail {
 			line, column, length := typeClause.Position()
 			print.Error(
@@ -1231,6 +1422,37 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 
 		return symbols.TypeSymbol{}, false
 	}
+}
+
+func (bin Binder) LookupClass(name string, canFail bool) (symbols.ClassSymbol, bool) {
+	cls := bin.ActiveScope.TryLookupSymbol(name)
+	if cls == nil {
+		return FailLookup(name, canFail)
+	}
+
+	if cls.SymbolType() != symbols.Class {
+		return FailLookup(name, canFail)
+	}
+
+	return cls.(symbols.ClassSymbol), true
+}
+
+func FailLookup(name string, canFail bool) (symbols.ClassSymbol, bool) {
+	if !canFail {
+		//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+		print.Error(
+			"BINDER",
+			print.ExplicitConversionError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Couldn't find class \"%s\"! Are you sure it exists?",
+			name,
+		)
+		os.Exit(-1)
+	}
+
+	return symbols.ClassSymbol{}, false
 }
 
 // </TYPES> -------------------------------------------------------------------

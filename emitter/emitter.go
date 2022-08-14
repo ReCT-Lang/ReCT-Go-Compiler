@@ -80,7 +80,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 				if fnc.Symbol.Name != "Constructor" && fnc.Symbol.Name != "Die" {
 					function := emitter.EmitClassFunction(cls.Symbol, fnc.Symbol, fnc.Body)
 					functionName := emitter.Id(fnc.Symbol)
-					emitter.Classes[emitter.Id(cls.Symbol)].Functions[functionName] = function
+					emitter.Classes[emitter.Id(cls.Symbol.Type)].Functions[functionName] = function
 				}
 			}
 		}
@@ -116,25 +116,25 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 			}
 
 			emitter.FunctionSym = fnc.Symbol
-			emitter.Class = emitter.Classes[emitter.Id(cls.Symbol)]
+			emitter.Class = emitter.Classes[emitter.Id(cls.Symbol.Type)]
 			emitter.ClassSym = cls.Symbol
 			emitter.IsInClass = true
 
 			// find out if this is the constructor
 			if fnc.Symbol.Name == "Constructor" {
 				// if it is, hand it the already prepared constructor function
-				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Constructor, fnc.Body)
+				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Constructor, fnc.Body)
 
 			} else if fnc.Symbol.Name == "Die" {
 				// if its the destructor, clear all auto-generated code inside it
-				emitter.Classes[emitter.Id(cls.Symbol)].Destructor.Blocks = make([]*ir.Block, 0)
-				emitter.Classes[emitter.Id(cls.Symbol)].Destructor.NewBlock("")
+				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks = make([]*ir.Block, 0)
+				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.NewBlock("")
 
 				// hand it the already prepared destructor function
-				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Destructor, fnc.Body)
+				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor, fnc.Body)
 			} else {
 				// if not, emit the function like normal
-				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Functions[emitter.Id(fnc.Symbol)], fnc.Body)
+				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Functions[emitter.Id(fnc.Symbol)], fnc.Body)
 			}
 
 		}
@@ -192,6 +192,9 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	// create a new root block
 	root := destructor.NewBlock("")
 
+	// bitcast the given void* into a class pointer
+	clsPtr := root.NewBitCast(destructor.Params[0], types.NewPointer(clsType))
+
 	// generate cleanup for all object members
 	root.Insts = append(root.Insts, NewComment("<DieARC>"))
 
@@ -200,7 +203,7 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 			root.Insts = append(root.Insts, NewComment(fmt.Sprintf("-> destroying reference to '%s [Field %d]'", emt.Id(field), clsFieldMap[emt.Id(field)])))
 
 			// get the field's pointer
-			ptr := root.NewGetElementPtr(clsType, destructor.Params[0], CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
+			ptr := root.NewGetElementPtr(clsType, clsPtr, CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
 
 			// load the pointer
 			obj := root.NewLoad(emt.IRTypes(field.VarType()), ptr)
@@ -228,8 +231,27 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	// ---------------------------------------------------------------------
 
 	// create an IR function definition for the constructor
-	clsParam := ir.NewParam("me", types.NewPointer(clsType))
-	constructor := emt.Module.NewFunc(cls.Symbol.Name+"_public_Constructor", types.Void, clsParam)
+	clsParams := make([]*ir.Param, 0)
+	clsParams = append(clsParams, ir.NewParam("me", types.NewPointer(clsType)))
+
+	// look for an explicit constructor
+	var constructorFunction *binder.BoundFunction
+	for _, fnc := range cls.Functions {
+		if fnc.Symbol.Name == "Constructor" {
+			constructorFunction = &fnc
+			break
+		}
+	}
+
+	// constructor found
+	if constructorFunction != nil {
+		// add the constructors parameters onto our template
+		for _, param := range constructorFunction.Symbol.Parameters {
+			clsParams = append(clsParams, ir.NewParam(emt.Id(param), emt.IRTypes(param.Type)))
+		}
+	}
+
+	constructor := emt.Module.NewFunc(cls.Symbol.Name+"_public_Constructor", types.Void, clsParams...)
 
 	// create a basic constructor in IR
 	// --------------------------------
@@ -237,7 +259,7 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	// get the objects own reference
 	croot := constructor.NewBlock("")
 	clsMePtr := croot.NewAlloca(types.NewPointer(clsType))
-	croot.NewStore(clsParam, clsMePtr)
+	croot.NewStore(clsParams[0], clsMePtr)
 	clsMe := croot.NewLoad(types.NewPointer(clsType), clsMePtr)
 
 	// set the vTable to the vTable constant
@@ -248,11 +270,48 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	clsMyRefCount := croot.NewGetElementPtr(clsType, clsMe, CI32(0), CI32(1))
 	croot.NewStore(CI32(0), clsMyRefCount)
 
+	// store a NULL in any object fields, to tell the ARC that they are empty
+	for _, field := range cls.Symbol.Fields {
+		if field.VarType().IsObject {
+			ptr := croot.NewGetElementPtr(clsType, constructor.Params[0], CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
+			croot.NewStore(constant.NewNull(emt.IRTypes(field.VarType()).(*types.PointerType)), ptr)
+		}
+	}
+
 	// don
 	croot.NewRet(nil)
 
+	// create locals array for constructor and destructor
+	if constructorFunction != nil {
+		// create locals array
+		locals := make(map[string]Local)
+
+		// create all needed locals in the root block to GC can trash them anywhere
+		for _, stmt := range constructorFunction.Body.Statements {
+			if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
+				declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
+
+				if declStatement.Variable.IsGlobal() {
+					continue
+				}
+
+				varName := emt.Id(declStatement.Variable)
+
+				// create local variable
+				local := croot.NewAlloca(emt.IRTypes(declStatement.Variable.VarType()))
+				local.SetName(varName)
+
+				// save it for referencing later
+				locals[varName] = Local{IRLocal: local, IRBlock: croot, Type: declStatement.Variable.VarType()}
+			}
+		}
+
+		// store this for later
+		emt.FunctionLocals[cls.Symbol.Name+"_public_"+emt.Id(constructorFunction.Symbol)] = locals
+	}
+
 	// create the class object to keep track of things
-	emt.Classes[emt.Id(cls.Symbol)] = Class{
+	emt.Classes[emt.Id(cls.Symbol.Type)] = Class{
 		Name: cls.Symbol.Name,
 		Type: clsType,
 
@@ -326,7 +385,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 func (emt *Emitter) EmitClassFunction(cls symbols.ClassSymbol, sym symbols.FunctionSymbol, body boundnodes.BoundBlockStatementNode) *ir.Func {
 	// figure out all parameters and their types
 	params := make([]*ir.Param, 0)
-	params = append(params, ir.NewParam("$me", types.NewPointer(emt.Classes[emt.Id(cls)].Type)))
+	params = append(params, ir.NewParam("$me", types.NewPointer(emt.Classes[emt.Id(cls.Type)].Type)))
 
 	for _, param := range sym.Parameters {
 		// figure out how to call this parameter
@@ -341,7 +400,7 @@ func (emt *Emitter) EmitClassFunction(cls symbols.ClassSymbol, sym symbols.Funct
 
 	// the function name
 	functionName := emt.Id(sym)
-	irName := cls.Name + "_public_" + functionName
+	irName := cls.Name + "_" + tern(sym.Public, "public", "private") + "_" + functionName
 
 	// create an IR function definition
 	function := emt.Module.NewFunc(irName, returnType, params...)
@@ -373,7 +432,7 @@ func (emt *Emitter) EmitClassFunction(cls symbols.ClassSymbol, sym symbols.Funct
 	}
 
 	// store this for later
-	emt.FunctionLocals[functionName] = locals
+	emt.FunctionLocals[irName] = locals
 
 	return function
 }
@@ -381,8 +440,14 @@ func (emt *Emitter) EmitClassFunction(cls symbols.ClassSymbol, sym symbols.Funct
 func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func, body boundnodes.BoundBlockStatementNode) {
 	// set up our environment
 	functionName := emt.Id(sym)
+	irName := functionName
+
+	if emt.IsInClass {
+		irName = emt.Class.Name + "_" + tern(sym.Public, "public", "private") + "_" + functionName
+	}
+
 	emt.Function = fnc
-	emt.Locals = emt.FunctionLocals[functionName]
+	emt.Locals = emt.FunctionLocals[irName]
 	emt.Labels = make(map[string]*ir.Block)
 
 	// create a semi-root block
@@ -588,6 +653,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	case boundnodes.BoundAssignmentExpression:
 		return emt.EmitAssignmentExpression(blk, expr.(boundnodes.BoundAssignmentExpressionNode))
 
+	case boundnodes.BoundMakeExpression:
+		return emt.EmitMakeExpression(blk, expr.(boundnodes.BoundMakeExpressionNode))
+
 	case boundnodes.BoundMakeArrayExpression:
 		return emt.EmitMakeArrayExpression(blk, expr.(boundnodes.BoundMakeArrayExpressionNode))
 
@@ -611,6 +679,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundTypeCallExpression:
 		return emt.EmitTypeCallExpression(blk, expr.(boundnodes.BoundTypeCallExpressionNode))
+
+	case boundnodes.BoundClassCallExpression:
+		return emt.EmitClassCallExpression(blk, expr.(boundnodes.BoundClassCallExpressionNode))
 
 	case boundnodes.BoundConversionExpression:
 		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
@@ -686,16 +757,23 @@ func (emt *Emitter) EmitAssignmentExpression(blk **ir.Block, expr boundnodes.Bou
 	}
 
 	if expr.Variable.IsGlobal() {
-		// if this variable already contained an object -> destroy the reference
-		if expr.Variable.VarType().IsObject {
-			emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Variable.VarType()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
-		}
-
 		if emt.IsInClass {
-			// assign the value to the structs field
+			// the location we need to store to
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, emt.Function.Params[0], CI32(0), CI32(int32(emt.Class.Fields[emt.Id(expr.Variable)])))
+
+			// if this variable already contained an object -> destroy the reference
+			if expr.Variable.VarType().IsObject {
+				emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Variable.VarType()), ptr), "destroying reference previously stored in '"+varName+"'")
+			}
+
+			// assign the value to the structs field
 			(*blk).NewStore(expression, ptr)
 		} else {
+			// if this variable already contained an object -> destroy the reference
+			if expr.Variable.VarType().IsObject {
+				emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Variable.VarType()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
+			}
+
 			// assign the value to the global variable
 			(*blk).NewStore(expression, emt.Globals[varName].IRGlobal)
 		}
@@ -718,6 +796,32 @@ func (emt *Emitter) EmitAssignmentExpression(blk **ir.Block, expr boundnodes.Bou
 	}
 
 	return expression
+}
+
+func (emt *Emitter) EmitMakeExpression(blk **ir.Block, expr boundnodes.BoundMakeExpressionNode) value.Value {
+	// emit all of the constructors arguments
+	arguments := make([]value.Value, 0)
+
+	for _, arg := range expr.Arguments {
+		expression := emt.EmitExpression(blk, arg)
+
+		// if this is an object -> increase its reference counter
+		// (only do this for variables)
+		if arg.IsPersistent() {
+			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
+				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
+				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
+			}
+		}
+
+		arguments = append(arguments, expression)
+	}
+
+	// create an object of the given type
+	obj := emt.CreateObject(blk, emt.Id(expr.BaseType.Type), arguments...)
+
+	// return the object
+	return obj
 }
 
 func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.BoundMakeArrayExpressionNode) value.Value {
@@ -1175,7 +1279,7 @@ func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCall
 	if emt.IsInClass && !expr.Function.BuiltIn {
 		// prepend the "$me" parameter to the given arguments
 		arguments = append([]value.Value{emt.Function.Params[0]}, arguments...)
-		call = (*blk).NewCall(emt.Classes[emt.Id(emt.ClassSym)].Functions[functionName], arguments...)
+		call = (*blk).NewCall(emt.Classes[emt.Id(emt.ClassSym.Type)].Functions[functionName], arguments...)
 	} else {
 		call = (*blk).NewCall(emt.Functions[functionName].IRFunction, arguments...)
 	}
@@ -1262,6 +1366,21 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 
 	fmt.Println("Unknown TypeCall!")
 	return nil
+}
+
+func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.BoundClassCallExpressionNode) value.Value {
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
+
+	// emit all arguments
+	args := make([]value.Value, 0)
+	args = append(args, base)
+	for _, arg := range expr.Arguments {
+		args = append(args, emt.EmitExpression(blk, arg))
+	}
+
+	return (*blk).NewCall(emt.Classes[emt.Id(expr.Base.Type())].Functions[emt.Id(expr.Function)], args...)
 }
 
 func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.BoundConversionExpressionNode) value.Value {
@@ -1476,6 +1595,10 @@ func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) cons
 	}
 
 	if typ.Name == builtins.Array.Name {
+		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
+	}
+
+	if typ.IsUserDefined {
 		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
 	}
 
