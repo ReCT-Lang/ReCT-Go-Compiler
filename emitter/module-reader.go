@@ -87,8 +87,13 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 		constructor := FindFunction(module, class.Name+"_public_Constructor")
 		emt.ImportFunction(constructor)
 
+		// find the destructor
+		destructor := FindFunction(module, class.Name+"_public_Die")
+		emt.ImportFunction(destructor)
+
 		// alter class object
 		class.Constructor = constructor
+		class.Destructor = destructor
 		emt.Classes[key] = class
 
 		// find all of its public functions

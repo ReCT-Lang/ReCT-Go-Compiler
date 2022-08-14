@@ -75,10 +75,13 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 
 		// declare all function names inside the class
 		for _, fnc := range cls.Functions {
-			if !fnc.Symbol.BuiltIn {
-				function := emitter.EmitClassFunction(cls.Symbol, fnc.Symbol, fnc.Body)
-				functionName := emitter.Id(fnc.Symbol)
-				emitter.Classes[emitter.Id(cls.Symbol)].Functions[functionName] = function
+			if !fnc.Symbol.BuiltIn { // ignore system functions
+				// ignore constructor and Die as they are declared automatically
+				if fnc.Symbol.Name != "Constructor" && fnc.Symbol.Name != "Die" {
+					function := emitter.EmitClassFunction(cls.Symbol, fnc.Symbol, fnc.Body)
+					functionName := emitter.Id(fnc.Symbol)
+					emitter.Classes[emitter.Id(cls.Symbol)].Functions[functionName] = function
+				}
 			}
 		}
 	}
@@ -116,7 +119,24 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 			emitter.Class = emitter.Classes[emitter.Id(cls.Symbol)]
 			emitter.ClassSym = cls.Symbol
 			emitter.IsInClass = true
-			emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Functions[emitter.Id(fnc.Symbol)], fnc.Body)
+
+			// find out if this is the constructor
+			if fnc.Symbol.Name == "Constructor" {
+				// if it is, hand it the already prepared constructor function
+				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Constructor, fnc.Body)
+
+			} else if fnc.Symbol.Name == "Die" {
+				// if its the destructor, clear all auto-generated code inside it
+				emitter.Classes[emitter.Id(cls.Symbol)].Destructor.Blocks = make([]*ir.Block, 0)
+				emitter.Classes[emitter.Id(cls.Symbol)].Destructor.NewBlock("")
+
+				// hand it the already prepared destructor function
+				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Destructor, fnc.Body)
+			} else {
+				// if not, emit the function like normal
+				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol)].Functions[emitter.Id(fnc.Symbol)], fnc.Body)
+			}
+
 		}
 	}
 
@@ -169,8 +189,29 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	// create an IR function definition for the destructor
 	destructor := emt.Module.NewFunc(cls.Symbol.Name+"_public_Die", types.Void, ir.NewParam("obj", types.I8Ptr))
 
-	// create an empty root block
+	// create a new root block
 	root := destructor.NewBlock("")
+
+	// generate cleanup for all object members
+	root.Insts = append(root.Insts, NewComment("<DieARC>"))
+
+	for _, field := range cls.Symbol.Fields {
+		if field.VarType().IsObject {
+			root.Insts = append(root.Insts, NewComment(fmt.Sprintf("-> destroying reference to '%s [Field %d]'", emt.Id(field), clsFieldMap[emt.Id(field)])))
+
+			// get the field's pointer
+			ptr := root.NewGetElementPtr(clsType, destructor.Params[0], CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
+
+			// load the pointer
+			obj := root.NewLoad(emt.IRTypes(field.VarType()), ptr)
+
+			// decrement its ARC reference counter
+			emt.DestroyReference(&root, obj, "")
+		}
+	}
+
+	root.Insts = append(root.Insts, NewComment("</DieARC>"))
+
 	root.NewRet(nil)
 
 	// create the vTable constant
@@ -212,13 +253,17 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 
 	// create the class object to keep track of things
 	emt.Classes[emt.Id(cls.Symbol)] = Class{
-		Name:        cls.Symbol.Name,
-		Type:        clsType,
-		vTable:      clsvTable,
-		vConstant:   clsvConstant,
+		Name: cls.Symbol.Name,
+		Type: clsType,
+
+		vTable:    clsvTable,
+		vConstant: clsvConstant,
+
 		Constructor: constructor,
-		Functions:   make(map[string]*ir.Func),
-		Fields:      clsFieldMap,
+		Destructor:  destructor,
+
+		Functions: make(map[string]*ir.Func),
+		Fields:    clsFieldMap,
 	}
 }
 
@@ -617,10 +662,13 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 	}
 
 	if variable.IsGlobal() {
+		// if we're in a class we need to load from the struct instead of a global
 		if emt.IsInClass {
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, emt.Function.Params[0], CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
 			return (*blk).NewLoad(emt.IRTypes(variable.VarType()), ptr)
+
 		} else {
+			// if we arent we can just get the global
 			return (*blk).NewLoad(emt.IRTypes(emt.Globals[varName].Type), emt.Globals[varName].IRGlobal)
 		}
 	} else {

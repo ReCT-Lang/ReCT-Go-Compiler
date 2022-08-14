@@ -2,6 +2,16 @@
 class SomeClass {
 
 	set int i;
+	set string s;
+	set any a;
+
+	function Constructor() {
+		Print("Much Construction");
+	}
+
+	function Die() {
+		Print("amogus");
+	}
 
 	function coolFunc(suffix string) {
 		var someMessage <- "very cool class function inside a class such wow";
