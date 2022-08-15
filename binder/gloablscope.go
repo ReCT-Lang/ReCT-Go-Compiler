@@ -58,9 +58,15 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
 
-	// FIRST PASS: declare all our classes as placeholders
+	// create a loose list of types so our class members have something to work with
+	preInitialTypeset := make([]symbols.TypeSymbol, 0)
 	for _, cls := range classDeclarations {
-		binder.BindClassDeclaration(cls)
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(cls.Identifier.Value, make([]symbols.TypeSymbol, 0), true, true))
+	}
+
+	// declare all our classes and their members
+	for _, cls := range classDeclarations {
+		binder.BindClassDeclaration(cls, preInitialTypeset)
 	}
 
 	// declare all our functions
@@ -86,6 +92,10 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 func BindParentScope(globalScope GlobalScope) Scope {
 	parent := BindRootScope()
 	workingScope := CreateScope(&parent)
+
+	for _, cls := range globalScope.Classes {
+		workingScope.TryDeclareSymbol(cls)
+	}
 
 	for _, fnc := range globalScope.Functions {
 		workingScope.TryDeclareSymbol(fnc)

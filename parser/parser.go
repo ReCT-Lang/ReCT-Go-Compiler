@@ -976,7 +976,7 @@ func (prs *Parser) parseThreadExpression() nodes.ThreadExpressionNode {
 // the data type is string (though in a program it's going to be a variable with the type string)
 // GetLength is the exact function call we need
 // Anything in the ( ... ) we need to get as arguments
-func (prs *Parser) parseTypeCallExpression() nodes.TypeCallExpressionNode {
+func (prs *Parser) parseTypeCallExpression() nodes.ExpressionNode {
 
 	// the variable we're calling the function on
 	// we aren't using the symbol directly, we are using a variable expression
@@ -990,15 +990,42 @@ func (prs *Parser) parseTypeCallExpression() nodes.TypeCallExpressionNode {
 // the data type is string (though in a program it's going to be a variable with the type string)
 // GetLength is the exact function call we need
 // Anything in the ( ... ) we need to get as arguments
-func (prs *Parser) parseTypeCallExpressionFromValue(expr nodes.ExpressionNode) nodes.TypeCallExpressionNode {
+func (prs *Parser) parseTypeCallExpressionFromValue(expr nodes.ExpressionNode) nodes.ExpressionNode {
 	prs.consume(lexer.AccessToken)               // ->
 	callIdentifier := prs.consume(lexer.IdToken) // now we need the name of the call (like "GetLength()")
+
+	// if there are no parenthesis -> redirect to parseClassFieldAccessExpression
+	if prs.current().Kind != lexer.OpenParenthesisToken {
+		return prs.parseClassFieldAccessExpression(callIdentifier, expr)
+	}
 
 	prs.consume(lexer.OpenParenthesisToken)  // (
 	args := prs.parseArguments()             // any arguments in the function call itself
 	prs.consume(lexer.CloseParenthesisToken) // )
 
 	return nodes.CreateTypeCallExpressionNode(expr, callIdentifier, args)
+}
+
+// parseClassFieldAccessExpression when we want to get a field from inside a class object
+// Example: someClass->someField
+func (prs *Parser) parseClassFieldAccessExpression(id lexer.Token, expr nodes.ExpressionNode) nodes.ExpressionNode {
+
+	// if we find a '<-', then this isnt an access, its an assignment
+	if prs.current().Kind == lexer.AssignToken {
+		return prs.parseClassFieldAssignmentExpression(id, expr)
+	}
+
+	return nodes.CreateClassFieldAccessExpressionNode(expr, id)
+}
+
+// parseClassFieldAssignmentExpression when we want to get a field from inside a class object
+// Example: someClass->someField <- "some value";
+func (prs *Parser) parseClassFieldAssignmentExpression(id lexer.Token, expr nodes.ExpressionNode) nodes.ClassFieldAssignmentExpressionNode {
+
+	prs.consume(lexer.AssignToken) // <-
+	value := prs.parseExpression() // the value
+
+	return nodes.CreateClassFieldAssignmentExpressionNode(expr, id, value)
 }
 
 // parseArguments this is when we want to get a series of arguments in a function call function definition.

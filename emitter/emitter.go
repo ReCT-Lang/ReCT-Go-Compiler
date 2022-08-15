@@ -22,9 +22,10 @@ type Emitter struct {
 	// referenced functions
 	CFuncs   map[string]*ir.Func
 	ArcFuncs map[string]*ir.Func
+	ExcFuncs map[string]*ir.Func
 
 	// referenced classes
-	Classes map[string]Class
+	Classes map[string]*Class
 
 	// global variables
 	Globals          map[string]Global
@@ -35,7 +36,7 @@ type Emitter struct {
 	StrNameCounter   int
 
 	// local things for this current class
-	Class    Class
+	Class    *Class
 	ClassSym symbols.ClassSymbol
 
 	// local things for this current function
@@ -60,9 +61,10 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		Functions:        make(map[string]Function),
 		CFuncs:           make(map[string]*ir.Func),
 		ArcFuncs:         make(map[string]*ir.Func),
+		ExcFuncs:         make(map[string]*ir.Func),
 		FunctionLocals:   make(map[string]map[string]Local),
 		StrConstants:     make(map[string]value.Value),
-		Classes:          make(map[string]Class),
+		Classes:          make(map[string]*Class),
 		FunctionWrappers: make(map[string]*ir.Func),
 		Temps:            make([]string, 0),
 	}
@@ -72,6 +74,11 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	// declare all class structs
 	for _, cls := range emitter.Program.Classes {
 		emitter.EmitClass(cls)
+	}
+
+	// populate all class structs
+	for _, cls := range emitter.Program.Classes {
+		emitter.PopulateClass(emitter.Classes[emitter.Id(cls.Symbol.Type)], cls)
 
 		// declare all function names inside the class
 		for _, fnc := range cls.Functions {
@@ -145,8 +152,16 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 
 // <CLASSES>-------------------------------------------------------------------
 func (emt *Emitter) EmitClass(cls binder.BoundClass) {
+	// create the class object to keep track of things
+	emt.Classes[emt.Id(cls.Symbol.Type)] = &Class{
+		Name: cls.Symbol.Name,
+		Type: &types.StructType{},
+	}
+}
+
+func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	// create the class' vTable type
-	clsvTable := emt.Module.NewTypeDef("struct."+cls.Symbol.Name+"_vTable",
+	clsvTable := emt.Module.NewTypeDef("struct."+bcls.Symbol.Name+"_vTable",
 		types.NewStruct(
 			types.NewPointer(emt.Classes[emt.Id(builtins.Any)].vTable),
 			types.I8Ptr,
@@ -172,38 +187,39 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	clsFields = append(clsFields, types.I32)                   // ARC counter
 
 	// add our types one by one
-	for i, field := range cls.Symbol.Fields {
+	for i, field := range bcls.Symbol.Fields {
 		clsFieldMap[emt.Id(field)] = i + 2
 		clsFields = append(clsFields, emt.IRTypes(field.VarType()))
 	}
 
-	// create the class' struct
-	clsType := emt.Module.NewTypeDef("struct.class_"+cls.Symbol.Name,
-		types.NewStruct(clsFields...),
-	)
+	// update the fields inside the struct
+	cls.Type.(*types.StructType).Fields = append(cls.Type.(*types.StructType).Fields, clsFields...)
+
+	// create the class' struct definition
+	emt.Module.NewTypeDef("struct.class_"+bcls.Symbol.Name, cls.Type)
 
 	// ---------------------------------------------------------------------
 	// create the destructor
 	// ---------------------------------------------------------------------
 
 	// create an IR function definition for the destructor
-	destructor := emt.Module.NewFunc(cls.Symbol.Name+"_public_Die", types.Void, ir.NewParam("obj", types.I8Ptr))
+	destructor := emt.Module.NewFunc(bcls.Symbol.Name+"_public_Die", types.Void, ir.NewParam("obj", types.I8Ptr))
 
 	// create a new root block
 	root := destructor.NewBlock("")
 
 	// bitcast the given void* into a class pointer
-	clsPtr := root.NewBitCast(destructor.Params[0], types.NewPointer(clsType))
+	clsPtr := root.NewBitCast(destructor.Params[0], types.NewPointer(cls.Type))
 
 	// generate cleanup for all object members
 	root.Insts = append(root.Insts, NewComment("<DieARC>"))
 
-	for _, field := range cls.Symbol.Fields {
+	for _, field := range bcls.Symbol.Fields {
 		if field.VarType().IsObject {
 			root.Insts = append(root.Insts, NewComment(fmt.Sprintf("-> destroying reference to '%s [Field %d]'", emt.Id(field), clsFieldMap[emt.Id(field)])))
 
 			// get the field's pointer
-			ptr := root.NewGetElementPtr(clsType, clsPtr, CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
+			ptr := root.NewGetElementPtr(cls.Type, clsPtr, CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
 
 			// load the pointer
 			obj := root.NewLoad(emt.IRTypes(field.VarType()), ptr)
@@ -221,10 +237,10 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	vtc := constant.NewStruct(
 		clsvTable.(*types.StructType),
 		emt.Classes[emt.Id(builtins.Any)].vConstant,
-		emt.GetConstantStringConstant(cls.Symbol.Name),
+		emt.GetConstantStringConstant(bcls.Symbol.Name),
 		destructor,
 	)
-	clsvConstant := emt.Module.NewGlobalDef(cls.Symbol.Name+"_vTable_Const", vtc)
+	clsvConstant := emt.Module.NewGlobalDef(bcls.Symbol.Name+"_vTable_Const", vtc)
 
 	// ---------------------------------------------------------------------
 	// create the constructor
@@ -232,11 +248,11 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 
 	// create an IR function definition for the constructor
 	clsParams := make([]*ir.Param, 0)
-	clsParams = append(clsParams, ir.NewParam("me", types.NewPointer(clsType)))
+	clsParams = append(clsParams, ir.NewParam("me", types.NewPointer(cls.Type)))
 
 	// look for an explicit constructor
 	var constructorFunction *binder.BoundFunction
-	for _, fnc := range cls.Functions {
+	for _, fnc := range bcls.Functions {
 		if fnc.Symbol.Name == "Constructor" {
 			constructorFunction = &fnc
 			break
@@ -251,29 +267,29 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 		}
 	}
 
-	constructor := emt.Module.NewFunc(cls.Symbol.Name+"_public_Constructor", types.Void, clsParams...)
+	constructor := emt.Module.NewFunc(bcls.Symbol.Name+"_public_Constructor", types.Void, clsParams...)
 
 	// create a basic constructor in IR
 	// --------------------------------
 
 	// get the objects own reference
 	croot := constructor.NewBlock("")
-	clsMePtr := croot.NewAlloca(types.NewPointer(clsType))
+	clsMePtr := croot.NewAlloca(types.NewPointer(cls.Type))
 	croot.NewStore(clsParams[0], clsMePtr)
-	clsMe := croot.NewLoad(types.NewPointer(clsType), clsMePtr)
+	clsMe := croot.NewLoad(types.NewPointer(cls.Type), clsMePtr)
 
 	// set the vTable to the vTable constant
-	clsMyVTable := croot.NewGetElementPtr(clsType, clsMe, CI32(0), CI32(0))
+	clsMyVTable := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(0))
 	croot.NewStore(clsvConstant, clsMyVTable)
 
 	// set the reference count to 0
-	clsMyRefCount := croot.NewGetElementPtr(clsType, clsMe, CI32(0), CI32(1))
+	clsMyRefCount := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(1))
 	croot.NewStore(CI32(0), clsMyRefCount)
 
 	// store a NULL in any object fields, to tell the ARC that they are empty
-	for _, field := range cls.Symbol.Fields {
+	for _, field := range bcls.Symbol.Fields {
 		if field.VarType().IsObject {
-			ptr := croot.NewGetElementPtr(clsType, constructor.Params[0], CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
+			ptr := croot.NewGetElementPtr(cls.Type, constructor.Params[0], CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
 			croot.NewStore(constant.NewNull(emt.IRTypes(field.VarType()).(*types.PointerType)), ptr)
 		}
 	}
@@ -307,23 +323,18 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 		}
 
 		// store this for later
-		emt.FunctionLocals[cls.Symbol.Name+"_public_"+emt.Id(constructorFunction.Symbol)] = locals
+		emt.FunctionLocals[bcls.Symbol.Name+"_public_"+emt.Id(constructorFunction.Symbol)] = locals
 	}
 
-	// create the class object to keep track of things
-	emt.Classes[emt.Id(cls.Symbol.Type)] = Class{
-		Name: cls.Symbol.Name,
-		Type: clsType,
+	// store all of this info in the class object
+	emt.Classes[emt.Id(bcls.Symbol.Type)].vTable = clsvTable
+	emt.Classes[emt.Id(bcls.Symbol.Type)].vConstant = clsvConstant
 
-		vTable:    clsvTable,
-		vConstant: clsvConstant,
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Constructor = constructor
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Destructor = destructor
 
-		Constructor: constructor,
-		Destructor:  destructor,
-
-		Functions: make(map[string]*ir.Func),
-		Fields:    clsFieldMap,
-	}
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Functions = make(map[string]*ir.Func)
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Fields = clsFieldMap
 }
 
 // </CLASSES>------------------------------------------------------------------
@@ -682,6 +693,12 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundClassCallExpression:
 		return emt.EmitClassCallExpression(blk, expr.(boundnodes.BoundClassCallExpressionNode))
+
+	case boundnodes.BoundClassFieldAccessExpression:
+		return emt.EmitClassFieldAccessExpression(blk, expr.(boundnodes.BoundClassFieldAccessExpressionNode))
+
+	case boundnodes.BoundClassFieldAssignmentExpression:
+		return emt.EmitClassFieldAssignmentExpression(blk, expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
 
 	case boundnodes.BoundConversionExpression:
 		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
@@ -1302,6 +1319,11 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
 
+	// if this is an object type -> do a null check before calling
+	if expr.Base.Type().IsObject {
+		(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
+	}
+
 	switch expr.Function.Fingerprint() {
 	case builtins.GetLength.Fingerprint():
 		// call the get length function on the string
@@ -1373,6 +1395,9 @@ func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.Boun
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
 
+	// run a null check on the base
+	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
+
 	// emit all arguments
 	args := make([]value.Value, 0)
 	args = append(args, base)
@@ -1381,6 +1406,59 @@ func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.Boun
 	}
 
 	return (*blk).NewCall(emt.Classes[emt.Id(expr.Base.Type())].Functions[emt.Id(expr.Function)], args...)
+}
+
+func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAccessExpressionNode) value.Value {
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
+
+	// run a null check on the base
+	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
+
+	// look up the field's index
+	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[emt.Id(expr.Field)]
+
+	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(expr.Base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
+	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr)
+}
+
+func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAssignmentExpressionNode) value.Value {
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
+
+	// run a null check on the base
+	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
+
+	// look up the field's index
+	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[emt.Id(expr.Field)]
+
+	// assignment value
+	// ----------------
+	value := emt.EmitExpression(blk, expr.Value)
+
+	// if the expression is a variable -> increase reference counter
+	if expr.Value.IsPersistent() && expr.Value.Type().IsObject {
+		emt.CreateReference(blk, value, "field assignment ["+expr.Field.SymbolName()+"]")
+	}
+
+	// the location we need to store to
+	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(expr.Base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
+
+	// if this variable already contained an object -> destroy the reference
+	if expr.Field.VarType().IsObject {
+		emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr), "destroying reference previously stored in '"+expr.Field.SymbolName()+"'")
+	}
+
+	// assign the value to the structs field
+	(*blk).NewStore(value, ptr)
+
+	// return a copy of the value (i really don't think this is necessary but oh well)
+	if expr.Value.Type().IsObject {
+		emt.CreateReference(blk, value, "assign value copy (field assignment)")
+	}
+	return value
 }
 
 func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.BoundConversionExpressionNode) value.Value {

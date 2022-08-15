@@ -49,6 +49,11 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 
 	fmt.Println("Unknown Type")
 	fmt.Println(typ.Fingerprint())
+
+	for _, v := range emt.Classes {
+		fmt.Println("> " + v.Name)
+	}
+
 	os.Exit(-1)
 	return nil
 }

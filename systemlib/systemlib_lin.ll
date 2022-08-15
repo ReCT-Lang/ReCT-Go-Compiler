@@ -48,27 +48,39 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.6.18 = private unnamed_addr constant [4 x i8] c".so\00", align 1
 @.str.7.19 = private unnamed_addr constant [5 x i8] c".dll\00", align 1
 @.str.8.20 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@.str.9.21 = private unnamed_addr constant [54 x i8] c"Null-Pointer exception! The given reference was null.\00", align 1
 @isCursorVisible = dso_local global i8 1, align 1
-@.str.21 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@.str.1.22 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
-@.str.2.23 = private unnamed_addr constant [8 x i8] c"\1B[2J\1B[H\00", align 1
-@.str.3.24 = private unnamed_addr constant [10 x i8] c"%c[%d;%df\00", align 1
-@.str.4.25 = private unnamed_addr constant [8 x i8] c"\1B[?251]\00", align 1
+@.str.22 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@.str.1.23 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
+@.str.2.24 = private unnamed_addr constant [8 x i8] c"\1B[2J\1B[H\00", align 1
+@.str.3.25 = private unnamed_addr constant [10 x i8] c"%c[%d;%df\00", align 1
+@.str.4.26 = private unnamed_addr constant [8 x i8] c"\1B[?251]\00", align 1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @arc_RegisterReference(%struct.class_Any* %0) #0 {
+define dso_local void @arc_RegisterReference(%struct.class_Any* noundef %0) #0 {
   %2 = alloca %struct.class_Any*, align 8
   store %struct.class_Any* %0, %struct.class_Any** %2, align 8
   %3 = load %struct.class_Any*, %struct.class_Any** %2, align 8
-  %4 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %3, i32 0, i32 1
-  %5 = load i32, i32* %4, align 8
-  %6 = add nsw i32 %5, 1
-  store i32 %6, i32* %4, align 8
+  %4 = icmp eq %struct.class_Any* %3, null
+  br i1 %4, label %5, label %6
+
+5:                                                ; preds = %1
+  br label %11
+
+6:                                                ; preds = %1
+  %7 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %8 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %7, i32 0, i32 1
+  %9 = load i32, i32* %8, align 8
+  %10 = add nsw i32 %9, 1
+  store i32 %10, i32* %8, align 8
+  br label %11
+
+11:                                               ; preds = %6, %5
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
+define dso_local void @arc_UnregisterReference(%struct.class_Any* noundef %0) #0 {
   %2 = alloca %struct.class_Any*, align 8
   store %struct.class_Any* %0, %struct.class_Any** %2, align 8
   %3 = load %struct.class_Any*, %struct.class_Any** %2, align 8
@@ -98,10 +110,10 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
   %20 = load void (i8*)*, void (i8*)** %19, align 8
   %21 = load %struct.class_Any*, %struct.class_Any** %2, align 8
   %22 = bitcast %struct.class_Any* %21 to i8*
-  call void %20(i8* %22)
+  call void %20(i8* noundef %22)
   %23 = load %struct.class_Any*, %struct.class_Any** %2, align 8
   %24 = bitcast %struct.class_Any* %23 to i8*
-  call void @free(i8* %24) #8
+  call void @free(i8* noundef %24) #8
   br label %25
 
 25:                                               ; preds = %15, %6, %5
@@ -109,10 +121,10 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* %0) #0 {
 }
 
 ; Function Attrs: nounwind
-declare void @free(i8*) #1
+declare void @free(i8* noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @arc_RegisterReferenceVerbose(%struct.class_Any* %0, i8* %1) #0 {
+define dso_local void @arc_RegisterReferenceVerbose(%struct.class_Any* noundef %0, i8* noundef %1) #0 {
   %3 = alloca %struct.class_Any*, align 8
   %4 = alloca i8*, align 8
   store %struct.class_Any* %0, %struct.class_Any** %3, align 8
@@ -131,14 +143,14 @@ define dso_local void @arc_RegisterReferenceVerbose(%struct.class_Any* %0, i8* %
   %15 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %14, i32 0, i32 1
   %16 = load i32, i32* %15, align 8
   %17 = load i8*, i8** %4, align 8
-  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([59 x i8], [59 x i8]* @.str, i64 0, i64 0), i8* %13, i32 %16, i8* %17)
+  %18 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([59 x i8], [59 x i8]* @.str, i64 0, i64 0), i8* noundef %13, i32 noundef %16, i8* noundef %17)
   ret void
 }
 
-declare i32 @printf(i8*, ...) #2
+declare i32 @printf(i8* noundef, ...) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8* %1) #0 {
+define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* noundef %0, i8* noundef %1) #0 {
   %3 = alloca %struct.class_Any*, align 8
   %4 = alloca i8*, align 8
   store %struct.class_Any* %0, %struct.class_Any** %3, align 8
@@ -165,7 +177,7 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   %19 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %18, i32 0, i32 1
   %20 = load i32, i32* %19, align 8
   %21 = load i8*, i8** %4, align 8
-  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([61 x i8], [61 x i8]* @.str.1, i64 0, i64 0), i8* %17, i32 %20, i8* %21)
+  %22 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([61 x i8], [61 x i8]* @.str.1, i64 0, i64 0), i8* noundef %17, i32 noundef %20, i8* noundef %21)
   %23 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %24 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %23, i32 0, i32 1
   %25 = load i32, i32* %24, align 8
@@ -179,7 +191,7 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   %31 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %30, i32 0, i32 1
   %32 = load i8*, i8** %31, align 8
   %33 = load i8*, i8** %4, align 8
-  %34 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([53 x i8], [53 x i8]* @.str.2, i64 0, i64 0), i8* %32, i8* %33)
+  %34 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([53 x i8], [53 x i8]* @.str.2, i64 0, i64 0), i8* noundef %32, i8* noundef %33)
   %35 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %36 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %35, i32 0, i32 0
   %37 = load %struct.Any_vTable*, %struct.Any_vTable** %36, align 8
@@ -187,10 +199,10 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   %39 = load void (i8*)*, void (i8*)** %38, align 8
   %40 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %41 = bitcast %struct.class_Any* %40 to i8*
-  call void %39(i8* %41)
+  call void %39(i8* noundef %41)
   %42 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %43 = bitcast %struct.class_Any* %42 to i8*
-  call void @free(i8* %43) #8
+  call void @free(i8* noundef %43) #8
   br label %56
 
 44:                                               ; preds = %8
@@ -205,7 +217,7 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
   %51 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %50, i32 0, i32 1
   %52 = load i32, i32* %51, align 8
   %53 = load i8*, i8** %4, align 8
-  %54 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([44 x i8], [44 x i8]* @.str.3, i64 0, i64 0), i32 %52, i8* %53)
+  %54 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([44 x i8], [44 x i8]* @.str.3, i64 0, i64 0), i32 noundef %52, i8* noundef %53)
   br label %55
 
 55:                                               ; preds = %49, %44
@@ -216,14 +228,14 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* %0, i8*
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Any_public_Die(i8* %0) #0 {
+define dso_local void @Any_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @String_public_Die(i8* %0) #0 {
+define dso_local void @String_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   %3 = alloca %struct.class_String*, align 8
   store i8* %0, i8** %2, align 8
@@ -240,7 +252,7 @@ define dso_local void @String_public_Die(i8* %0) #0 {
   %11 = load %struct.class_String*, %struct.class_String** %3, align 8
   %12 = getelementptr inbounds %struct.class_String, %struct.class_String* %11, i32 0, i32 2
   %13 = load i8*, i8** %12, align 8
-  call void @free(i8* %13) #8
+  call void @free(i8* noundef %13) #8
   br label %14
 
 14:                                               ; preds = %10, %1
@@ -248,28 +260,28 @@ define dso_local void @String_public_Die(i8* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Int_public_Die(i8* %0) #0 {
+define dso_local void @Int_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Float_public_Die(i8* %0) #0 {
+define dso_local void @Float_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Bool_public_Die(i8* %0) #0 {
+define dso_local void @Bool_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Array_public_Die(i8* %0) #0 {
+define dso_local void @Array_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   %3 = alloca %struct.class_Array*, align 8
   %4 = alloca i32, align 4
@@ -296,7 +308,7 @@ define dso_local void @Array_public_Die(i8* %0) #0 {
   %18 = sext i32 %17 to i64
   %19 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %16, i64 %18
   %20 = load %struct.class_Any*, %struct.class_Any** %19, align 8
-  call void @arc_UnregisterReference(%struct.class_Any* %20)
+  call void @arc_UnregisterReference(%struct.class_Any* noundef %20)
   br label %21
 
 21:                                               ; preds = %13
@@ -310,12 +322,12 @@ define dso_local void @Array_public_Die(i8* %0) #0 {
   %26 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %25, i32 0, i32 2
   %27 = load %struct.class_Any**, %struct.class_Any*** %26, align 8
   %28 = bitcast %struct.class_Any** %27 to i8*
-  call void @free(i8* %28) #8
+  call void @free(i8* noundef %28) #8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @pArray_public_Die(i8* %0) #0 {
+define dso_local void @pArray_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   %3 = alloca %struct.class_pArray*, align 8
   store i8* %0, i8** %2, align 8
@@ -325,19 +337,19 @@ define dso_local void @pArray_public_Die(i8* %0) #0 {
   %6 = load %struct.class_pArray*, %struct.class_pArray** %3, align 8
   %7 = getelementptr inbounds %struct.class_pArray, %struct.class_pArray* %6, i32 0, i32 2
   %8 = load i8*, i8** %7, align 8
-  call void @free(i8* %8) #8
+  call void @free(i8* noundef %8) #8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Thread_public_Die(i8* %0) #0 {
+define dso_local void @Thread_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Any_public_Constructor(%struct.class_Any* %0) #0 {
+define dso_local void @Any_public_Constructor(%struct.class_Any* noundef %0) #0 {
   %2 = alloca %struct.class_Any*, align 8
   store %struct.class_Any* %0, %struct.class_Any** %2, align 8
   %3 = load %struct.class_Any*, %struct.class_Any** %2, align 8
@@ -350,7 +362,7 @@ define dso_local void @Any_public_Constructor(%struct.class_Any* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @String_public_Constructor(%struct.class_String* %0) #0 {
+define dso_local void @String_public_Constructor(%struct.class_String* noundef %0) #0 {
   %2 = alloca %struct.class_String*, align 8
   store %struct.class_String* %0, %struct.class_String** %2, align 8
   %3 = load %struct.class_String*, %struct.class_String** %2, align 8
@@ -375,7 +387,7 @@ define dso_local void @String_public_Constructor(%struct.class_String* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @String_public_Load(%struct.class_String* %0, i8* %1) #0 {
+define dso_local void @String_public_Load(%struct.class_String* noundef %0, i8* noundef %1) #0 {
   %3 = alloca %struct.class_String*, align 8
   %4 = alloca i8*, align 8
   %5 = alloca i32, align 4
@@ -383,13 +395,13 @@ define dso_local void @String_public_Load(%struct.class_String* %0, i8* %1) #0 {
   store %struct.class_String* %0, %struct.class_String** %3, align 8
   store i8* %1, i8** %4, align 8
   %7 = load i8*, i8** %4, align 8
-  %8 = call i64 @strlen(i8* %7) #9
+  %8 = call i64 @strlen(i8* noundef %7) #9
   %9 = trunc i64 %8 to i32
   store i32 %9, i32* %5, align 4
   %10 = load i32, i32* %5, align 4
   %11 = add nsw i32 %10, 1
   %12 = sext i32 %11 to i64
-  %13 = call noalias align 16 i8* @malloc(i64 %12) #8
+  %13 = call noalias i8* @malloc(i64 noundef %12) #8
   store i8* %13, i8** %6, align 8
   %14 = load i8*, i8** %6, align 8
   %15 = load i8*, i8** %4, align 8
@@ -407,7 +419,7 @@ define dso_local void @String_public_Load(%struct.class_String* %0, i8* %1) #0 {
   %24 = load %struct.class_String*, %struct.class_String** %3, align 8
   %25 = getelementptr inbounds %struct.class_String, %struct.class_String* %24, i32 0, i32 2
   %26 = load i8*, i8** %25, align 8
-  call void @free(i8* %26) #8
+  call void @free(i8* noundef %26) #8
   br label %27
 
 27:                                               ; preds = %23, %2
@@ -427,16 +439,16 @@ define dso_local void @String_public_Load(%struct.class_String* %0, i8* %1) #0 {
 }
 
 ; Function Attrs: nounwind readonly willreturn
-declare i64 @strlen(i8*) #3
+declare i64 @strlen(i8* noundef) #3
 
 ; Function Attrs: nounwind
-declare noalias align 16 i8* @malloc(i64) #1
+declare noalias i8* @malloc(i64 noundef) #1
 
 ; Function Attrs: argmemonly nofree nounwind willreturn
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #4
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0 {
+define dso_local void @String_public_Resize(%struct.class_String* noundef %0, i32 noundef %1) #0 {
   %3 = alloca %struct.class_String*, align 8
   %4 = alloca i32, align 4
   %5 = alloca i8*, align 8
@@ -444,7 +456,7 @@ define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0
   store i32 %1, i32* %4, align 4
   %6 = load i32, i32* %4, align 4
   %7 = sext i32 %6 to i64
-  %8 = call noalias align 16 i8* @malloc(i64 %7) #8
+  %8 = call noalias i8* @malloc(i64 noundef %7) #8
   store i8* %8, i8** %5, align 8
   %9 = load i8*, i8** %5, align 8
   %10 = load %struct.class_String*, %struct.class_String** %3, align 8
@@ -458,7 +470,7 @@ define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0
   %17 = load %struct.class_String*, %struct.class_String** %3, align 8
   %18 = getelementptr inbounds %struct.class_String, %struct.class_String* %17, i32 0, i32 2
   %19 = load i8*, i8** %18, align 8
-  call void @free(i8* %19) #8
+  call void @free(i8* noundef %19) #8
   %20 = load i8*, i8** %5, align 8
   %21 = load %struct.class_String*, %struct.class_String** %3, align 8
   %22 = getelementptr inbounds %struct.class_String, %struct.class_String* %21, i32 0, i32 2
@@ -471,7 +483,7 @@ define dso_local void @String_public_Resize(%struct.class_String* %0, i32 %1) #0
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @String_public_AddChar(%struct.class_String* %0, i8 signext %1) #0 {
+define dso_local void @String_public_AddChar(%struct.class_String* noundef %0, i8 noundef signext %1) #0 {
   %3 = alloca %struct.class_String*, align 8
   %4 = alloca i8, align 1
   store %struct.class_String* %0, %struct.class_String** %3, align 8
@@ -494,7 +506,7 @@ define dso_local void @String_public_AddChar(%struct.class_String* %0, i8 signex
   %18 = getelementptr inbounds %struct.class_String, %struct.class_String* %17, i32 0, i32 5
   %19 = load i32, i32* %18, align 8
   %20 = add nsw i32 %16, %19
-  call void @String_public_Resize(%struct.class_String* %13, i32 %20)
+  call void @String_public_Resize(%struct.class_String* noundef %13, i32 noundef %20)
   br label %21
 
 21:                                               ; preds = %12, %2
@@ -517,7 +529,7 @@ define dso_local void @String_public_AddChar(%struct.class_String* %0, i8 signex
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local %struct.class_String* @String_public_Concat(%struct.class_String* %0, %struct.class_String* %1) #0 {
+define dso_local %struct.class_String* @String_public_Concat(%struct.class_String* noundef %0, %struct.class_String* noundef %1) #0 {
   %3 = alloca %struct.class_String*, align 8
   %4 = alloca %struct.class_String*, align 8
   %5 = alloca i8*, align 8
@@ -533,43 +545,43 @@ define dso_local %struct.class_String* @String_public_Concat(%struct.class_Strin
   %13 = add nsw i32 %9, %12
   %14 = add nsw i32 %13, 1
   %15 = sext i32 %14 to i64
-  %16 = call noalias align 16 i8* @malloc(i64 %15) #8
+  %16 = call noalias i8* @malloc(i64 noundef %15) #8
   store i8* %16, i8** %5, align 8
   %17 = load i8*, i8** %5, align 8
   %18 = load %struct.class_String*, %struct.class_String** %3, align 8
   %19 = getelementptr inbounds %struct.class_String, %struct.class_String* %18, i32 0, i32 2
   %20 = load i8*, i8** %19, align 8
-  %21 = call i8* @strcpy(i8* %17, i8* %20) #8
+  %21 = call i8* @strcpy(i8* noundef %17, i8* noundef %20) #8
   %22 = load i8*, i8** %5, align 8
   %23 = load %struct.class_String*, %struct.class_String** %4, align 8
   %24 = getelementptr inbounds %struct.class_String, %struct.class_String* %23, i32 0, i32 2
   %25 = load i8*, i8** %24, align 8
-  %26 = call i8* @strcat(i8* %22, i8* %25) #8
-  %27 = call noalias align 16 i8* @malloc(i64 40) #8
+  %26 = call i8* @strcat(i8* noundef %22, i8* noundef %25) #8
+  %27 = call noalias i8* @malloc(i64 noundef 40) #8
   %28 = bitcast i8* %27 to %struct.class_String*
   store %struct.class_String* %28, %struct.class_String** %6, align 8
   %29 = load %struct.class_String*, %struct.class_String** %6, align 8
-  call void @String_public_Constructor(%struct.class_String* %29)
+  call void @String_public_Constructor(%struct.class_String* noundef %29)
   %30 = load %struct.class_String*, %struct.class_String** %6, align 8
   %31 = load i8*, i8** %5, align 8
-  call void @String_public_Load(%struct.class_String* %30, i8* %31)
+  call void @String_public_Load(%struct.class_String* noundef %30, i8* noundef %31)
   %32 = load %struct.class_String*, %struct.class_String** %6, align 8
   %33 = bitcast %struct.class_String* %32 to %struct.class_Any*
-  call void @arc_RegisterReference(%struct.class_Any* %33)
+  call void @arc_RegisterReference(%struct.class_Any* noundef %33)
   %34 = load i8*, i8** %5, align 8
-  call void @free(i8* %34) #8
+  call void @free(i8* noundef %34) #8
   %35 = load %struct.class_String*, %struct.class_String** %6, align 8
   ret %struct.class_String* %35
 }
 
 ; Function Attrs: nounwind
-declare i8* @strcpy(i8*, i8*) #1
+declare i8* @strcpy(i8* noundef, i8* noundef) #1
 
 ; Function Attrs: nounwind
-declare i8* @strcat(i8*, i8*) #1
+declare i8* @strcat(i8* noundef, i8* noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local zeroext i1 @String_public_Equal(%struct.class_String* %0, %struct.class_String* %1) #0 {
+define dso_local zeroext i1 @String_public_Equal(%struct.class_String* noundef %0, %struct.class_String* noundef %1) #0 {
   %3 = alloca %struct.class_String*, align 8
   %4 = alloca %struct.class_String*, align 8
   %5 = alloca i32, align 4
@@ -581,7 +593,7 @@ define dso_local zeroext i1 @String_public_Equal(%struct.class_String* %0, %stru
   %9 = load %struct.class_String*, %struct.class_String** %4, align 8
   %10 = getelementptr inbounds %struct.class_String, %struct.class_String* %9, i32 0, i32 2
   %11 = load i8*, i8** %10, align 8
-  %12 = call i32 @strcmp(i8* %8, i8* %11) #9
+  %12 = call i32 @strcmp(i8* noundef %8, i8* noundef %11) #9
   store i32 %12, i32* %5, align 4
   %13 = load i32, i32* %5, align 4
   %14 = icmp eq i32 %13, 0
@@ -589,10 +601,10 @@ define dso_local zeroext i1 @String_public_Equal(%struct.class_String* %0, %stru
 }
 
 ; Function Attrs: nounwind readonly willreturn
-declare i32 @strcmp(i8*, i8*) #3
+declare i32 @strcmp(i8* noundef, i8* noundef) #3
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i8* @String_public_GetBuffer(%struct.class_String* %0) #0 {
+define dso_local i8* @String_public_GetBuffer(%struct.class_String* noundef %0) #0 {
   %2 = alloca %struct.class_String*, align 8
   store %struct.class_String* %0, %struct.class_String** %2, align 8
   %3 = load %struct.class_String*, %struct.class_String** %2, align 8
@@ -602,7 +614,7 @@ define dso_local i8* @String_public_GetBuffer(%struct.class_String* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @String_public_GetLength(%struct.class_String* %0) #0 {
+define dso_local i32 @String_public_GetLength(%struct.class_String* noundef %0) #0 {
   %2 = alloca %struct.class_String*, align 8
   store %struct.class_String* %0, %struct.class_String** %2, align 8
   %3 = load %struct.class_String*, %struct.class_String** %2, align 8
@@ -612,7 +624,7 @@ define dso_local i32 @String_public_GetLength(%struct.class_String* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local %struct.class_String* @String_public_Substring(%struct.class_String* %0, i32 %1, i32 %2) #0 {
+define dso_local %struct.class_String* @String_public_Substring(%struct.class_String* noundef %0, i32 noundef %1, i32 noundef %2) #0 {
   %4 = alloca %struct.class_String*, align 8
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
@@ -626,7 +638,7 @@ define dso_local %struct.class_String* @String_public_Substring(%struct.class_St
   br i1 %10, label %11, label %12
 
 11:                                               ; preds = %3
-  call void @exc_Throw(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @.str.2.6, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([42 x i8], [42 x i8]* @.str.2.6, i64 0, i64 0))
   br label %45
 
 12:                                               ; preds = %3
@@ -635,7 +647,7 @@ define dso_local %struct.class_String* @String_public_Substring(%struct.class_St
   br i1 %14, label %15, label %16
 
 15:                                               ; preds = %12
-  call void @exc_Throw(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @.str.3.7, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([37 x i8], [37 x i8]* @.str.3.7, i64 0, i64 0))
   br label %44
 
 16:                                               ; preds = %12
@@ -649,14 +661,14 @@ define dso_local %struct.class_String* @String_public_Substring(%struct.class_St
   br i1 %23, label %24, label %25
 
 24:                                               ; preds = %16
-  call void @exc_Throw(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @.str.4.8, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([24 x i8], [24 x i8]* @.str.4.8, i64 0, i64 0))
   br label %43
 
 25:                                               ; preds = %16
   %26 = load i32, i32* %6, align 4
   %27 = add nsw i32 %26, 1
   %28 = sext i32 %27 to i64
-  %29 = call noalias align 16 i8* @malloc(i64 %28) #8
+  %29 = call noalias i8* @malloc(i64 noundef %28) #8
   store i8* %29, i8** %7, align 8
   %30 = load i8*, i8** %7, align 8
   %31 = load %struct.class_String*, %struct.class_String** %4, align 8
@@ -682,25 +694,25 @@ define dso_local %struct.class_String* @String_public_Substring(%struct.class_St
   br label %45
 
 45:                                               ; preds = %44, %11
-  %46 = call noalias align 16 i8* @malloc(i64 40) #8
+  %46 = call noalias i8* @malloc(i64 noundef 40) #8
   %47 = bitcast i8* %46 to %struct.class_String*
   store %struct.class_String* %47, %struct.class_String** %8, align 8
   %48 = load %struct.class_String*, %struct.class_String** %8, align 8
-  call void @String_public_Constructor(%struct.class_String* %48)
+  call void @String_public_Constructor(%struct.class_String* noundef %48)
   %49 = load %struct.class_String*, %struct.class_String** %8, align 8
   %50 = load i8*, i8** %7, align 8
-  call void @String_public_Load(%struct.class_String* %49, i8* %50)
+  call void @String_public_Load(%struct.class_String* noundef %49, i8* noundef %50)
   %51 = load %struct.class_String*, %struct.class_String** %8, align 8
   %52 = bitcast %struct.class_String* %51 to %struct.class_Any*
-  call void @arc_RegisterReference(%struct.class_Any* %52)
+  call void @arc_RegisterReference(%struct.class_Any* noundef %52)
   %53 = load i8*, i8** %7, align 8
-  call void @free(i8* %53) #8
+  call void @free(i8* noundef %53) #8
   %54 = load %struct.class_String*, %struct.class_String** %8, align 8
   ret %struct.class_String* %54
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Int_public_Constructor(%struct.class_Int* %0, i32 %1) #0 {
+define dso_local void @Int_public_Constructor(%struct.class_Int* noundef %0, i32 noundef %1) #0 {
   %3 = alloca %struct.class_Int*, align 8
   %4 = alloca i32, align 4
   store %struct.class_Int* %0, %struct.class_Int** %3, align 8
@@ -719,7 +731,7 @@ define dso_local void @Int_public_Constructor(%struct.class_Int* %0, i32 %1) #0 
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @Int_public_GetValue(%struct.class_Int* %0) #0 {
+define dso_local i32 @Int_public_GetValue(%struct.class_Int* noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca %struct.class_Int*, align 8
   store %struct.class_Int* %0, %struct.class_Int** %3, align 8
@@ -744,7 +756,7 @@ define dso_local i32 @Int_public_GetValue(%struct.class_Int* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Float_public_Constructor(%struct.class_Float* %0, float %1) #0 {
+define dso_local void @Float_public_Constructor(%struct.class_Float* noundef %0, float noundef %1) #0 {
   %3 = alloca %struct.class_Float*, align 8
   %4 = alloca float, align 4
   store %struct.class_Float* %0, %struct.class_Float** %3, align 8
@@ -763,7 +775,7 @@ define dso_local void @Float_public_Constructor(%struct.class_Float* %0, float %
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local float @Float_public_GetValue(%struct.class_Float* %0) #0 {
+define dso_local float @Float_public_GetValue(%struct.class_Float* noundef %0) #0 {
   %2 = alloca float, align 4
   %3 = alloca %struct.class_Float*, align 8
   store %struct.class_Float* %0, %struct.class_Float** %3, align 8
@@ -788,7 +800,7 @@ define dso_local float @Float_public_GetValue(%struct.class_Float* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Bool_public_Constructor(%struct.class_Bool* %0, i1 zeroext %1) #0 {
+define dso_local void @Bool_public_Constructor(%struct.class_Bool* noundef %0, i1 noundef zeroext %1) #0 {
   %3 = alloca %struct.class_Bool*, align 8
   %4 = alloca i8, align 1
   store %struct.class_Bool* %0, %struct.class_Bool** %3, align 8
@@ -810,7 +822,7 @@ define dso_local void @Bool_public_Constructor(%struct.class_Bool* %0, i1 zeroex
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local zeroext i1 @Bool_public_GetValue(%struct.class_Bool* %0) #0 {
+define dso_local zeroext i1 @Bool_public_GetValue(%struct.class_Bool* noundef %0) #0 {
   %2 = alloca i1, align 1
   %3 = alloca %struct.class_Bool*, align 8
   store %struct.class_Bool* %0, %struct.class_Bool** %3, align 8
@@ -836,7 +848,7 @@ define dso_local zeroext i1 @Bool_public_GetValue(%struct.class_Bool* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Array_public_Constructor(%struct.class_Array* %0, i32 %1) #0 {
+define dso_local void @Array_public_Constructor(%struct.class_Array* noundef %0, i32 noundef %1) #0 {
   %3 = alloca %struct.class_Array*, align 8
   %4 = alloca i32, align 4
   store %struct.class_Array* %0, %struct.class_Array** %3, align 8
@@ -860,7 +872,7 @@ define dso_local void @Array_public_Constructor(%struct.class_Array* %0, i32 %1)
   store i32 5, i32* %16, align 8
   %17 = load i32, i32* %4, align 4
   %18 = sext i32 %17 to i64
-  %19 = call noalias align 16 i8* @calloc(i64 %18, i64 8) #8
+  %19 = call noalias i8* @calloc(i64 noundef %18, i64 noundef 8) #8
   %20 = bitcast i8* %19 to %struct.class_Any**
   %21 = load %struct.class_Array*, %struct.class_Array** %3, align 8
   %22 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %21, i32 0, i32 2
@@ -869,10 +881,10 @@ define dso_local void @Array_public_Constructor(%struct.class_Array* %0, i32 %1)
 }
 
 ; Function Attrs: nounwind
-declare noalias align 16 i8* @calloc(i64, i64) #1
+declare noalias i8* @calloc(i64 noundef, i64 noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local %struct.class_Any* @Array_public_GetElement(%struct.class_Array* %0, i32 %1) #0 {
+define dso_local %struct.class_Any* @Array_public_GetElement(%struct.class_Array* noundef %0, i32 noundef %1) #0 {
   %3 = alloca %struct.class_Array*, align 8
   %4 = alloca i32, align 4
   store %struct.class_Array* %0, %struct.class_Array** %3, align 8
@@ -890,7 +902,7 @@ define dso_local %struct.class_Any* @Array_public_GetElement(%struct.class_Array
   br i1 %12, label %13, label %14
 
 13:                                               ; preds = %7, %2
-  call void @exc_Throw(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @.str.9, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.9, i64 0, i64 0))
   br label %14
 
 14:                                               ; preds = %13, %7
@@ -905,7 +917,7 @@ define dso_local %struct.class_Any* @Array_public_GetElement(%struct.class_Array
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Array_public_SetElement(%struct.class_Array* %0, i32 %1, %struct.class_Any* %2) #0 {
+define dso_local void @Array_public_SetElement(%struct.class_Array* noundef %0, i32 noundef %1, %struct.class_Any* noundef %2) #0 {
   %4 = alloca %struct.class_Array*, align 8
   %5 = alloca i32, align 4
   %6 = alloca %struct.class_Any*, align 8
@@ -925,12 +937,12 @@ define dso_local void @Array_public_SetElement(%struct.class_Array* %0, i32 %1, 
   br i1 %14, label %15, label %16
 
 15:                                               ; preds = %9, %3
-  call void @exc_Throw(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @.str.9, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.9, i64 0, i64 0))
   br label %16
 
 16:                                               ; preds = %15, %9
   %17 = load %struct.class_Any*, %struct.class_Any** %6, align 8
-  call void @arc_RegisterReference(%struct.class_Any* %17)
+  call void @arc_RegisterReference(%struct.class_Any* noundef %17)
   %18 = load %struct.class_Array*, %struct.class_Array** %4, align 8
   %19 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %18, i32 0, i32 2
   %20 = load %struct.class_Any**, %struct.class_Any*** %19, align 8
@@ -938,7 +950,7 @@ define dso_local void @Array_public_SetElement(%struct.class_Array* %0, i32 %1, 
   %22 = sext i32 %21 to i64
   %23 = getelementptr inbounds %struct.class_Any*, %struct.class_Any** %20, i64 %22
   %24 = load %struct.class_Any*, %struct.class_Any** %23, align 8
-  call void @arc_UnregisterReference(%struct.class_Any* %24)
+  call void @arc_UnregisterReference(%struct.class_Any* noundef %24)
   %25 = load %struct.class_Any*, %struct.class_Any** %6, align 8
   %26 = load %struct.class_Array*, %struct.class_Array** %4, align 8
   %27 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %26, i32 0, i32 2
@@ -951,7 +963,7 @@ define dso_local void @Array_public_SetElement(%struct.class_Array* %0, i32 %1, 
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @Array_public_GetLength(%struct.class_Array* %0) #0 {
+define dso_local i32 @Array_public_GetLength(%struct.class_Array* noundef %0) #0 {
   %2 = alloca %struct.class_Array*, align 8
   store %struct.class_Array* %0, %struct.class_Array** %2, align 8
   %3 = load %struct.class_Array*, %struct.class_Array** %2, align 8
@@ -961,7 +973,7 @@ define dso_local i32 @Array_public_GetLength(%struct.class_Array* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Array_public_Push(%struct.class_Array* %0, %struct.class_Any* %1) #0 {
+define dso_local void @Array_public_Push(%struct.class_Array* noundef %0, %struct.class_Any* noundef %1) #0 {
   %3 = alloca %struct.class_Array*, align 8
   %4 = alloca %struct.class_Any*, align 8
   %5 = alloca i32, align 4
@@ -994,7 +1006,7 @@ define dso_local void @Array_public_Push(%struct.class_Array* %0, %struct.class_
   %27 = load i32, i32* %5, align 4
   %28 = sext i32 %27 to i64
   %29 = mul i64 8, %28
-  %30 = call align 16 i8* @realloc(i8* %26, i64 %29) #8
+  %30 = call i8* @realloc(i8* noundef %26, i64 noundef %29) #8
   %31 = bitcast i8* %30 to %struct.class_Any**
   store %struct.class_Any** %31, %struct.class_Any*** %6, align 8
   %32 = load %struct.class_Any**, %struct.class_Any*** %6, align 8
@@ -1005,7 +1017,7 @@ define dso_local void @Array_public_Push(%struct.class_Array* %0, %struct.class_
   %35 = load i32, i32* %5, align 4
   %36 = sext i32 %35 to i64
   %37 = mul i64 8, %36
-  %38 = call noalias align 16 i8* @malloc(i64 %37) #8
+  %38 = call noalias i8* @malloc(i64 noundef %37) #8
   %39 = bitcast i8* %38 to %struct.class_Any**
   store %struct.class_Any** %39, %struct.class_Any*** %6, align 8
   %40 = load %struct.class_Any**, %struct.class_Any*** %6, align 8
@@ -1024,7 +1036,7 @@ define dso_local void @Array_public_Push(%struct.class_Array* %0, %struct.class_
   %52 = getelementptr inbounds %struct.class_Array, %struct.class_Array* %51, i32 0, i32 2
   %53 = load %struct.class_Any**, %struct.class_Any*** %52, align 8
   %54 = bitcast %struct.class_Any** %53 to i8*
-  call void @free(i8* %54) #8
+  call void @free(i8* noundef %54) #8
   br label %55
 
 55:                                               ; preds = %34, %15
@@ -1083,15 +1095,15 @@ define dso_local void @Array_public_Push(%struct.class_Array* %0, %struct.class_
   %92 = load i32, i32* %91, align 8
   %93 = sub nsw i32 %92, 1
   %94 = load %struct.class_Any*, %struct.class_Any** %4, align 8
-  call void @Array_public_SetElement(%struct.class_Array* %89, i32 %93, %struct.class_Any* %94)
+  call void @Array_public_SetElement(%struct.class_Array* noundef %89, i32 noundef %93, %struct.class_Any* noundef %94)
   ret void
 }
 
 ; Function Attrs: nounwind
-declare align 16 i8* @realloc(i8*, i64) #1
+declare i8* @realloc(i8* noundef, i64 noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @pArray_public_Constructor(%struct.class_pArray* %0, i32 %1, i32 %2) #0 {
+define dso_local void @pArray_public_Constructor(%struct.class_pArray* noundef %0, i32 noundef %1, i32 noundef %2) #0 {
   %4 = alloca %struct.class_pArray*, align 8
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
@@ -1123,7 +1135,7 @@ define dso_local void @pArray_public_Constructor(%struct.class_pArray* %0, i32 %
   %23 = sext i32 %22 to i64
   %24 = load i32, i32* %6, align 4
   %25 = sext i32 %24 to i64
-  %26 = call noalias align 16 i8* @calloc(i64 %23, i64 %25) #8
+  %26 = call noalias i8* @calloc(i64 noundef %23, i64 noundef %25) #8
   %27 = load %struct.class_pArray*, %struct.class_pArray** %4, align 8
   %28 = getelementptr inbounds %struct.class_pArray, %struct.class_pArray* %27, i32 0, i32 2
   store i8* %26, i8** %28, align 8
@@ -1131,7 +1143,7 @@ define dso_local void @pArray_public_Constructor(%struct.class_pArray* %0, i32 %
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @pArray_public_GetLength(%struct.class_pArray* %0) #0 {
+define dso_local i32 @pArray_public_GetLength(%struct.class_pArray* noundef %0) #0 {
   %2 = alloca %struct.class_pArray*, align 8
   store %struct.class_pArray* %0, %struct.class_pArray** %2, align 8
   %3 = load %struct.class_pArray*, %struct.class_pArray** %2, align 8
@@ -1141,7 +1153,7 @@ define dso_local i32 @pArray_public_GetLength(%struct.class_pArray* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i8* @pArray_public_Grow(%struct.class_pArray* %0) #0 {
+define dso_local i8* @pArray_public_Grow(%struct.class_pArray* noundef %0) #0 {
   %2 = alloca %struct.class_pArray*, align 8
   %3 = alloca i32, align 4
   %4 = alloca i8*, align 8
@@ -1173,7 +1185,7 @@ define dso_local i8* @pArray_public_Grow(%struct.class_pArray* %0) #0 {
   %26 = load i8*, i8** %25, align 8
   %27 = load i32, i32* %3, align 4
   %28 = sext i32 %27 to i64
-  %29 = call align 16 i8* @realloc(i8* %26, i64 %28) #8
+  %29 = call i8* @realloc(i8* noundef %26, i64 noundef %28) #8
   store i8* %29, i8** %4, align 8
   %30 = load i8*, i8** %4, align 8
   %31 = icmp eq i8* %30, null
@@ -1182,7 +1194,7 @@ define dso_local i8* @pArray_public_Grow(%struct.class_pArray* %0) #0 {
 32:                                               ; preds = %12
   %33 = load i32, i32* %3, align 4
   %34 = sext i32 %33 to i64
-  %35 = call noalias align 16 i8* @malloc(i64 %34) #8
+  %35 = call noalias i8* @malloc(i64 noundef %34) #8
   store i8* %35, i8** %4, align 8
   %36 = load i8*, i8** %4, align 8
   %37 = load %struct.class_pArray*, %struct.class_pArray** %2, align 8
@@ -1200,7 +1212,7 @@ define dso_local i8* @pArray_public_Grow(%struct.class_pArray* %0) #0 {
   %48 = load %struct.class_pArray*, %struct.class_pArray** %2, align 8
   %49 = getelementptr inbounds %struct.class_pArray, %struct.class_pArray* %48, i32 0, i32 2
   %50 = load i8*, i8** %49, align 8
-  call void @free(i8* %50) #8
+  call void @free(i8* noundef %50) #8
   br label %51
 
 51:                                               ; preds = %32, %12
@@ -1243,7 +1255,7 @@ define dso_local i8* @pArray_public_Grow(%struct.class_pArray* %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* %0, i32 %1) #0 {
+define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* noundef %0, i32 noundef %1) #0 {
   %3 = alloca %struct.class_pArray*, align 8
   %4 = alloca i32, align 4
   store %struct.class_pArray* %0, %struct.class_pArray** %3, align 8
@@ -1261,7 +1273,7 @@ define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* %0, i32 
   br i1 %12, label %13, label %14
 
 13:                                               ; preds = %7, %2
-  call void @exc_Throw(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @.str.9, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.9, i64 0, i64 0))
   br label %14
 
 14:                                               ; preds = %13, %7
@@ -1279,7 +1291,7 @@ define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* %0, i32 
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Thread_public_Constructor(%struct.class_Thread* %0, i8* (i8*)* %1, i8* %2) #0 {
+define dso_local void @Thread_public_Constructor(%struct.class_Thread* noundef %0, i8* (i8*)* noundef %1, i8* noundef %2) #0 {
   %4 = alloca %struct.class_Thread*, align 8
   %5 = alloca i8* (i8*)*, align 8
   %6 = alloca i8*, align 8
@@ -1304,7 +1316,7 @@ define dso_local void @Thread_public_Constructor(%struct.class_Thread* %0, i8* (
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Thread_public_Start(%struct.class_Thread* %0) #0 {
+define dso_local void @Thread_public_Start(%struct.class_Thread* noundef %0) #0 {
   %2 = alloca %struct.class_Thread*, align 8
   store %struct.class_Thread* %0, %struct.class_Thread** %2, align 8
   %3 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
@@ -1315,39 +1327,39 @@ define dso_local void @Thread_public_Start(%struct.class_Thread* %0) #0 {
   %8 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
   %9 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %8, i32 0, i32 3
   %10 = load i8*, i8** %9, align 8
-  %11 = call i32 @pthread_create(i64* %4, %union.pthread_attr_t* null, i8* (i8*)* %7, i8* %10) #8
+  %11 = call i32 @pthread_create(i64* noundef %4, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef %7, i8* noundef %10) #8
   ret void
 }
 
 ; Function Attrs: nounwind
-declare i32 @pthread_create(i64*, %union.pthread_attr_t*, i8* (i8*)*, i8*) #1
+declare i32 @pthread_create(i64* noundef, %union.pthread_attr_t* noundef, i8* (i8*)* noundef, i8* noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Thread_public_Join(%struct.class_Thread* %0) #0 {
+define dso_local void @Thread_public_Join(%struct.class_Thread* noundef %0) #0 {
   %2 = alloca %struct.class_Thread*, align 8
   store %struct.class_Thread* %0, %struct.class_Thread** %2, align 8
   %3 = load %struct.class_Thread*, %struct.class_Thread** %2, align 8
   %4 = getelementptr inbounds %struct.class_Thread, %struct.class_Thread* %3, i32 0, i32 4
   %5 = load i64, i64* %4, align 8
-  %6 = call i32 @pthread_join(i64 %5, i8** null)
+  %6 = call i32 @pthread_join(i64 noundef %5, i8** noundef null)
   ret void
 }
 
-declare i32 @pthread_join(i64, i8**) #2
+declare i32 @pthread_join(i64 noundef, i8** noundef) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Thread_public_Kill(%struct.class_Thread* %0) #0 {
+define dso_local void @Thread_public_Kill(%struct.class_Thread* noundef %0) #0 {
   %2 = alloca %struct.class_Thread*, align 8
   store %struct.class_Thread* %0, %struct.class_Thread** %2, align 8
-  call void @pthread_exit(i8* null) #10
+  call void @pthread_exit(i8* noundef null) #10
   unreachable
 }
 
 ; Function Attrs: noreturn
-declare void @pthread_exit(i8*) #5
+declare void @pthread_exit(i8* noundef) #5
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @exc_Throw(i8* %0) #0 {
+define dso_local void @exc_Throw(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   %3 = alloca [128 x i8*], align 16
   %4 = alloca i32, align 4
@@ -1357,14 +1369,14 @@ define dso_local void @exc_Throw(i8* %0) #0 {
   %8 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
   %9 = load i8*, i8** %2, align 8
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([45 x i8], [45 x i8]* @.str.12, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1.13, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.2.14, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1.13, i64 0, i64 0), i8* %9)
-  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @.str.3.15, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.4.16, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.5.17, i64 0, i64 0))
+  %10 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([45 x i8], [45 x i8]* @.str.12, i64 0, i64 0), i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1.13, i64 0, i64 0), i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.2.14, i64 0, i64 0), i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.1.13, i64 0, i64 0), i8* noundef %9)
+  %11 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([19 x i8], [19 x i8]* @.str.3.15, i64 0, i64 0), i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.4.16, i64 0, i64 0), i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.5.17, i64 0, i64 0))
   %12 = getelementptr inbounds [128 x i8*], [128 x i8*]* %3, i64 0, i64 0
-  %13 = call i32 @backtrace(i8** %12, i32 128)
+  %13 = call i32 @backtrace(i8** noundef %12, i32 noundef 128)
   store i32 %13, i32* %4, align 4
   %14 = getelementptr inbounds [128 x i8*], [128 x i8*]* %3, i64 0, i64 0
   %15 = load i32, i32* %4, align 4
-  %16 = call i8** @backtrace_symbols(i8** %14, i32 %15) #8
+  %16 = call i8** @backtrace_symbols(i8** noundef %14, i32 noundef %15) #8
   store i8** %16, i8*** %5, align 8
   store i32 1, i32* %6, align 4
   br label %17
@@ -1381,14 +1393,14 @@ define dso_local void @exc_Throw(i8* %0) #0 {
   %24 = sext i32 %23 to i64
   %25 = getelementptr inbounds i8*, i8** %22, i64 %24
   %26 = load i8*, i8** %25, align 8
-  %27 = call i8* @strstr(i8* %26, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.6.18, i64 0, i64 0)) #9
+  %27 = call i8* @strstr(i8* noundef %26, i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.6.18, i64 0, i64 0)) #9
   store i8* %27, i8** %7, align 8
   %28 = load i8**, i8*** %5, align 8
   %29 = load i32, i32* %6, align 4
   %30 = sext i32 %29 to i64
   %31 = getelementptr inbounds i8*, i8** %28, i64 %30
   %32 = load i8*, i8** %31, align 8
-  %33 = call i8* @strstr(i8* %32, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.7.19, i64 0, i64 0)) #9
+  %33 = call i8* @strstr(i8* noundef %32, i8* noundef getelementptr inbounds ([5 x i8], [5 x i8]* @.str.7.19, i64 0, i64 0)) #9
   store i8* %33, i8** %8, align 8
   %34 = load i8*, i8** %7, align 8
   %35 = icmp ne i8* %34, null
@@ -1411,7 +1423,7 @@ define dso_local void @exc_Throw(i8* %0) #0 {
   %44 = sext i32 %43 to i64
   %45 = getelementptr inbounds i8*, i8** %42, i64 %44
   %46 = load i8*, i8** %45, align 8
-  %47 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.8.20, i64 0, i64 0), i8* %46)
+  %47 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.8.20, i64 0, i64 0), i8* noundef %46)
   br label %48
 
 48:                                               ; preds = %41
@@ -1423,41 +1435,63 @@ define dso_local void @exc_Throw(i8* %0) #0 {
 51:                                               ; preds = %40, %36, %17
   %52 = load i8**, i8*** %5, align 8
   %53 = bitcast i8** %52 to i8*
-  call void @free(i8* %53) #8
-  call void @exit(i32 -1) #11
+  call void @free(i8* noundef %53) #8
+  call void @exit(i32 noundef -1) #11
   unreachable
 }
 
-declare i32 @backtrace(i8**, i32) #2
+declare i32 @backtrace(i8** noundef, i32 noundef) #2
 
 ; Function Attrs: nounwind
-declare i8** @backtrace_symbols(i8**, i32) #1
+declare i8** @backtrace_symbols(i8** noundef, i32 noundef) #1
 
 ; Function Attrs: nounwind readonly willreturn
-declare i8* @strstr(i8*, i8*) #3
+declare i8* @strstr(i8* noundef, i8* noundef) #3
 
 ; Function Attrs: noreturn nounwind
-declare void @exit(i32) #6
+declare void @exit(i32 noundef) #6
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Print(%struct.class_String* %0) #0 {
-  %2 = alloca %struct.class_String*, align 8
-  store %struct.class_String* %0, %struct.class_String** %2, align 8
-  %3 = load %struct.class_String*, %struct.class_String** %2, align 8
-  %4 = getelementptr inbounds %struct.class_String, %struct.class_String* %3, i32 0, i32 2
-  %5 = load i8*, i8** %4, align 8
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.21, i64 0, i64 0), i8* %5)
+define dso_local void @exc_ThrowIfNull(i8* noundef %0) #0 {
+  %2 = alloca i8*, align 8
+  store i8* %0, i8** %2, align 8
+  %3 = load i8*, i8** %2, align 8
+  %4 = icmp eq i8* %3, null
+  br i1 %4, label %5, label %6
+
+5:                                                ; preds = %1
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([54 x i8], [54 x i8]* @.str.9.21, i64 0, i64 0))
+  br label %6
+
+6:                                                ; preds = %5, %1
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Write(%struct.class_String* %0) #0 {
+define dso_local void @rct_Print(%struct.class_String* noundef %0) #0 {
   %2 = alloca %struct.class_String*, align 8
   store %struct.class_String* %0, %struct.class_String** %2, align 8
   %3 = load %struct.class_String*, %struct.class_String** %2, align 8
-  %4 = getelementptr inbounds %struct.class_String, %struct.class_String* %3, i32 0, i32 2
-  %5 = load i8*, i8** %4, align 8
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.1.22, i64 0, i64 0), i8* %5)
+  %4 = bitcast %struct.class_String* %3 to i8*
+  call void @exc_ThrowIfNull(i8* noundef %4)
+  %5 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %6 = getelementptr inbounds %struct.class_String, %struct.class_String* %5, i32 0, i32 2
+  %7 = load i8*, i8** %6, align 8
+  %8 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.22, i64 0, i64 0), i8* noundef %7)
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @rct_Write(%struct.class_String* noundef %0) #0 {
+  %2 = alloca %struct.class_String*, align 8
+  store %struct.class_String* %0, %struct.class_String** %2, align 8
+  %3 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %4 = bitcast %struct.class_String* %3 to i8*
+  call void @exc_ThrowIfNull(i8* noundef %4)
+  %5 = load %struct.class_String*, %struct.class_String** %2, align 8
+  %6 = getelementptr inbounds %struct.class_String, %struct.class_String* %5, i32 0, i32 2
+  %7 = load i8*, i8** %6, align 8
+  %8 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([3 x i8], [3 x i8]* @.str.1.23, i64 0, i64 0), i8* noundef %7)
   ret void
 }
 
@@ -1467,7 +1501,7 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %2 = alloca i8*, align 8
   %3 = alloca i32, align 4
   %4 = alloca %struct.class_String*, align 8
-  %5 = call noalias align 16 i8* @malloc(i64 1042) #8
+  %5 = call noalias i8* @malloc(i64 noundef 1042) #8
   store i8* %5, i8** %1, align 8
   store i32 0, i32* %3, align 4
   br label %6
@@ -1506,14 +1540,14 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   %28 = add nsw i32 %27, 1
   %29 = sext i32 %28 to i64
   %30 = mul i64 1, %29
-  %31 = call align 16 i8* @realloc(i8* %25, i64 %30) #8
+  %31 = call i8* @realloc(i8* noundef %25, i64 noundef %30) #8
   store i8* %31, i8** %2, align 8
   %32 = icmp eq i8* %31, null
   br i1 %32, label %33, label %35
 
 33:                                               ; preds = %24
   %34 = load i8*, i8** %1, align 8
-  call void @free(i8* %34) #8
+  call void @free(i8* noundef %34) #8
   br label %35
 
 35:                                               ; preds = %33, %24
@@ -1544,24 +1578,24 @@ define dso_local %struct.class_String* @rct_Input() #0 {
   br label %49
 
 49:                                               ; preds = %44, %41
-  %50 = call noalias align 16 i8* @malloc(i64 40) #8
+  %50 = call noalias i8* @malloc(i64 noundef 40) #8
   %51 = bitcast i8* %50 to %struct.class_String*
   store %struct.class_String* %51, %struct.class_String** %4, align 8
   %52 = load %struct.class_String*, %struct.class_String** %4, align 8
-  call void @String_public_Constructor(%struct.class_String* %52)
+  call void @String_public_Constructor(%struct.class_String* noundef %52)
   %53 = load %struct.class_String*, %struct.class_String** %4, align 8
   %54 = load i8*, i8** %1, align 8
-  call void @String_public_Load(%struct.class_String* %53, i8* %54)
+  call void @String_public_Load(%struct.class_String* noundef %53, i8* noundef %54)
   %55 = load %struct.class_String*, %struct.class_String** %4, align 8
   %56 = bitcast %struct.class_String* %55 to %struct.class_Any*
-  call void @arc_RegisterReference(%struct.class_Any* %56)
+  call void @arc_RegisterReference(%struct.class_Any* noundef %56)
   %57 = load i8*, i8** %1, align 8
   %58 = icmp ne i8* %57, null
   br i1 %58, label %59, label %61
 
 59:                                               ; preds = %49
   %60 = load i8*, i8** %1, align 8
-  call void @free(i8* %60) #8
+  call void @free(i8* noundef %60) #8
   br label %61
 
 61:                                               ; preds = %59, %49
@@ -1573,24 +1607,24 @@ declare i32 @getchar() #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @rct_Clear() #0 {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.2.23, i64 0, i64 0))
+  %1 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.2.24, i64 0, i64 0))
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_SetCursor(i32 %0, i32 %1) #0 {
+define dso_local void @rct_SetCursor(i32 noundef %0, i32 noundef %1) #0 {
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   store i32 %0, i32* %3, align 4
   store i32 %1, i32* %4, align 4
   %5 = load i32, i32* %4, align 4
   %6 = load i32, i32* %3, align 4
-  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @.str.3.24, i64 0, i64 0), i32 27, i32 %5, i32 %6)
+  %7 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([10 x i8], [10 x i8]* @.str.3.25, i64 0, i64 0), i32 noundef 27, i32 noundef %5, i32 noundef %6)
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_SetCursorVisible(i1 zeroext %0) #0 {
+define dso_local void @rct_SetCursorVisible(i1 noundef zeroext %0) #0 {
   %2 = alloca i8, align 1
   %3 = zext i1 %0 to i8
   store i8 %3, i8* %2, align 1
@@ -1603,11 +1637,11 @@ define dso_local void @rct_SetCursorVisible(i1 zeroext %0) #0 {
   br i1 %8, label %9, label %11
 
 9:                                                ; preds = %1
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.4.25, i64 0, i64 0))
+  %10 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.4.26, i64 0, i64 0))
   br label %13
 
 11:                                               ; preds = %1
-  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.4.25, i64 0, i64 0))
+  %12 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.4.26, i64 0, i64 0))
   br label %13
 
 13:                                               ; preds = %11, %9
@@ -1622,7 +1656,7 @@ define dso_local zeroext i1 @rct_GetCursorVisible() #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @rct_Random(i32 %0) #0 {
+define dso_local i32 @rct_Random(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = call i32 @rand() #8
@@ -1635,31 +1669,31 @@ define dso_local i32 @rct_Random(i32 %0) #0 {
 declare i32 @rand() #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Sleep(i32 %0) #0 {
+define dso_local void @rct_Sleep(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
   %4 = mul nsw i32 %3, 1000
-  %5 = call i32 @usleep(i32 %4)
+  %5 = call i32 @usleep(i32 noundef %4)
   ret void
 }
 
-declare i32 @usleep(i32) #2
+declare i32 @usleep(i32 noundef) #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @rct_Sqrt(i32 %0) #0 {
+define dso_local i32 @rct_Sqrt(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
   %4 = sitofp i32 %3 to double
-  %5 = call double @sqrt(double %4) #8
+  %5 = call double @sqrt(double noundef %4) #8
   %6 = call double @llvm.floor.f64(double %5)
   %7 = fptosi double %6 to i32
   ret i32 %7
 }
 
 ; Function Attrs: nounwind
-declare double @sqrt(double) #1
+declare double @sqrt(double noundef) #1
 
 ; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
 declare double @llvm.floor.f64(double) #7
@@ -1675,31 +1709,31 @@ define dso_local i32 @rct_Now() #0 {
 declare i64 @clock() #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local %struct.class_String* @rct_Char(i32 %0) #0 {
+define dso_local %struct.class_String* @rct_Char(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i8*, align 8
   %4 = alloca %struct.class_String*, align 8
   store i32 %0, i32* %2, align 4
-  %5 = call noalias align 16 i8* @malloc(i64 1) #8
+  %5 = call noalias i8* @malloc(i64 noundef 1) #8
   store i8* %5, i8** %3, align 8
   %6 = load i32, i32* %2, align 4
   %7 = trunc i32 %6 to i8
   %8 = load i8*, i8** %3, align 8
   %9 = getelementptr inbounds i8, i8* %8, i64 0
   store i8 %7, i8* %9, align 1
-  %10 = call noalias align 16 i8* @malloc(i64 40) #8
+  %10 = call noalias i8* @malloc(i64 noundef 40) #8
   %11 = bitcast i8* %10 to %struct.class_String*
   store %struct.class_String* %11, %struct.class_String** %4, align 8
   %12 = load %struct.class_String*, %struct.class_String** %4, align 8
-  call void @String_public_Constructor(%struct.class_String* %12)
+  call void @String_public_Constructor(%struct.class_String* noundef %12)
   %13 = load %struct.class_String*, %struct.class_String** %4, align 8
   %14 = load i8*, i8** %3, align 8
-  call void @String_public_Load(%struct.class_String* %13, i8* %14)
+  call void @String_public_Load(%struct.class_String* noundef %13, i8* noundef %14)
   %15 = load %struct.class_String*, %struct.class_String** %4, align 8
   %16 = bitcast %struct.class_String* %15 to %struct.class_Any*
-  call void @arc_RegisterReference(%struct.class_Any* %16)
+  call void @arc_RegisterReference(%struct.class_Any* noundef %16)
   %17 = load i8*, i8** %3, align 8
-  call void @free(i8* %17) #8
+  call void @free(i8* noundef %17) #8
   %18 = load %struct.class_String*, %struct.class_String** %4, align 8
   ret %struct.class_String* %18
 }
@@ -1720,7 +1754,7 @@ attributes #11 = { noreturn nounwind }
 !llvm.ident = !{!0, !0, !0, !0}
 !llvm.module.flags = !{!1, !2, !3, !4, !5}
 
-!0 = !{!"clang version 13.0.0"}
+!0 = !{!"clang version 14.0.6"}
 !1 = !{i32 1, !"wchar_size", i32 4}
 !2 = !{i32 7, !"PIC Level", i32 2}
 !3 = !{i32 7, !"PIE Level", i32 2}

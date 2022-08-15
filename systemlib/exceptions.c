@@ -66,3 +66,9 @@ void exc_Throw(char *message) {
 	// die();
 	exit(-1);
 }
+
+// shortcut for null errors
+void exc_ThrowIfNull(void* pointer) {
+	if (pointer == NULL)
+	 exc_Throw("Null-Pointer exception! The given reference was null.");
+}

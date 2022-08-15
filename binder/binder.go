@@ -20,6 +20,8 @@ type Binder struct {
 	LabelCounter   int
 	BreakLabels    []boundnodes.BoundLabel
 	ContinueLabels []boundnodes.BoundLabel
+
+	PreInitialTypeset []symbols.TypeSymbol
 }
 
 // helpers for the label stacks
@@ -146,7 +148,7 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 	}
 }
 
-func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember) {
+func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preInitialTypeset []symbols.TypeSymbol) {
 	rootScope := BindRootScope()
 	classScope := CreateScope(&rootScope)
 
@@ -174,10 +176,29 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember) {
 	}
 
 	binder := CreateBinder(classScope, symbols.FunctionSymbol{})
+	binder.PreInitialTypeset = preInitialTypeset
+
+	hasConstructor := false
 
 	// declare all our functions
 	for _, fnc := range functionDeclarations {
 		binder.BindFunctionDeclaration(fnc, true)
+
+		// if this function is a constructor, the class has one
+		if fnc.Identifier.Value == "Constructor" {
+			hasConstructor = true
+		}
+	}
+
+	// if the class doenst have a constructor -> create an empty one
+	if !hasConstructor {
+		binder.BindFunctionDeclaration(nodes.CreateFunctionDeclarationMember(
+			lexer.Token{Kind: lexer.IdToken, Value: "Constructor"},
+			make([]nodes.ParameterNode, 0),
+			nodes.TypeClauseNode{},
+			nodes.CreateBlockStatementNode(lexer.Token{}, make([]nodes.StatementNode, 0), lexer.Token{}),
+			true,
+		), true)
 	}
 
 	// check all our statements, only variable declarations are allowed in here
@@ -249,8 +270,10 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 		allowed := exprStmt.Expression.NodeType() == boundnodes.BoundErrorExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundTypeCallExpression ||
+			exprStmt.Expression.NodeType() == boundnodes.BoundClassCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression ||
-			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression
+			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression ||
+			exprStmt.Expression.NodeType() == boundnodes.BoundClassFieldAssignmentExpression
 
 		if !allowed {
 			//print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
@@ -262,7 +285,7 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 				column,
 				length,
 				"cannot use \"%s\" as statement, only call and assignment expressions can be used as statements!",
-				exprStmt.NodeType(),
+				exprStmt.Expression.NodeType(),
 			)
 			os.Exit(-1)
 		}
@@ -622,6 +645,10 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindUnaryExpression(expr.(nodes.UnaryExpressionNode))
 	case nodes.TypeCallExpression:
 		return bin.BindTypeCallExpression(expr.(nodes.TypeCallExpressionNode))
+	case nodes.ClassFieldAccessExpression:
+		return bin.BindClassFieldAccessExpression(expr.(nodes.ClassFieldAccessExpressionNode))
+	case nodes.ClassFieldAssignmentExpression:
+		return bin.BindClassFieldAssignmentExpression(expr.(nodes.ClassFieldAssignmentExpressionNode))
 	case nodes.BinaryExpression:
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
 	case nodes.TernaryExpression:
@@ -741,6 +768,21 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 }
 
 func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.BoundMakeExpressionNode {
+	// this is not allowed in a class' global scope
+	// because at the point in time its bound, constructors doesnt exist yet
+	if bin.PreInitialTypeset != nil {
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"Constructor calls are not allowed in the global scope of a class!",
+		)
+		os.Exit(-1)
+	}
+
 	// resolve the type symbol
 	baseType, _ := bin.LookupClass(expr.BaseType.Value, false)
 
@@ -763,7 +805,6 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 
 	// if there is, check if the arguments match up
 	if constructor != nil {
-		fmt.Println(constructor.Parameters)
 		// make sure we got the right number of arguments
 		if len(boundArguments) != len(constructor.Parameters) {
 			//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
@@ -931,6 +972,56 @@ func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, ba
 	}
 
 	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments)
+}
+
+func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExpressionNode) boundnodes.BoundClassFieldAccessExpressionNode {
+	baseExpression := bin.BindExpression(expr.Base)
+
+	// if the base type is a class, it cant have any fields
+	if !baseExpression.Type().IsUserDefined {
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"Can not use field access on non-class '%s'!",
+			baseExpression.Type().Name,
+		)
+		os.Exit(-1)
+	}
+
+	// try finding the field meant to be accessed
+	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type())
+
+	return boundnodes.CreateBoundClassFieldAccessExpressionNode(baseExpression, field)
+}
+
+func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssignmentExpressionNode) boundnodes.BoundClassFieldAssignmentExpressionNode {
+	baseExpression := bin.BindExpression(expr.Base)
+
+	// if the base type is a class, it cant have any fields
+	if !baseExpression.Type().IsUserDefined {
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"Can not use field access on non-class '%s'!",
+			baseExpression.Type().Name,
+		)
+		os.Exit(-1)
+	}
+
+	// try finding the field meant to be accessed
+	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type())
+	expression := bin.BindExpression(expr.Value)
+	convertedExpression := bin.BindConversion(expression, field.VarType(), false)
+
+	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(baseExpression, field, convertedExpression)
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
@@ -1284,6 +1375,49 @@ func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol)
 	return symbols.FunctionSymbol{}
 }
 
+func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) symbols.VariableSymbol {
+	// try locating the class
+	clsSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
+
+	// if that failed -> throw an error
+	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
+		print.Error(
+			"BINDER",
+			print.TypeFunctionDoesNotExistError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Could not find class \"%s\" in lookup, did something not load correctly?",
+			baseType.Name,
+		)
+		os.Exit(-1)
+	}
+
+	// get the symbol as a class symbol
+	cls := clsSym.(symbols.ClassSymbol)
+
+	// search through all the class' functions to find the one we're looking for
+	for _, fld := range cls.Fields {
+		if fld.SymbolName() == name {
+			return fld
+		}
+	}
+
+	print.Error(
+		"BINDER",
+		print.TypeFunctionDoesNotExistError,
+		0,
+		0, // needs extra data added and passed into the function
+		0, // Probably wrong, but it works - that's the tokorv guarantee
+		"Could not find function \"%s\" in class \"%s\", does the function exist?",
+		name,
+		baseType.Name,
+	)
+	os.Exit(-1)
+
+	return symbols.LocalVariableSymbol{}
+}
+
 // </IDEK> --------------------------------------------------------------------
 // <TYPES> --------------------------------------------------------------------
 
@@ -1368,6 +1502,19 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		cls, ok := bin.LookupClass(typeClause.TypeIdentifier.Value, true)
 		if ok {
 			return cls.Type, true
+		}
+
+		// check if this binder has been given a pre-initial typeset
+		if bin.PreInitialTypeset != nil {
+
+			// if so, use it as a source for type symbols
+			// this is done because at this point, no classes are officially registered yet
+			// to "kickstart" the type resolving process
+			for _, piType := range bin.PreInitialTypeset {
+				if piType.Name == typeClause.TypeIdentifier.Value {
+					return piType, true
+				}
+			}
 		}
 
 		// otherwise, die()

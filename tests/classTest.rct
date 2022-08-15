@@ -1,61 +1,14 @@
 // much class
 class SomeClass {
 
-	set int i;
-	set string s;
-	set any a;
+	// instance of another class
+	set OtherClass otherClass;
 
-	set OtherClass oc;
-
-	set function Constructor(index int) {
-		i <- index;
-		var coolString <- string(i) + "iteration";
-
-		s <- coolString;
-		a <- s;
-
-		//oc <- make OtherClass();
-	}
-
-	function SomePrivateFunc() int {
-		return 99;
-	}
-
-	set function SomePublicFunc() int {
-		return 100;
-	}
-
-	set function GetOtherClass() OtherClass {
-		return oc;
+	set function PrintNumber() {
+		Print(string(otherClass->incrediblyCoolNumber));
 	}
 }
 
 class OtherClass {
-	set function GetNumber() int {
-		return 500;
-	}
+	set incrediblyCoolNumber <- 100;
 }
-
-// much non-classy main function
-var count <- 0;
-var SomeClass sc;
-var OtherClass oc;
-
-//var someInstance <- make SomeClass(0);
-
-//while (true) {
-//	count++;
-//	Print("creating 100 objects for the " + string(count) + "th time");
-
-//	var objectArray <- make SomeClass array(0);
-
-//	from (i <- 0) to 100
-//	{
-//		objectArray->Push(make SomeClass(count));
-//	}
-//}
-
-//function cringe() {
-//	var i <- 0;
-//	var s <- string(i);
-//}

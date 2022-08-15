@@ -103,4 +103,12 @@ func (emt *Emitter) EmitClassAndArcReferences(module *ir.Module) {
 		emt.ArcFuncs[strings.Split(fnc.Name(), "_")[1]] = fnc
 		emt.ImportFunction(fnc)
 	}
+
+	// reference exc functions
+	excFuncs := FindFunctionsWithPrefix(module, "exc_")
+
+	for _, fnc := range excFuncs {
+		emt.ExcFuncs[strings.Split(fnc.Name(), "_")[1]] = fnc
+		emt.ImportFunction(fnc)
+	}
 }

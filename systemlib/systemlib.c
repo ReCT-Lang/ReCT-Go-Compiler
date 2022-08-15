@@ -12,6 +12,7 @@
 
 #include "objects.h"
 #include "arc.h"
+#include "exceptions.h"
 
 #define BUFFER 1042
 
@@ -19,11 +20,13 @@ bool isCursorVisible = true;
 
 void rct_Print(class_String *text)
 {
+	exc_ThrowIfNull(text);
     printf("%s\n", text->buffer);
 }
 
 void rct_Write(class_String *text)
 {
+	exc_ThrowIfNull(text);
     printf("%s", text->buffer);
 }
 

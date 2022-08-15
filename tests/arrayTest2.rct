@@ -1,0 +1,4 @@
+var arr <- make string array(1);
+arr[0] <- "some string";
+
+Print(arr[0]);

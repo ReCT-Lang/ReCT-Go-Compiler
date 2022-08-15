@@ -6,23 +6,23 @@ import (
 	"fmt"
 )
 
-type BoundClassCallExpressionNode struct {
+type BoundTypeCallExpressionNode struct {
 	BoundExpressionNode
 
 	Base      BoundExpressionNode
-	Function  symbols.FunctionSymbol
+	Function  symbols.TypeFunctionSymbol
 	Arguments []BoundExpressionNode
 }
 
 // implement node type from interface
-func (BoundClassCallExpressionNode) NodeType() BoundType { return BoundClassCallExpression }
+func (BoundTypeCallExpressionNode) NodeType() BoundType { return BoundTypeCallExpression }
 
 // implement the expression node interface
-func (node BoundClassCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
+func (node BoundTypeCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
 
 // node print function
-func (node BoundClassCallExpressionNode) Print(indent string) {
-	print.PrintC(print.Yellow, indent+"└ BoundClassCallExpressionNode")
+func (node BoundTypeCallExpressionNode) Print(indent string) {
+	print.PrintC(print.Yellow, indent+"└ BoundTypeCallExpressionNode")
 	fmt.Println(indent + "  └ Base: ")
 	node.Base.Print(indent + "    ")
 	fmt.Println(indent + "  └ Function: ")
@@ -33,15 +33,15 @@ func (node BoundClassCallExpressionNode) Print(indent string) {
 	}
 }
 
-func (BoundClassCallExpressionNode) IsPersistent() bool { return false }
+func (BoundTypeCallExpressionNode) IsPersistent() bool { return false }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateBoundClassCallExpressionNode(
+func CreateBoundTypeCallExpressionNode(
 	base BoundExpressionNode,
-	callId symbols.FunctionSymbol,
+	callId symbols.TypeFunctionSymbol,
 	args []BoundExpressionNode,
-) BoundClassCallExpressionNode {
-	return BoundClassCallExpressionNode{
+) BoundTypeCallExpressionNode {
+	return BoundTypeCallExpressionNode{
 		Base:      base,
 		Function:  callId,
 		Arguments: args,

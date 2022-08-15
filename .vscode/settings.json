@@ -27,6 +27,7 @@
 		"utility": "c",
 		"bitset": "c",
 		"sstream": "c",
-		"execinfo.h": "c"
+		"execinfo.h": "c",
+		"arc.h": "c"
 	}
 }

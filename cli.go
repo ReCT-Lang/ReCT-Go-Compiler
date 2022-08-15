@@ -101,7 +101,11 @@ func CompileFile(file string) {
 	//print.PrintC(print.Cyan, "-> Emitting!")
 	module := emitter.Emit(boundProgram, true)
 	//fmt.Println(module)
-	os.WriteFile("./out.ll", []byte(module.String()), 0644)
+	output := module.String()
+
+	print.PrintC(print.Green, "Compiled successfully!")
+
+	os.WriteFile("./out.ll", []byte(output), 0644)
 }
 
 // Prepare runs the lexer, parser, binder, and lowerer. This is used before evaluation or emitting.
@@ -117,7 +121,7 @@ func Prepare(file string) binder.BoundProgram {
 	//print.WriteC(print.Red, "-> Binding... ")
 	boundProgram := binder.BindProgram(members)
 	//print.PrintC(print.Green, "Done!")
-	boundProgram.Print()
+	//boundProgram.Print()
 	//boundProgram.PrintStatements()
 
 	return boundProgram

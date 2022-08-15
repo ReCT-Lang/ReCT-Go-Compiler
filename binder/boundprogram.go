@@ -52,13 +52,48 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 
 	for _, cls := range globalScope.Classes {
 		classScope := BindParentScope(globalScope)
-
 		classScope.InsertVariableSymbols(cls.Fields)
 		classScope.InsertFunctionSymbols(cls.Functions)
 
 		classFunctionBodies := make([]BoundFunction, 0)
 
+		constructorNeedsInjection := false
+		constructorInjection := make([]nodes.StatementNode, 0)
+
+		// assemble an injection for the constructor to initialize fields
+		for _, mem := range cls.Declaration.Members {
+			if mem.NodeType() != nodes.GlobalStatement {
+				continue
+			}
+
+			// all of these should be variable declarations
+			// anything else should have been filtered out by the binder
+			declaration := mem.(nodes.GlobalStatementMember).Statement.(nodes.VariableDeclarationStatementNode)
+			if declaration.Initializer != nil {
+				constructorNeedsInjection = true
+
+				// find the field associated with this declaration
+				for _, fld := range cls.Fields {
+
+					// when found, fabricate an assignment expression
+					if fld.SymbolName() == declaration.Identifier.Value {
+						constructorInjection = append(constructorInjection,
+							nodes.CreateExpressionStatementNode(
+								nodes.CreateAssignmentExpressionNode(declaration.Identifier, declaration.Initializer),
+							),
+						)
+					}
+				}
+
+			}
+		}
+
 		for _, fnc := range cls.Functions {
+			// if this class has fields with assignments -> put those in the constructor
+			if constructorNeedsInjection && fnc.Name == "Constructor" {
+				fnc.Declaration.Body.Statements = append(constructorInjection, fnc.Declaration.Body.Statements...)
+			}
+
 			binder := CreateBinder(classScope, fnc)
 			body := binder.BindBlockStatement(fnc.Declaration.Body)
 			loweredBody := lowerer.Lower(fnc, body)

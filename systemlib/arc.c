@@ -11,6 +11,7 @@
 // record a new reference being created
 void arc_RegisterReference(class_Any* obj)
 {
+	if (obj == NULL) return;
     obj->referenceCounter++;
 }
 

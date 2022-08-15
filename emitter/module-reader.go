@@ -75,7 +75,7 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 			}
 
 			// create a class object
-			emt.Classes[emt.Id(typeSymbol)] = Class{Type: typ, vTable: vTable, vConstant: vTableConstant, Constructor: nil, Functions: make(map[string]*ir.Func), Name: className}
+			emt.Classes[emt.Id(typeSymbol)] = &Class{Type: typ, vTable: vTable, vConstant: vTableConstant, Constructor: nil, Functions: make(map[string]*ir.Func), Name: className}
 			emt.ImportType(typ)
 		}
 	}
