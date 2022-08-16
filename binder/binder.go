@@ -126,7 +126,7 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 				line,
 				column,
 				length,
-				"reserved function 'Constructor' is not allowed to be public!",
+				"reserved function 'Constructor' is not allowed to be!",
 			)
 			os.Exit(-1)
 		}
@@ -139,7 +139,7 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 				line,
 				column,
 				length,
-				"reserved function 'Die' is not allowed to be public!",
+				"reserved function 'Die' is not allowed to be!",
 			)
 			os.Exit(-1)
 		}
