@@ -30,6 +30,15 @@ void arc_UnregisterReference(class_Any* obj)
     }
 }
 
+// destroy an object, ignoring ARC
+void arc_DestroyObject(class_Any* obj)
+{
+    if (obj == NULL) return;
+	
+	obj->vtable->dieFunction((void*)obj); // destroy the objects data
+	free(obj);                            // destroy the struct
+}
+
 // record a new reference being created
 void arc_RegisterReferenceVerbose(class_Any* obj, char* comment)
 {

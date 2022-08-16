@@ -339,6 +339,8 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteClassFieldAccessExpression(expr.(boundnodes.BoundClassFieldAccessExpressionNode))
 	case boundnodes.BoundClassFieldAssignmentExpression:
 		return RewriteClassFieldAssignmentExpression(expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
+	case boundnodes.BoundClassDestructionExpression:
+		return RewriteClassDestructionExpression(expr.(boundnodes.BoundClassDestructionExpressionNode))
 	case boundnodes.BoundArrayAccessExpression:
 		return RewriteArrayAccessExpression(expr.(boundnodes.BoundArrayAccessExpressionNode))
 	case boundnodes.BoundArrayAssignmentExpression:
@@ -439,6 +441,12 @@ func RewriteClassFieldAssignmentExpression(expr boundnodes.BoundClassFieldAssign
 	rewrittenValue := RewriteExpression(expr.Value)
 
 	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(rewrittenBase, expr.Field, rewrittenValue)
+}
+
+func RewriteClassDestructionExpression(expr boundnodes.BoundClassDestructionExpressionNode) boundnodes.BoundClassDestructionExpressionNode {
+	rewrittenBase := RewriteExpression(expr.Base)
+
+	return boundnodes.CreateBoundClassDestructionExpressionNode(rewrittenBase)
 }
 
 func RewriteArrayAccessExpression(expr boundnodes.BoundArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {

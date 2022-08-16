@@ -3,12 +3,28 @@ class SomeClass {
 
 	// instance of another class
 	set OtherClass otherClass;
+	set CoolString <- "very cool";
 
-	set function PrintNumber() {
-		Print(string(otherClass->incrediblyCoolNumber));
+	function Constructor() {
+		otherClass <- make OtherClass();
+	}
+
+	function Die() {
+		CoolString->Die();
+		otherClass->Die();
 	}
 }
 
 class OtherClass {
 	set incrediblyCoolNumber <- 100;
+
+	function Die() {
+		var a <- "something";
+		Print(a);
+		Print("death is upon us");
+	}
 }
+
+var someInstance <- make SomeClass();
+someInstance->Die();
+Print(someInstance->CoolString);

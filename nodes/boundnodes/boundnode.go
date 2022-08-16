@@ -60,6 +60,7 @@ const (
 	BoundClassCallExpression            BoundType = "BoundClassCallExpression"
 	BoundClassFieldAccessExpression     BoundType = "BoundClassFieldAccessExpression"
 	BoundClassFieldAssignmentExpression BoundType = "BoundClassFieldAssignmentExpression"
+	BoundClassDestructionExpression     BoundType = "BoundClassDestructionExpression"
 	BoundArrayAccessExpression          BoundType = "BoundArrayAccessExpression"
 	BoundArrayAssignmentExpression      BoundType = "BoundArrayAssignmentExpression"
 	BoundMakeExpression                 BoundType = "BoundMakeExpression"

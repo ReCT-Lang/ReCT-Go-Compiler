@@ -134,8 +134,8 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 
 			} else if fnc.Symbol.Name == "Die" {
 				// if its the destructor, clear all auto-generated code inside it
-				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks = make([]*ir.Block, 0)
-				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.NewBlock("")
+				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks = emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks[1:]
+				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks[0].LocalID = 0
 
 				// hand it the already prepared destructor function
 				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor, fnc.Body)
@@ -201,37 +201,7 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	// ---------------------------------------------------------------------
 	// create the destructor
 	// ---------------------------------------------------------------------
-
-	// create an IR function definition for the destructor
-	destructor := emt.Module.NewFunc(bcls.Symbol.Name+"_public_Die", types.Void, ir.NewParam("obj", types.I8Ptr))
-
-	// create a new root block
-	root := destructor.NewBlock("")
-
-	// bitcast the given void* into a class pointer
-	clsPtr := root.NewBitCast(destructor.Params[0], types.NewPointer(cls.Type))
-
-	// generate cleanup for all object members
-	root.Insts = append(root.Insts, NewComment("<DieARC>"))
-
-	for _, field := range bcls.Symbol.Fields {
-		if field.VarType().IsObject {
-			root.Insts = append(root.Insts, NewComment(fmt.Sprintf("-> destroying reference to '%s [Field %d]'", emt.Id(field), clsFieldMap[emt.Id(field)])))
-
-			// get the field's pointer
-			ptr := root.NewGetElementPtr(cls.Type, clsPtr, CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
-
-			// load the pointer
-			obj := root.NewLoad(emt.IRTypes(field.VarType()), ptr)
-
-			// decrement its ARC reference counter
-			emt.DestroyReference(&root, obj, "")
-		}
-	}
-
-	root.Insts = append(root.Insts, NewComment("</DieARC>"))
-
-	root.NewRet(nil)
+	destructor := emt.EmitClassDestructor(cls, bcls, clsFieldMap)
 
 	// create the vTable constant
 	vtc := constant.NewStruct(
@@ -242,6 +212,23 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	)
 	clsvConstant := emt.Module.NewGlobalDef(bcls.Symbol.Name+"_vTable_Const", vtc)
 
+	// ---------------------------------------------------------------------
+	// create the constructor
+	// ---------------------------------------------------------------------
+	constructor := emt.EmitClassConstructor(cls, bcls, clsvConstant, clsFieldMap)
+
+	// store all of this info in the class object
+	emt.Classes[emt.Id(bcls.Symbol.Type)].vTable = clsvTable
+	emt.Classes[emt.Id(bcls.Symbol.Type)].vConstant = clsvConstant
+
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Constructor = constructor
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Destructor = destructor
+
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Functions = make(map[string]*ir.Func)
+	emt.Classes[emt.Id(bcls.Symbol.Type)].Fields = clsFieldMap
+}
+
+func (emt *Emitter) EmitClassConstructor(cls *Class, bcls binder.BoundClass, clsvConstant value.Value, clsFieldMap map[string]int) *ir.Func {
 	// ---------------------------------------------------------------------
 	// create the constructor
 	// ---------------------------------------------------------------------
@@ -294,10 +281,8 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 		}
 	}
 
-	// don
-	croot.NewRet(nil)
-
-	// create locals array for constructor and destructor
+	// create locals array for constructor
+	// if the constructor has local variables they need to be present in there
 	if constructorFunction != nil {
 		// create locals array
 		locals := make(map[string]Local)
@@ -323,18 +308,96 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 		}
 
 		// store this for later
-		emt.FunctionLocals[bcls.Symbol.Name+"_public_"+emt.Id(constructorFunction.Symbol)] = locals
+		emt.FunctionLocals[bcls.Symbol.Name+"_private_"+emt.Id(constructorFunction.Symbol)] = locals
 	}
 
-	// store all of this info in the class object
-	emt.Classes[emt.Id(bcls.Symbol.Type)].vTable = clsvTable
-	emt.Classes[emt.Id(bcls.Symbol.Type)].vConstant = clsvConstant
+	// done, constructor constructed
+	croot.NewRet(nil)
 
-	emt.Classes[emt.Id(bcls.Symbol.Type)].Constructor = constructor
-	emt.Classes[emt.Id(bcls.Symbol.Type)].Destructor = destructor
+	return constructor
+}
 
-	emt.Classes[emt.Id(bcls.Symbol.Type)].Functions = make(map[string]*ir.Func)
-	emt.Classes[emt.Id(bcls.Symbol.Type)].Fields = clsFieldMap
+func (emt *Emitter) EmitClassDestructor(cls *Class, bcls binder.BoundClass, clsFieldMap map[string]int) *ir.Func {
+	// ---------------------------------------------------------------------
+	// create the destructor
+	// ---------------------------------------------------------------------
+
+	// create an IR function definition for the destructor
+	destructor := emt.Module.NewFunc(bcls.Symbol.Name+"_public_Die", types.Void, ir.NewParam("obj", types.I8Ptr))
+
+	// create a new root block
+	root := destructor.NewBlock("")
+
+	// bitcast the given void* into a class pointer
+	clsPtr := root.NewBitCast(destructor.Params[0], types.NewPointer(cls.Type))
+
+	// generate cleanup for all object members
+	root.Insts = append(root.Insts, NewComment("<DieARC>"))
+
+	for _, field := range bcls.Symbol.Fields {
+		if field.VarType().IsObject {
+			root.Insts = append(root.Insts, NewComment(fmt.Sprintf("-> destroying reference to '%s [Field %d]'", emt.Id(field), clsFieldMap[emt.Id(field)])))
+
+			// get the field's pointer
+			ptr := root.NewGetElementPtr(cls.Type, clsPtr, CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
+
+			// load the pointer
+			obj := root.NewLoad(emt.IRTypes(field.VarType()), ptr)
+
+			// decrement its ARC reference counter
+			emt.DestroyReference(&root, obj, "")
+		}
+	}
+
+	root.Insts = append(root.Insts, NewComment("</DieARC>"))
+
+	// look for an explicit destructor
+	var destructorFunction *binder.BoundFunction
+	for _, fnc := range bcls.Functions {
+		if fnc.Symbol.Name == "Die" {
+			destructorFunction = &fnc
+			break
+		}
+	}
+
+	// create a second block for any local variable defintions
+	// if there are none this empty block will be optimized away by llvm
+	decl := destructor.NewBlock("$decl")
+	root.NewBr(decl)
+
+	// create locals array for destructor
+	// if the destructor has local variables they need to be present in there
+	if destructorFunction != nil {
+		// create locals array
+		locals := make(map[string]Local)
+
+		// create all needed locals in the decl block so GC can trash them anywhere
+		for _, stmt := range destructorFunction.Body.Statements {
+			if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
+				declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
+
+				if declStatement.Variable.IsGlobal() {
+					continue
+				}
+
+				varName := emt.Id(declStatement.Variable)
+
+				// create local variable
+				local := decl.NewAlloca(emt.IRTypes(declStatement.Variable.VarType()))
+				local.SetName(varName)
+
+				// save it for referencing later
+				locals[varName] = Local{IRLocal: local, IRBlock: decl, Type: declStatement.Variable.VarType()}
+			}
+		}
+
+		// store this for later
+		emt.FunctionLocals[bcls.Symbol.Name+"_private_"+emt.Id(destructorFunction.Symbol)] = locals
+	}
+
+	decl.NewRet(nil)
+
+	return destructor
 }
 
 // </CLASSES>------------------------------------------------------------------
@@ -700,6 +763,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	case boundnodes.BoundClassFieldAssignmentExpression:
 		return emt.EmitClassFieldAssignmentExpression(blk, expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
 
+	case boundnodes.BoundClassDestructionExpression:
+		return emt.EmitClassDestructionExpression(blk, expr.(boundnodes.BoundClassDestructionExpressionNode))
+
 	case boundnodes.BoundConversionExpression:
 		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
 
@@ -752,7 +818,15 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 	if variable.IsGlobal() {
 		// if we're in a class we need to load from the struct instead of a global
 		if emt.IsInClass {
-			ptr := (*blk).NewGetElementPtr(emt.Class.Type, emt.Function.Params[0], CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
+			mePtr := value.Value(emt.Function.Params[0])
+
+			// if we're in a Destructor, the "mePtr" will be a generic void*
+			// that means it will need to be converted
+			if emt.FunctionSym.Name == "Die" && len(emt.Function.Params) == 1 {
+				mePtr = (*blk).NewBitCast(mePtr, types.NewPointer(emt.Class.Type))
+			}
+
+			ptr := (*blk).NewGetElementPtr(emt.Class.Type, mePtr, CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
 			return (*blk).NewLoad(emt.IRTypes(variable.VarType()), ptr)
 
 		} else {
@@ -1406,6 +1480,21 @@ func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.Boun
 	}
 
 	return (*blk).NewCall(emt.Classes[emt.Id(expr.Base.Type())].Functions[emt.Id(expr.Function)], args...)
+}
+
+func (emt *Emitter) EmitClassDestructionExpression(blk **ir.Block, expr boundnodes.BoundClassDestructionExpressionNode) value.Value {
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
+
+	// run a null check on the base
+	//(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
+
+	// destroy the object (mercilessly)
+	any := (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
+	(*blk).NewCall(emt.ArcFuncs["DestroyObject"], any)
+
+	return (*blk).NewPtrToInt((*blk).NewBitCast(base, types.I8Ptr), types.I32)
 }
 
 func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAccessExpressionNode) value.Value {

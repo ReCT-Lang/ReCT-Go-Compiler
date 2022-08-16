@@ -22,6 +22,7 @@ type Binder struct {
 	ContinueLabels []boundnodes.BoundLabel
 
 	PreInitialTypeset []symbols.TypeSymbol
+	InClass           bool
 }
 
 // helpers for the label stacks
@@ -115,8 +116,34 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 
 	functionSymbol := symbols.CreateFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem, mem.IsPublic)
 
-	// make sure reserved functions like Die() meet certain requirements
+	// make sure reserved functions like Constructor() and Die() meet certain requirements
 	if inClass {
+		if functionSymbol.Name == "Constructor" && functionSymbol.Public {
+			line, column, length := mem.Position()
+			print.Error(
+				"BINDER",
+				print.DuplicateFunctionError,
+				line,
+				column,
+				length,
+				"reserved function 'Constructor' is not allowed to be public!",
+			)
+			os.Exit(-1)
+		}
+
+		if functionSymbol.Name == "Die" && functionSymbol.Public {
+			line, column, length := mem.Position()
+			print.Error(
+				"BINDER",
+				print.DuplicateFunctionError,
+				line,
+				column,
+				length,
+				"reserved function 'Die' is not allowed to be public!",
+			)
+			os.Exit(-1)
+		}
+
 		if functionSymbol.Name == "Die" && len(boundParameters) > 0 {
 			line, column, length := mem.Position()
 			print.Error(
@@ -197,7 +224,7 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 			make([]nodes.ParameterNode, 0),
 			nodes.TypeClauseNode{},
 			nodes.CreateBlockStatementNode(lexer.Token{}, make([]nodes.StatementNode, 0), lexer.Token{}),
-			true,
+			false,
 		), true)
 	}
 
@@ -273,7 +300,8 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 			exprStmt.Expression.NodeType() == boundnodes.BoundClassCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression ||
-			exprStmt.Expression.NodeType() == boundnodes.BoundClassFieldAssignmentExpression
+			exprStmt.Expression.NodeType() == boundnodes.BoundClassFieldAssignmentExpression ||
+			exprStmt.Expression.NodeType() == boundnodes.BoundClassDestructionExpression
 
 		if !allowed {
 			//print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
@@ -883,6 +911,12 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundExpressionNode {
 	baseExpression := bin.BindExpression(expr.Base)
 
+	// if this is an object and the function is "Die()" and has 0 arguments -> this is a destructor call
+	if baseExpression.Type().IsObject &&
+		expr.CallIdentifier.Value == "Die" && len(expr.Arguments) == 0 {
+		return boundnodes.CreateBoundClassDestructionExpressionNode(baseExpression)
+	}
+
 	// if the base type is a class, redirect to BindClassCallExpression
 	if baseExpression.Type().IsUserDefined {
 		return bin.BindClassCallExpression(expr, baseExpression)
@@ -938,6 +972,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 }
 
 func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, baseExpression boundnodes.BoundExpressionNode) boundnodes.BoundExpressionNode {
+
 	// try finding the function meant to be called
 	function := bin.LookupClassFunction(expr.CallIdentifier.Value, baseExpression.Type()) // Should be a string anyway
 
@@ -1093,6 +1128,33 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 
 	for i := 0; i < len(boundArguments); i++ {
 		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false)
+	}
+
+	// if we are inside a class, dont allow calls to Constructor() and Die()
+	if bin.InClass && functionSymbol.Name == "Constructor" {
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			"placeholder",
+			line,
+			column,
+			length,
+			"Call to Constructor in own class is not allowed!",
+		)
+		os.Exit(-1)
+	}
+
+	if bin.InClass && functionSymbol.Name == "Die" {
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			"placeholder",
+			line,
+			column,
+			length,
+			"Class is not allowed to destruct itself!",
+		)
+		os.Exit(-1)
 	}
 
 	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments)
