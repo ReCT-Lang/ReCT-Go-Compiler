@@ -45,9 +45,6 @@ void Array_public_Constructor(class_Array*, int);
 void pArray_public_Constructor(class_pArray*, int, int);
 void Thread_public_Constructor(class_Thread*, void *(*)(void *), void *);
 
-// delcare string loading function
-void String_public_Load(class_String*, char*);
-
 // -----------------------------------------------------------------------------
 // base "any" object type
 // Note: all object types will inherit from this
@@ -88,6 +85,16 @@ struct class_String {
 	int factor;
 };
 
+// the objects methods
+void String_public_Load(class_String*, char*);
+void String_public_Resize(class_String*, int);
+void String_public_AddChar(class_String*, char);
+class_String* String_public_Concat(class_String*, class_String*);
+bool String_public_Equal(class_String*, class_String*);
+char *String_public_GetBuffer(class_String*);
+int String_public_GetLength(class_String*);
+class_String *String_public_Substring(class_String*, int, int);
+
 // -----------------------------------------------------------------------------
 // "int" object type
 // Note: this is an object version of an int, this is to box and crunch it
@@ -106,6 +113,9 @@ struct class_Int {
 	int referenceCounter;      // implementation of the reference counter
 	int value;
 };
+
+// the objects methods
+int Int_public_GetValue(class_Int*);
 
 // -----------------------------------------------------------------------------
 // "float" object type
@@ -126,6 +136,9 @@ struct class_Float {
 	float value;
 };
 
+// the objects methods
+float Float_public_GetValue(class_Float*);
+
 // -----------------------------------------------------------------------------
 // "bool" object type
 // Note: this is an object version of a bool, this is to box and crunch it
@@ -144,6 +157,9 @@ struct class_Bool {
 	int referenceCounter;   // implementation of the reference counter
 	bool value;
 };
+
+// the objects methods
+bool Bool_public_GetValue(class_Bool*);
 
 // -----------------------------------------------------------------------------
 // "array" object type
@@ -168,6 +184,12 @@ struct class_Array {
 	int factor;                  // growth factor 
 };
 
+// the objects methods
+class_Any* Array_public_GetElement(class_Array*, int);
+void Array_public_SetElement(class_Array*, int, class_Any*);
+int Array_public_GetLength(class_Array*);
+void Array_public_Push(class_Array*, class_Any*);
+
 // -----------------------------------------------------------------------------
 // "parray" object type
 // Note: this is a primitive version of "array"
@@ -188,8 +210,13 @@ struct class_pArray {
 	int length;                   // array length
 	int maxLen;                   // buffer length
 	int factor;                   // growth factor 
-	int elemSize;                 // growth factor 
+	int elemSize;                 // size of one element 
 };
+
+// the objects methods
+int pArray_public_GetLength(class_pArray*);
+void *pArray_public_Grow(class_pArray*);
+void *pArray_public_GetElementPtr(class_pArray*, int);
 
 // -----------------------------------------------------------------------------
 // base "thread" object type
@@ -215,5 +242,9 @@ struct class_Thread {
 	pthread_t id;               // thread id
 };
 
+// the objects methods
+void Thread_public_Start(class_Thread*);
+void Thread_public_Join(class_Thread*);
+void Thread_public_Kill(class_Thread*);
 
 #endif

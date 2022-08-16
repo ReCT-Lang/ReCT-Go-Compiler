@@ -36,4 +36,5 @@ const (
 	LocalVariable  SymbolType = "LocalVariableSymbol"
 	Parameter      SymbolType = "ParameterSymbol"
 	Type           SymbolType = "TypeSymbol"
+	Package        SymbolType = "PackageSymbol"
 )

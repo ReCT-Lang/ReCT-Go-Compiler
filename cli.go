@@ -116,6 +116,9 @@ func Prepare(file string) binder.BoundProgram {
 
 	//print.WriteC(print.Yellow, "-> Parsing... ")
 	members := parser.Parse(tokens)
+	for _, v := range members {
+		v.Print("")
+	}
 	//print.PrintC(print.Green, "Done!")
 
 	//print.WriteC(print.Red, "-> Binding... ")

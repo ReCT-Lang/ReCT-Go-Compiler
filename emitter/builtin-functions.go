@@ -3,6 +3,7 @@ package emitter
 import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/irtools"
 	"ReCT-Go-Compiler/symbols"
 	"strings"
 
@@ -16,7 +17,7 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 	emt.EmitCLibReferences()
 
 	// read the system lib module
-	module := ReadModule("./systemlib/systemlib_lin.ll")
+	module := irtools.ReadModule("./systemlib/systemlib_lin.ll")
 
 	// link our classes and arc
 	emt.EmitClassAndArcReferences(module)
@@ -73,7 +74,7 @@ func (emt *Emitter) EmitCLibReferences() {
 
 func (emt *Emitter) EmitSystemFuncReferences(module *ir.Module) {
 
-	rctFuncs := FindFunctionsWithPrefix(module, "rct_")
+	rctFuncs := irtools.FindFunctionsWithPrefix(module, "rct_")
 
 	for _, fnc := range rctFuncs {
 		functionName := strings.Split(fnc.Name(), "_")[1]
@@ -97,7 +98,7 @@ func (emt *Emitter) EmitClassAndArcReferences(module *ir.Module) {
 	emt.LoadAndReferenceClasses(module)
 
 	// reference arc functions
-	arcFuncs := FindFunctionsWithPrefix(module, "arc_")
+	arcFuncs := irtools.FindFunctionsWithPrefix(module, "arc_")
 
 	for _, fnc := range arcFuncs {
 		emt.ArcFuncs[strings.Split(fnc.Name(), "_")[1]] = fnc
@@ -105,7 +106,7 @@ func (emt *Emitter) EmitClassAndArcReferences(module *ir.Module) {
 	}
 
 	// reference exc functions
-	excFuncs := FindFunctionsWithPrefix(module, "exc_")
+	excFuncs := irtools.FindFunctionsWithPrefix(module, "exc_")
 
 	for _, fnc := range excFuncs {
 		emt.ExcFuncs[strings.Split(fnc.Name(), "_")[1]] = fnc

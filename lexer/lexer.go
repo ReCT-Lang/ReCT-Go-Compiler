@@ -403,6 +403,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return MakeKeyword
 	case "Thread":
 		return ThreadKeyword
+	case "package":
+		return PackageKeyword
 	default:
 		return IdToken
 	}
