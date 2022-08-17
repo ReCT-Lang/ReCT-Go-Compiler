@@ -2,39 +2,14 @@ package emitter
 
 import (
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/irtools"
 	"ReCT-Go-Compiler/print"
-	"os"
 	"strings"
 
-	"github.com/dlclark/regexp2"
-	"github.com/llir/llvm/asm"
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/enum"
 	"github.com/llir/llvm/ir/types"
 )
-
-func ReadModule(path string) *ir.Module {
-	// read out contents of the the file
-	moduleBytes, _ := os.ReadFile(path)
-	module := string(moduleBytes)
-
-	// do a regex replace to replace all function content with 'ret void'
-	re := regexp2.MustCompile(`{\n.*?}\n`, regexp2.Singleline)
-	module, _ = re.Replace(module, " {\n  ret void\n}\n", 0, -1)
-
-	// do a regex replace to remove invalid function declarations
-	re2 := regexp2.MustCompile(`(?<=declare.*?)align [0-9]*`, regexp2.Multiline)
-	module, _ = re2.Replace(module, " ", 0, -1)
-
-	// parse the module using llir/llvm
-	irModule, err := asm.ParseString(path, module)
-	if err != nil {
-		print.PrintC(print.Red, "Couldnt load module '"+path+"'")
-		return nil
-	}
-
-	return irModule
-}
 
 func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 	// reference all classes
@@ -68,7 +43,7 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 
 			// 3. finding and importing the types vtable constant
 			vConstantName := strings.Split(vTableType, ".")[1] + "_Const"
-			vTableConstant := FindGlobal(module, vConstantName)
+			vTableConstant := irtools.FindGlobal(module, vConstantName)
 
 			if !GlobalExists(emt.Module, vTableConstant.GlobalName) {
 				emt.Module.NewGlobal(vTableConstant.GlobalName, vTable).Linkage = enum.LinkageExternal
@@ -84,11 +59,11 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 	for key, class := range emt.Classes {
 
 		// find the constructor
-		constructor := FindFunction(module, class.Name+"_public_Constructor")
+		constructor := irtools.FindFunction(module, class.Name+"_public_Constructor")
 		emt.ImportFunction(constructor)
 
 		// find the destructor
-		destructor := FindFunction(module, class.Name+"_public_Die")
+		destructor := irtools.FindFunction(module, class.Name+"_public_Die")
 		emt.ImportFunction(destructor)
 
 		// alter class object
@@ -97,7 +72,7 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 		emt.Classes[key] = class
 
 		// find all of its public functions
-		classFuncs := FindFunctionsWithPrefix(module, class.Name+"_public_")
+		classFuncs := irtools.FindFunctionsWithPrefix(module, class.Name+"_public_")
 		for _, fnc := range classFuncs {
 			// if this isn't the constructor or destructor
 			if !strings.HasSuffix(fnc.Name(), "_Constructor") &&
@@ -109,28 +84,6 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 	}
 }
 
-func FindFunction(module *ir.Module, name string) *ir.Func {
-	for _, fnc := range module.Funcs {
-		if fnc.Name() == name {
-			return fnc
-		}
-	}
-
-	print.PrintC(print.Red, "Couldnt find function '"+name+"'")
-	return nil
-}
-
-func FindGlobal(module *ir.Module, name string) *ir.Global {
-	for _, glb := range module.Globals {
-		if glb.Name() == name {
-			return glb
-		}
-	}
-
-	print.PrintC(print.Red, "Couldnt find global '"+name+"'")
-	return nil
-}
-
 func GlobalExists(module *ir.Module, name string) bool {
 	for _, glb := range module.Globals {
 		if glb.Name() == name {
@@ -139,18 +92,6 @@ func GlobalExists(module *ir.Module, name string) bool {
 	}
 
 	return false
-}
-
-func FindFunctionsWithPrefix(module *ir.Module, prefix string) []*ir.Func {
-	funcs := make([]*ir.Func, 0)
-
-	for _, fnc := range module.Funcs {
-		if strings.HasPrefix(fnc.Name(), prefix) {
-			funcs = append(funcs, fnc)
-		}
-	}
-
-	return funcs
 }
 
 func FindType(module *ir.Module, name string) types.Type {

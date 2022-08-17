@@ -41,6 +41,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	rootScope := BindRootScope()
 	mainScope := CreateScope(&rootScope)
 
+	packageReferences := make([]nodes.PackageReferenceMember, 0)
 	functionDeclarations := make([]nodes.FunctionDeclarationMember, 0)
 	classDeclarations := make([]nodes.ClassDeclarationMember, 0)
 	globalStatements := make([]nodes.GlobalStatementMember, 0)
@@ -51,12 +52,19 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 			functionDeclarations = append(functionDeclarations, member.(nodes.FunctionDeclarationMember))
 		} else if member.NodeType() == nodes.ClassDeclaration {
 			classDeclarations = append(classDeclarations, member.(nodes.ClassDeclarationMember))
+		} else if member.NodeType() == nodes.PackageReference {
+			packageReferences = append(packageReferences, member.(nodes.PackageReferenceMember))
 		} else {
 			globalStatements = append(globalStatements, member.(nodes.GlobalStatementMember))
 		}
 	}
 
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
+
+	// load all our packages first
+	for _, pkg := range packageReferences {
+		binder.BindPackageReference(pkg)
+	}
 
 	// create a loose list of types so our class members have something to work with
 	preInitialTypeset := make([]symbols.TypeSymbol, 0)

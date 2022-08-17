@@ -203,7 +203,7 @@ void Int_public_Constructor(class_Int* this, int value) {
 // definition for the objects destructor
 void Int_public_Die(void* this) {}
 
-// definition for a string.Resize() method
+// definition for an int.GetValue() method
 int Int_public_GetValue(class_Int* this) {
 	// if the object is null -> return the default value
 	if (this == NULL) return 0;
@@ -230,7 +230,7 @@ void Float_public_Constructor(class_Float* this, float value) {
 // definition for the objects destructor
 void Float_public_Die(void* this) {}
 
-// definition for a string.Resize() method
+// definition for a float.GetValue() method
 float Float_public_GetValue(class_Float* this) {
 	// if the object is null -> return the default value
 	if (this == NULL) return 0.0;
@@ -257,7 +257,7 @@ void Bool_public_Constructor(class_Bool* this, bool value) {
 // definition for the objects destructor
 void Bool_public_Die(void* this) {}
 
-// definition for a string.Resize() method
+// definition for a bool.GetValue() method
 bool Bool_public_GetValue(class_Bool* this) {
 	// if the object is null -> return the default value
 	if (this == NULL) return false;
@@ -272,7 +272,7 @@ bool Bool_public_GetValue(class_Bool* this) {
 // The array wont make data copies, it will just hold references
 // -----------------------------------------------------------------------------
 
-// definition for the Bool vTable
+// definition for the Array vTable
 const Array_vTable Array_vTable_Const = {&Any_vTable_Const, "Array", &Array_public_Die};
 
 // definition for the objects constructor

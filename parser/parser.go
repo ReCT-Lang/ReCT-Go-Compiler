@@ -93,7 +93,7 @@ func (prs *Parser) parseMembers() []nodes.MemberNode {
 		startToken := prs.current()
 
 		// parse all our members
-		member := prs.parseMember(true)
+		member := prs.parseMember(true, true)
 		members = append(members, member)
 
 		// if we got stuck somewhere, just keep moving
@@ -106,7 +106,7 @@ func (prs *Parser) parseMembers() []nodes.MemberNode {
 }
 
 // parseMember begins parsing either functions or global statements
-func (prs *Parser) parseMember(allowClasses bool) nodes.MemberNode {
+func (prs *Parser) parseMember(allowClasses bool, allowPackages bool) nodes.MemberNode {
 	// functions / classes would go here \/
 	if prs.current().Kind == lexer.FunctionKeyword {
 		return prs.parseFunctionDeclaration()
@@ -117,6 +117,10 @@ func (prs *Parser) parseMember(allowClasses bool) nodes.MemberNode {
 
 	if prs.current().Kind == lexer.ClassKeyword && allowClasses {
 		return prs.parseClassDeclaration()
+	}
+
+	if prs.current().Kind == lexer.PackageKeyword && allowPackages {
+		return prs.parsePackageReference()
 	}
 
 	// global statements (any statements outside any functions)
@@ -181,7 +185,7 @@ func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
 		startToken := prs.current()
 
 		// parse all our members
-		member := prs.parseMember(false)
+		member := prs.parseMember(false, false)
 		members = append(members, member)
 
 		// if we got stuck somewhere, just keep moving
@@ -193,6 +197,17 @@ func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
 	prs.consume(lexer.CloseBraceToken)
 
 	return nodes.CreateClassDeclarationMember(id, members)
+}
+
+func (prs *Parser) parsePackageReference() nodes.PackageReferenceMember {
+	prs.consume(lexer.PackageKeyword)
+	id := prs.consume(lexer.IdToken)
+
+	if prs.current().Kind == lexer.Semicolon {
+		prs.consume(lexer.Semicolon)
+	}
+
+	return nodes.CreatePackageReferenceMember(id)
 }
 
 // parseParameterList we parse a list of arguments (usually for a function or functionCall)

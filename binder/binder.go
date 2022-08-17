@@ -5,6 +5,7 @@ import (
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/nodes/boundnodes"
+	"ReCT-Go-Compiler/packager"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -283,6 +284,10 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 		)
 		os.Exit(-1)
 	}
+}
+
+func (bin *Binder) BindPackageReference(mem nodes.PackageReferenceMember) {
+	packager.ResolvePackage(mem.Package.Value)
 }
 
 // </MEMBERS> ----------------------------------------------------------------

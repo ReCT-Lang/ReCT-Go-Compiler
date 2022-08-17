@@ -26,6 +26,7 @@ const (
 	BreakKeyword    TokenKind = "break (Keyword)"
 	MakeKeyword     TokenKind = "make (Keyword)"
 	ThreadKeyword   TokenKind = "Thread (keyword)"
+	PackageKeyword  TokenKind = "Package (keyword)"
 
 	// Tokens
 	EOF         TokenKind = "EndOfFile"
