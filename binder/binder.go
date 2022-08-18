@@ -1243,7 +1243,7 @@ func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNod
 			column,
 			length,
 			"function \"%s\" (in package \"%s\") expects %d arguments but got %d!",
-			expr.Identifier,
+			functionSymbol.Name,
 			pack.Name,
 			len(functionSymbol.Parameters),
 			len(expr.Arguments),

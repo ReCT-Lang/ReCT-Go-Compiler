@@ -959,6 +959,9 @@ func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.Boun
 		}
 	}
 
+	// bitcast to typed array type
+	arrObject = (*blk).NewBitCast(arrObject, emt.IRTypes(symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{expr.BaseType}, true, false)))
+
 	return arrObject
 }
 
@@ -984,6 +987,13 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 	// load the base value
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
+
+	// bitcast the base into a generic array type
+	if expr.Base.Type().SubTypes[0].IsObject {
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
+	} else {
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
+	}
 
 	// index
 	// -----
@@ -1028,6 +1038,13 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 	// load the base value
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
+
+	// bitcast the base into a generic array type
+	if expr.Base.Type().SubTypes[0].IsObject {
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
+	} else {
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
+	}
 
 	// load the index
 	index := emt.EmitExpression(blk, expr.Index)
@@ -1366,8 +1383,7 @@ func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCall
 		// if this is an object -> increase its reference counter
 		// (only do this for variables)
 		if arg.IsPersistent() {
-			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
-				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			if arg.Type().IsObject {
 				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
 			}
 		}
@@ -1409,8 +1425,7 @@ func (emt *Emitter) EmitPackageCallExpression(blk **ir.Block, expr boundnodes.Bo
 		// if this is an object -> increase its reference counter
 		// (only do this for variables)
 		if arg.IsPersistent() {
-			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
-				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			if arg.Type().IsObject {
 				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
 			}
 		}
@@ -1458,14 +1473,19 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 
 		// object arrays
 		if expr.Base.Type().SubTypes[0].IsObject {
+			base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
 			return (*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], base)
 		} else {
 			// primitive arrays
+			base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
 			return (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], base)
 		}
 
 	case builtins.Push.Fingerprint():
 		element := emt.EmitExpression(blk, expr.Arguments[0])
+
+		// sneaky lil bitcast
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
 
 		// Push() for object arrays
 		// call the array's push function
@@ -1481,6 +1501,9 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 
 	case builtins.PPush.Fingerprint():
 		element := emt.EmitExpression(blk, expr.Arguments[0])
+
+		// sneakier liler bitcast
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
 
 		// Push() for primitive arrays
 		// grow the array and get the elem pointer

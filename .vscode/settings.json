@@ -34,6 +34,10 @@
 		"__tree": "c",
 		"__tuple": "c",
 		"cstddef": "c",
-		"limits": "c"
+		"limits": "c",
+		"algorithm": "c",
+		"__bit_reference": "c",
+		"map": "c",
+		"set": "c"
 	}
 }

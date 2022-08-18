@@ -261,9 +261,10 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 	}
 
 	// if theres a package token (::) then the type has a prefix
-	var pack lexer.Token
+	var pack *lexer.Token = nil
 	if prs.peek(1).Kind == lexer.PackageToken {
-		pack = prs.consume(lexer.IdToken)
+		pck := prs.consume(lexer.IdToken)
+		pack = &pck
 		prs.consume(lexer.PackageToken)
 	}
 
@@ -288,16 +289,17 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 		prs.consume(lexer.CloseBracketToken)
 	}
 
-	return nodes.CreateTypeClauseNode(&pack, identifier, subTypes)
+	return nodes.CreateTypeClauseNode(pack, identifier, subTypes)
 }
 
 // parseUncertainTypeClause consumes the datatype and returns it in node form
 // difference to parseTypeClause is that this one can fail safely if we notice that this isn't a type
 func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
 	// if theres a package token (::) then the type has a prefix
-	var pack lexer.Token
+	var pack *lexer.Token = nil
 	if prs.peek(1).Kind == lexer.PackageToken {
-		pack = prs.consume(lexer.IdToken)
+		pck := prs.consume(lexer.IdToken)
+		pack = &pck
 		prs.consume(lexer.PackageToken)
 	}
 
@@ -339,7 +341,7 @@ func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
 		prs.consume(lexer.CloseBracketToken)
 	}
 
-	return nodes.CreateTypeClauseNode(&pack, identifier, subTypes), true
+	return nodes.CreateTypeClauseNode(pack, identifier, subTypes), true
 }
 
 // <STATEMENTS> ---------------------------------------------------------------
@@ -939,9 +941,10 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 	makeKeyword := prs.consume(lexer.MakeKeyword) // make
 
 	// if theres a package token (::) then the type has a prefix
-	var pack lexer.Token
+	var pack *lexer.Token = nil
 	if prs.peek(1).Kind == lexer.PackageToken {
-		pack = prs.consume(lexer.IdToken)
+		pck := prs.consume(lexer.IdToken)
+		pack = &pck
 		prs.consume(lexer.PackageToken)
 	}
 
@@ -963,7 +966,7 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 	prs.consume(lexer.CloseParenthesisToken) // )
 
 	// return an array access expression
-	return nodes.CreateMakeExpressionNode(&pack, baseType, args)
+	return nodes.CreateMakeExpressionNode(pack, baseType, args)
 }
 
 // parseMakeArrayExpression this for creating arrays

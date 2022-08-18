@@ -238,7 +238,7 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSym
 	// OBJECTS
 	// =========================================================================
 	typeName := ProcessTypeName(typ.LLString())
-	typeSymbol := ResolveObjectType(typeName, classes)
+	typeSymbol := ResolveObjectType(typeName, classes, false)
 	if typeSymbol != nil {
 		return *typeSymbol
 	}
@@ -258,7 +258,7 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSym
 	return symbols.TypeSymbol{}
 }
 
-func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol) *symbols.TypeSymbol {
+func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLower bool) *symbols.TypeSymbol {
 	// disallow boxed types
 	if typeName == "Int" || typeName == "Byte" || typeName == "Float" || typeName == "Bool" {
 		print.Error(
@@ -274,17 +274,17 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol) *symbols
 	}
 
 	// string type
-	if typeName == "String" {
+	if typeName == "String" || (allowLower && typeName == "string") {
 		return &builtins.String
 	}
 
 	// thread type
-	if typeName == "Thread" {
+	if typeName == "Thread" || (allowLower && typeName == "thread") {
 		return &builtins.Thread
 	}
 
 	// thread type
-	if typeName == "Any" {
+	if typeName == "Any" || (allowLower && typeName == "any") {
 		return &builtins.Thread
 	}
 
@@ -339,23 +339,23 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol) *symbols
 }
 
 func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol) symbols.TypeSymbol {
-	if typeName == "Bool" {
+	if typeName == "Bool" || typeName == "bool" {
 		return builtins.Bool
 	}
 
-	if typeName == "Byte" {
+	if typeName == "Byte" || typeName == "byte" {
 		return builtins.Byte
 	}
 
-	if typeName == "Int" {
+	if typeName == "Int" || typeName == "int" {
 		return builtins.Int
 	}
 
-	if typeName == "Float" {
+	if typeName == "Float" || typeName == "float" {
 		return builtins.Float
 	}
 
-	typeSymbol := ResolveObjectType(typeName, classes)
+	typeSymbol := ResolveObjectType(typeName, classes, true)
 	if typeSymbol != nil {
 		return *typeSymbol
 	}

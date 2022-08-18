@@ -6,6 +6,7 @@ import (
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
@@ -13,6 +14,9 @@ import (
 )
 
 // this file is just keeping track of how ReCT types map to LLVM types
+
+var arrayTypes = make(map[string]types.Type)
+var parrayTypes = make(map[string]types.Type)
 
 func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 	switch typ.Fingerprint() {
@@ -35,9 +39,9 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 	}
 	if typ.Name == builtins.Array.Name {
 		if typ.SubTypes[0].IsObject {
-			return types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type)
+			return emt.ResolveArray(typ, &arrayTypes, builtins.Array)
 		} else {
-			return types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type)
+			return emt.ResolveArray(typ, &parrayTypes, builtins.PArray)
 		}
 	}
 
@@ -56,6 +60,56 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 
 	os.Exit(-1)
 	return nil
+}
+
+func (emt *Emitter) ResolveArray(typ symbols.TypeSymbol, cache *map[string]types.Type, generic symbols.TypeSymbol) types.Type {
+	// see if this type already exists
+	arrType, ok := (*cache)[typ.Fingerprint()]
+	if ok {
+		return arrType
+	}
+
+	// if not, copy the array type and rename it
+	genericType := emt.Classes[emt.Id(generic)].Type.(*types.StructType)
+
+	// figure out the suffix
+	name := typ.SubTypes[0].Name
+	suffix := strings.ToUpper(string(name[0])) + name[1:]
+	if len(typ.SubTypes[0].SubTypes) > 0 {
+		suffix = typ.SubTypes[0].Fingerprint()
+
+		// escape symbols which arent allowed in c
+		suffix = strings.Replace(suffix, "[", "$b$", -1)
+		suffix = strings.Replace(suffix, "]", "$e$", -1)
+		suffix = strings.Replace(suffix, ";", "$s$", -1)
+	}
+
+	// figure out the prefix
+	prefix := "class_Array_"
+	if generic.Fingerprint() == builtins.PArray.Fingerprint() {
+		prefix = "class_pArray_"
+	}
+
+	var newType types.Type
+
+	// check if this type has already been imported
+	if emt.TypeExists("struct." + prefix + suffix) {
+		newType = FindType(emt.Module, "struct."+prefix+suffix)
+
+	} else {
+		// otherwise, create it
+		blueprint := &types.StructType{}
+		blueprint.Fields = genericType.Fields
+
+		newType = emt.Module.NewTypeDef("struct."+prefix+suffix, blueprint)
+	}
+
+	newType = types.NewPointer(newType)
+
+	// cache this type definition
+	(*cache)[typ.Fingerprint()] = newType
+
+	return newType
 }
 
 type Global struct {

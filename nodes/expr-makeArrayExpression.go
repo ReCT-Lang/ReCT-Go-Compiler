@@ -30,8 +30,6 @@ func (node MakeArrayExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ MakeArrayExpressionNode")
 	fmt.Println(indent + "  └ Type: ")
 	node.Type.Print(indent + "    ")
-	fmt.Println(indent + "  └ Length: ")
-	node.Length.Print(indent + "    ")
 }
 
 // "constructor" / ooga booga OOP cave man brain

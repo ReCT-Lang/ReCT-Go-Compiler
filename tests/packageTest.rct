@@ -1,29 +1,53 @@
 package test
 Print(test::GetString());
 
-// create an instance of the package class
-var thing <- make test::Thing("this is such input");
-thing->Output();
+while (true) {
+	// create an instance of the package class
+	var thing <- make test::Thing("this is such input");
+	thing->Output();
 
-// check if casting works
-var someAny <- any(thing);
-var thingAgain <- test::Thing(someAny);
+	// check if casting works
+	var someAny <- any(thing);
+	var thingAgain <- test::Thing(someAny);
 
-// check if field access works
-Print(thingAgain->someString + " #2");
+	// check if field access works
+	Print(thingAgain->someString + " #2");
 
-// check if field assignment works
-thingAgain->someString <- "much string";
-thingAgain->Output();
+	// check if field assignment works
+	thingAgain->someString <- "much string";
+	thingAgain->Output();
 
-// check if arrays of the class can be created
-var thingArray <- make test::Thing array(1);
-thingArray[0]  <- thing;
+	// check if arrays of the class can be created
+	var thingArray <- make test::Thing array(1);
+	thingArray[0]  <- thing;
 
-// check if array expansion works
-thingArray->Push(make test::Thing("cool beans"));
+	// check if array expansion works
+	thingArray->Push(make test::Thing("cool beans"));
 
-// check if indexing works correctly
-from (i <- 0) to thingArray->GetLength() - 1 {
-	thingArray[i]->Output();
+	// check if indexing works correctly
+	from (i <- 0) to thingArray->GetLength() - 1 {
+		thingArray[i]->Output();
+	}
+
+	// check if passing arrays works
+	var strArr <- make string array { "string 1", "string 2" };
+	strArr->Push("sussy");
+	strArr->Push("baka");
+
+	test::PrintArr(strArr);
+
+	// check if getting an array from a package works
+	var newArr <- test::GetStringArray("my string", 10);
+	from (i <- 0) to newArr->GetLength() -1 {
+		Print(string(i) + ": " + newArr[i])
+	}
+
+	// check if getting a 2d array from a package works
+	var nestedArr <- test::Get2DStringArray("a", 3, 3);
+	from (x <- 0) to nestedArr->GetLength() -1 {
+		from (y <- 0) to nestedArr->GetLength() -1 {
+			Write(nestedArr[x][y] + ", ");
+		}
+		Print("");
+	}
 }

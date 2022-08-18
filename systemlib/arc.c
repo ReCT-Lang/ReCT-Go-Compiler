@@ -56,7 +56,7 @@ void arc_UnregisterReferenceVerbose(class_Any* obj, char* comment)
     obj->referenceCounter--;
 
 	// debug message
-    printf("\33[36mARC \33[0m- \33[33mUnregistered %s reference [%d] - %s\33[0m\n", obj->vtable->className, obj->referenceCounter, comment);
+    printf("\33[36mARC \33[0m- \33[33mUnregistered %s reference [%d] - %s\33[0m\n", obj->vtable->className, obj->referenceCounter, comment);	
 
     // if the reference pointer is 0 (or negative for some random reason)
     // clear it!
