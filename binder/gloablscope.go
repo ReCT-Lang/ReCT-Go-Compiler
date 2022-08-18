@@ -14,6 +14,7 @@ type GlobalScope struct {
 	Functions  []symbols.FunctionSymbol
 	Variables  []symbols.VariableSymbol
 	Classes    []symbols.ClassSymbol
+	Packages   []symbols.PackageSymbol
 	Statements []boundnodes.BoundStatementNode
 }
 
@@ -93,6 +94,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 		Functions:    binder.ActiveScope.GetAllFunctions(),
 		Variables:    binder.ActiveScope.GetAllVariables(),
 		Classes:      binder.ActiveScope.GetAllClasses(),
+		Packages:     binder.ActiveScope.GetAllPackages(),
 		Statements:   boundStatements,
 	}
 }

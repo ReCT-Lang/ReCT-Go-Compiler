@@ -260,6 +260,13 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 		prs.consume(lexer.AccessToken)
 	}
 
+	// if theres a package token (::) then the type has a prefix
+	var pack lexer.Token
+	if prs.peek(1).Kind == lexer.PackageToken {
+		pack = prs.consume(lexer.IdToken)
+		prs.consume(lexer.PackageToken)
+	}
+
 	identifier := prs.consume(lexer.IdToken)
 	subTypes := make([]nodes.TypeClauseNode, 0)
 
@@ -281,12 +288,19 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 		prs.consume(lexer.CloseBracketToken)
 	}
 
-	return nodes.CreateTypeClauseNode(identifier, subTypes)
+	return nodes.CreateTypeClauseNode(&pack, identifier, subTypes)
 }
 
 // parseUncertainTypeClause consumes the datatype and returns it in node form
 // difference to parseTypeClause is that this one can fail safely if we notice that this isn't a type
 func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
+	// if theres a package token (::) then the type has a prefix
+	var pack lexer.Token
+	if prs.peek(1).Kind == lexer.PackageToken {
+		pack = prs.consume(lexer.IdToken)
+		prs.consume(lexer.PackageToken)
+	}
+
 	identifier := prs.consume(lexer.IdToken)
 	subTypes := make([]nodes.TypeClauseNode, 0)
 
@@ -325,7 +339,7 @@ func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
 		prs.consume(lexer.CloseBracketToken)
 	}
 
-	return nodes.CreateTypeClauseNode(identifier, subTypes), true
+	return nodes.CreateTypeClauseNode(&pack, identifier, subTypes), true
 }
 
 // <STATEMENTS> ---------------------------------------------------------------
@@ -796,6 +810,11 @@ func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {
 		return prs.parseComplexCastExpression()
 	}
 
+	// if there's a package access (::), assume its a package call or cast
+	if prs.peek(1).Kind == lexer.PackageToken {
+		return prs.parsePackageCallExpression()
+	}
+
 	// if not, it's a name expression
 	return prs.parseNameExpression()
 }
@@ -844,6 +863,24 @@ func (prs *Parser) parseComplexCastExpression() nodes.ExpressionNode {
 
 	// return a call expression as the rest is all managed through it
 	return nodes.CreateCallExpressionNode(identifier, []nodes.ExpressionNode{expression}, typeClause)
+}
+
+// parsePackageCallExpression this for when we're calling a function from a package
+// For example: sys::Print("hello");
+func (prs *Parser) parsePackageCallExpression() nodes.PackageCallExpressionNode {
+
+	// We need the identifier to know which package to select
+	pack := prs.consume(lexer.IdToken)
+	prs.consume(lexer.PackageToken) // ::
+
+	// We need the identifier to know which function the program called
+	identifier := prs.consume(lexer.IdToken)
+
+	prs.consume(lexer.OpenParenthesisToken)  // (
+	args := prs.parseArguments()             // We get the arguments being put into the function
+	prs.consume(lexer.CloseParenthesisToken) // )
+
+	return nodes.CreatePackageCallExpressionNode(pack, identifier, args)
 }
 
 // parseArrayAccessExpression this for accessing arrays!
@@ -901,6 +938,13 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 
 	makeKeyword := prs.consume(lexer.MakeKeyword) // make
 
+	// if theres a package token (::) then the type has a prefix
+	var pack lexer.Token
+	if prs.peek(1).Kind == lexer.PackageToken {
+		pack = prs.consume(lexer.IdToken)
+		prs.consume(lexer.PackageToken)
+	}
+
 	// We need the class' Identifier
 	baseType := prs.consume(lexer.IdToken)
 
@@ -919,7 +963,7 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 	prs.consume(lexer.CloseParenthesisToken) // )
 
 	// return an array access expression
-	return nodes.CreateMakeExpressionNode(baseType, args)
+	return nodes.CreateMakeExpressionNode(&pack, baseType, args)
 }
 
 // parseMakeArrayExpression this for creating arrays

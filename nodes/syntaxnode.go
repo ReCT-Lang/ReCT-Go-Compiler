@@ -66,6 +66,7 @@ const (
 	NameExpression                 NodeType = "Name Expression"
 	AssignmentExpression           NodeType = "Assignment Expression"
 	CallExpression                 NodeType = "Call Expression"
+	PackageCallExpression          NodeType = "PackageCall Expression"
 	UnaryExpression                NodeType = "Unary Expression"
 	BinaryExpression               NodeType = "Binary Expression"
 	VariableEditorExpression       NodeType = "VariableEditor Expression"

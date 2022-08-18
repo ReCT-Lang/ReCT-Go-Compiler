@@ -14,6 +14,7 @@ type BoundProgram struct {
 	MainFunction symbols.FunctionSymbol
 	Functions    []BoundFunction
 	Classes      []BoundClass
+	Packages     []symbols.PackageSymbol
 }
 
 type BoundFunction struct {
@@ -116,6 +117,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 		MainFunction: globalScope.MainFunction,
 		Functions:    functionBodies,
 		Classes:      classes,
+		Packages:     globalScope.Packages,
 	}
 }
 

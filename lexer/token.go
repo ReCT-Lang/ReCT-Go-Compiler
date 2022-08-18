@@ -66,6 +66,8 @@ const (
 	QuestionMarkToken TokenKind = "QuestionMark '?'"
 	ColonToken        TokenKind = "Colon ':'"
 
+	PackageToken TokenKind = "Package '::'"
+
 	BadToken TokenKind = "Token Error (BadToken)" // Naughty ;)
 
 	Semicolon TokenKind = "Semicolon ';'" // Used to separate statements (for now... )

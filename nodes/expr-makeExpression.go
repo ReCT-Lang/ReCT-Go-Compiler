@@ -9,6 +9,7 @@ import (
 type MakeExpressionNode struct {
 	ExpressionNode
 
+	Package   *lexer.Token
 	BaseType  lexer.Token
 	Arguments []ExpressionNode
 }
@@ -35,8 +36,9 @@ func (node MakeExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateMakeExpressionNode(typ lexer.Token, args []ExpressionNode) MakeExpressionNode {
+func CreateMakeExpressionNode(pack *lexer.Token, typ lexer.Token, args []ExpressionNode) MakeExpressionNode {
 	return MakeExpressionNode{
+		Package:   pack,
 		BaseType:  typ,
 		Arguments: args,
 	}

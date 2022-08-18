@@ -190,6 +190,22 @@ void Array_public_SetElement(class_Array*, int, class_Any*);
 int Array_public_GetLength(class_Array*);
 void Array_public_Push(class_Array*, class_Any*);
 
+// helper for lazy people (me)
+#define DEFINE_ARRAY(class)                                 \
+	typedef struct class_Array_##class class_Array_##class; \
+	struct class_Array_##class {                            \
+		const Array_vTable* vtable;                         \
+		int referenceCounter;                               \
+		class_Any **elements;                               \
+		int length;                                         \
+		int maxLen;                                         \
+		int factor;                                         \
+	};
+
+// predefined Array Types
+DEFINE_ARRAY(String);
+DEFINE_ARRAY(Any);
+
 // -----------------------------------------------------------------------------
 // "parray" object type
 // Note: this is a primitive version of "array"
@@ -217,6 +233,25 @@ struct class_pArray {
 int pArray_public_GetLength(class_pArray*);
 void *pArray_public_Grow(class_pArray*);
 void *pArray_public_GetElementPtr(class_pArray*, int);
+
+// helper for lazy people (me)
+#define DEFINE_PARRAY(type)                                   \
+	typedef struct class_pArray_##type class_pArray_##type;   \
+	struct class_pArray_##type {                              \
+		const pArray_vTable* vtable;                          \
+		int referenceCounter;                                 \
+		void *elements;                                       \
+		int length;                                           \
+		int maxLen;                                           \
+		int factor;                                           \
+		int elemSize;                                         \
+	};
+
+// predefined pArray Types
+DEFINE_PARRAY(Bool);
+DEFINE_PARRAY(Byte);
+DEFINE_PARRAY(Int);
+DEFINE_PARRAY(Float);
 
 // -----------------------------------------------------------------------------
 // base "thread" object type

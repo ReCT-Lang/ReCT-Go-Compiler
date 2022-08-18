@@ -1,1 +1,29 @@
 package test
+Print(test::GetString());
+
+// create an instance of the package class
+var thing <- make test::Thing("this is such input");
+thing->Output();
+
+// check if casting works
+var someAny <- any(thing);
+var thingAgain <- test::Thing(someAny);
+
+// check if field access works
+Print(thingAgain->someString + " #2");
+
+// check if field assignment works
+thingAgain->someString <- "much string";
+thingAgain->Output();
+
+// check if arrays of the class can be created
+var thingArray <- make test::Thing array(1);
+thingArray[0]  <- thing;
+
+// check if array expansion works
+thingArray->Push(make test::Thing("cool beans"));
+
+// check if indexing works correctly
+from (i <- 0) to thingArray->GetLength() - 1 {
+	thingArray[i]->Output();
+}

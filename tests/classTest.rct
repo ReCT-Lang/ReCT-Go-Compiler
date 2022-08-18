@@ -26,5 +26,12 @@ class OtherClass {
 }
 
 var someInstance <- make SomeClass();
-someInstance->Die();
+//someInstance->Die();
+Print(someInstance->CoolString);
+
+var any someAny;
+someAny <- any(someInstance);
+
+var SomeClass instanceAgain;
+instanceAgain <- SomeClass(someAny);
 Print(someInstance->CoolString);

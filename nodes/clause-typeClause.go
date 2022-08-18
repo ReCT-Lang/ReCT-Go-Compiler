@@ -10,7 +10,9 @@ import (
 type TypeClauseNode struct {
 	SyntaxNode
 
-	ClauseIsSet    bool
+	ClauseIsSet bool
+
+	Package        *lexer.Token
 	TypeIdentifier lexer.Token
 	SubClauses     []TypeClauseNode
 }
@@ -34,9 +36,10 @@ func (node TypeClauseNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateTypeClauseNode(id lexer.Token, subtypes []TypeClauseNode) TypeClauseNode {
+func CreateTypeClauseNode(pack *lexer.Token, id lexer.Token, subtypes []TypeClauseNode) TypeClauseNode {
 	return TypeClauseNode{
 		ClauseIsSet:    true,
+		Package:        pack,
 		TypeIdentifier: id,
 		SubClauses:     subtypes,
 	}

@@ -3,6 +3,8 @@ package symbols
 import (
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
+
+	"github.com/llir/llvm/ir/types"
 )
 
 type ClassSymbol struct {
@@ -10,7 +12,8 @@ type ClassSymbol struct {
 
 	Exists bool
 
-	Type TypeSymbol
+	Type   TypeSymbol
+	IRType types.Type
 
 	Name        string
 	Declaration nodes.ClassDeclarationMember

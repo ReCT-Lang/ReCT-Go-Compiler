@@ -85,3 +85,7 @@ type Class struct {
 	Fields      map[string]int
 	Name        string
 }
+
+type Package struct {
+	Functions map[string]*ir.Func
+}

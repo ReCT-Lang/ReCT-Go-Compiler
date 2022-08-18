@@ -55,6 +55,7 @@ const (
 	BoundUnaryExpression                BoundType = "BoundUnaryExpression"
 	BoundBinaryExpression               BoundType = "BoundBinaryExpression"
 	BoundCallExpression                 BoundType = "BoundCallExpression"
+	BoundPackageCallExpression          BoundType = "BoundPackageCallExpression"
 	BoundConversionExpression           BoundType = "BoundConversionExpression"
 	BoundTypeCallExpression             BoundType = "BoundTypeCallExpression"
 	BoundClassCallExpression            BoundType = "BoundClassCallExpression"

@@ -3,6 +3,8 @@ package symbols
 import (
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
+
+	"github.com/llir/llvm/ir"
 )
 
 type FunctionSymbol struct {
@@ -11,6 +13,8 @@ type FunctionSymbol struct {
 	Exists  bool
 	BuiltIn bool
 	Public  bool
+
+	IRFunction *ir.Func
 
 	Name        string
 	Parameters  []ParameterSymbol

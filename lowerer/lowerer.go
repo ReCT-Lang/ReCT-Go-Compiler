@@ -329,6 +329,8 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteBinaryExpression(expr.(boundnodes.BoundBinaryExpressionNode))
 	case boundnodes.BoundCallExpression:
 		return RewriteCallExpression(expr.(boundnodes.BoundCallExpressionNode))
+	case boundnodes.BoundPackageCallExpression:
+		return RewritePackageCallExpression(expr.(boundnodes.BoundPackageCallExpressionNode))
 	case boundnodes.BoundConversionExpression:
 		return RewriteConversionExpression(expr.(boundnodes.BoundConversionExpressionNode))
 	case boundnodes.BoundTypeCallExpression:
@@ -398,6 +400,16 @@ func RewriteCallExpression(expr boundnodes.BoundCallExpressionNode) boundnodes.B
 	}
 
 	return boundnodes.CreateBoundCallExpressionNode(expr.Function, rewrittenArgs)
+}
+
+func RewritePackageCallExpression(expr boundnodes.BoundPackageCallExpressionNode) boundnodes.BoundPackageCallExpressionNode {
+	rewrittenArgs := make([]boundnodes.BoundExpressionNode, 0)
+
+	for _, arg := range expr.Arguments {
+		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
+	}
+
+	return boundnodes.CreateBoundPackageCallExpressionNode(expr.Package, expr.Function, rewrittenArgs)
 }
 
 func RewriteConversionExpression(expr boundnodes.BoundConversionExpressionNode) boundnodes.BoundConversionExpressionNode {

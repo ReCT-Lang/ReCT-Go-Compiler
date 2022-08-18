@@ -254,7 +254,12 @@ func (lxr *Lexer) getOperator() {
 	case '?':
 		_token = QuestionMarkToken
 	case ':':
-		_token = ColonToken
+		if peek(1) == ':' {
+			lxr.Increment()
+			_token = PackageToken
+		} else {
+			_token = ColonToken
+		}
 	case ',':
 		_token = CommaToken
 	case '<':

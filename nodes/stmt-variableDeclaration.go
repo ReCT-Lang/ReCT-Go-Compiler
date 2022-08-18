@@ -44,8 +44,11 @@ func (node VariableDeclarationStatementNode) Print(indent string) {
 	}
 
 	fmt.Printf("%s  └ Identifier: %s\n", indent, node.Identifier.Value)
-	fmt.Println(indent + "  └ Initializer: ")
-	node.Initializer.Print(indent + "    ")
+
+	if node.Initializer != nil {
+		fmt.Println(indent + "  └ Initializer: ")
+		node.Initializer.Print(indent + "    ")
+	}
 }
 
 // "constructor" / ooga booga OOP cave man brain

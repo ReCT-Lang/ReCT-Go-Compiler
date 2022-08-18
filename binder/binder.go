@@ -287,7 +287,21 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 }
 
 func (bin *Binder) BindPackageReference(mem nodes.PackageReferenceMember) {
-	packager.ResolvePackage(mem.Package.Value)
+	pack := packager.ResolvePackage(mem.Package.Value)
+	if !bin.ActiveScope.TryDeclareSymbol(pack) {
+		line, column, length := mem.Position()
+		print.Error(
+			"BINDER",
+			print.DuplicateFunctionError,
+			line,
+			column,
+			length,
+			"a package with the name \"%s\" has already been loaded! \"%s\" could not be referenced!",
+			pack.Name,
+			pack.Name,
+		)
+		os.Exit(-1)
+	}
 }
 
 // </MEMBERS> ----------------------------------------------------------------
@@ -303,6 +317,7 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 			exprStmt.Expression.NodeType() == boundnodes.BoundCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundTypeCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundClassCallExpression ||
+			exprStmt.Expression.NodeType() == boundnodes.BoundPackageCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundClassFieldAssignmentExpression ||
@@ -674,6 +689,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindMakeArrayExpression(expr.(nodes.MakeArrayExpressionNode))
 	case nodes.CallExpression:
 		return bin.BindCallExpression(expr.(nodes.CallExpressionNode))
+	case nodes.PackageCallExpression:
+		return bin.BindPackageCallExpression(expr.(nodes.PackageCallExpressionNode))
 	case nodes.UnaryExpression:
 		return bin.BindUnaryExpression(expr.(nodes.UnaryExpressionNode))
 	case nodes.TypeCallExpression:
@@ -816,8 +833,22 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 		os.Exit(-1)
 	}
 
-	// resolve the type symbol
-	baseType, _ := bin.LookupClass(expr.BaseType.Value, false)
+	var baseType symbols.ClassSymbol
+
+	// check if this refers to a package class
+	if expr.Package != nil {
+		// look up this package
+		pack, _ := bin.LookupPackage(expr.Package.Value, false)
+
+		// get the class
+		bType, _ := LookupClassInPackage(expr.BaseType.Value, pack, false)
+		baseType = bType
+
+	} else {
+		// resolve the type symbol
+		bType, _ := bin.LookupClass(expr.BaseType.Value, false)
+		baseType = bType
+	}
 
 	// bind the constructors arguments
 	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
@@ -884,7 +915,7 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 
 func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
 	// resolve the type symbol
-	baseType, _ := bin.LookupType(expr.Type, false)
+	baseType, _ := bin.BindTypeClause(expr.Type)
 
 	if !expr.IsLiteral {
 		// bind the length expression
@@ -1078,6 +1109,16 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		return bin.BindConversion(expression, typeSymbol, true)
 	}
 
+	// check if it's a class cast
+	classSymbol, exists := bin.LookupClass(expr.Identifier.Value, true)
+
+	// if it worked -> create a class conversion
+	if exists && len(expr.Arguments) == 1 {
+		// bind the expression and return a conversion
+		expression := bin.BindExpression(expr.Arguments[0])
+		return bin.BindConversion(expression, classSymbol.Type, true)
+	}
+
 	// check if it's a complex cast
 	complexTypeSymbol, exists := bin.LookupType(expr.CastingType, true)
 
@@ -1163,6 +1204,58 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments)
+}
+
+func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNode) boundnodes.BoundExpressionNode {
+	// find out what package this is refering to
+	pack, _ := bin.LookupPackage(expr.Package.Value, false)
+
+	// check if this is a cast
+	// -----------------------
+
+	// check if it's a class cast
+	typeSymbol, exists := LookupClassInPackage(expr.Identifier.Value, pack, true)
+
+	// if it worked -> create a conversion
+	if exists && len(expr.Arguments) == 1 {
+		// bind the expression and return a conversion
+		expression := bin.BindExpression(expr.Arguments[0])
+		return bin.BindConversion(expression, typeSymbol.Type, true)
+	}
+
+	// normal function calling
+	// -----------------------
+
+	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
+	for _, arg := range expr.Arguments {
+		boundArg := bin.BindExpression(arg)
+		boundArguments = append(boundArguments, boundArg)
+	}
+
+	functionSymbol := LookupFunctionInPackage(expr.Identifier.Value, pack)
+	if len(boundArguments) != len(functionSymbol.Parameters) {
+		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
+		line, column, length := expr.Position()
+		print.Error(
+			"BINDER",
+			print.BadNumberOfParametersError,
+			line,
+			column,
+			length,
+			"function \"%s\" (in package \"%s\") expects %d arguments but got %d!",
+			expr.Identifier,
+			pack.Name,
+			len(functionSymbol.Parameters),
+			len(expr.Arguments),
+		)
+		os.Exit(-1)
+	}
+
+	for i := 0; i < len(boundArguments); i++ {
+		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false)
+	}
+
+	return boundnodes.CreateBoundPackageCallExpressionNode(pack, functionSymbol, boundArguments)
 }
 
 func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnodes.BoundUnaryExpressionNode {
@@ -1334,6 +1427,16 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 		return symbols.TypeSymbol{}, false
 	}
 
+	// if a package is given
+	if tc.Package != nil {
+		// look up this package
+		pack, _ := bin.LookupPackage(tc.Package.Value, false)
+
+		// get the class
+		bType, _ := LookupClassInPackage(tc.TypeIdentifier.Value, pack, false)
+		return bType.Type, true
+	}
+
 	typ, _ := bin.LookupType(tc, false)
 	return typ, true
 }
@@ -1388,6 +1491,17 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) 
 func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol) symbols.FunctionSymbol {
 	// try locating the class
 	clsSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
+
+	// if that failed -> look through packages
+	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
+		for _, pck := range bin.ActiveScope.GetAllPackages() {
+			for _, cls := range pck.Classes {
+				if cls.Name == baseType.Name {
+					clsSym = cls
+				}
+			}
+		}
+	}
 
 	// if that failed -> throw an error
 	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
@@ -1446,6 +1560,17 @@ func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) sy
 	// try locating the class
 	clsSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
 
+	// if that failed -> look through packages
+	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
+		for _, pck := range bin.ActiveScope.GetAllPackages() {
+			for _, cls := range pck.Classes {
+				if cls.Name == baseType.Name {
+					clsSym = cls
+				}
+			}
+		}
+	}
+
 	// if that failed -> throw an error
 	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
 		print.Error(
@@ -1472,11 +1597,11 @@ func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) sy
 
 	print.Error(
 		"BINDER",
-		print.TypeFunctionDoesNotExistError,
+		"eatborger",
 		0,
 		0, // needs extra data added and passed into the function
 		0, // Probably wrong, but it works - that's the tokorv guarantee
-		"Could not find function \"%s\" in class \"%s\", does the function exist?",
+		"Could not find field \"%s\" in class \"%s\", does the field exist?",
 		name,
 		baseType.Name,
 	)
@@ -1641,17 +1766,76 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 func (bin Binder) LookupClass(name string, canFail bool) (symbols.ClassSymbol, bool) {
 	cls := bin.ActiveScope.TryLookupSymbol(name)
 	if cls == nil {
-		return FailLookup(name, canFail)
+		return FailClassLookup(name, canFail)
 	}
 
 	if cls.SymbolType() != symbols.Class {
-		return FailLookup(name, canFail)
+		return FailClassLookup(name, canFail)
 	}
 
 	return cls.(symbols.ClassSymbol), true
 }
 
-func FailLookup(name string, canFail bool) (symbols.ClassSymbol, bool) {
+func (bin Binder) LookupPackage(name string, canFail bool) (symbols.PackageSymbol, bool) {
+	pck := bin.ActiveScope.TryLookupSymbol(name)
+	if pck == nil {
+		return FailPackageLookup(name, canFail)
+	}
+
+	if pck.SymbolType() != symbols.Package {
+		return FailPackageLookup(name, canFail)
+	}
+
+	return pck.(symbols.PackageSymbol), true
+}
+
+func LookupClassInPackage(name string, pack symbols.PackageSymbol, canFail bool) (symbols.ClassSymbol, bool) {
+	for _, cls := range pack.Classes {
+		if cls.Name == name {
+			return cls, true
+		}
+	}
+
+	if !canFail {
+		print.Error(
+			"BINDER",
+			print.ExplicitConversionError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Couldn't find class \"%s\" in package \"%s\"! Are you sure it exists?",
+			name,
+			pack.Name,
+		)
+		os.Exit(-1)
+	}
+
+	return symbols.ClassSymbol{}, false
+}
+
+func LookupFunctionInPackage(name string, pack symbols.PackageSymbol) symbols.FunctionSymbol {
+	for _, fnc := range pack.Functions {
+		if fnc.Name == name {
+			return fnc
+		}
+	}
+
+	print.Error(
+		"BINDER",
+		print.ExplicitConversionError,
+		0,
+		0, // needs extra data added and passed into the function
+		0, // Probably wrong, but it works - that's the tokorv guarantee
+		"Couldn't find function \"%s\" in package \"%s\"! Are you sure it exists?",
+		name,
+		pack.Name,
+	)
+	os.Exit(-1)
+
+	return symbols.FunctionSymbol{}
+}
+
+func FailClassLookup(name string, canFail bool) (symbols.ClassSymbol, bool) {
 	if !canFail {
 		//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
 		print.Error(
@@ -1667,6 +1851,24 @@ func FailLookup(name string, canFail bool) (symbols.ClassSymbol, bool) {
 	}
 
 	return symbols.ClassSymbol{}, false
+}
+
+func FailPackageLookup(name string, canFail bool) (symbols.PackageSymbol, bool) {
+	if !canFail {
+		//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+		print.Error(
+			"BINDER",
+			print.ExplicitConversionError,
+			0,
+			0, // needs extra data added and passed into the function
+			0, // Probably wrong, but it works - that's the tokorv guarantee
+			"Couldn't find package \"%s\"! Are you sure it was imported?",
+			name,
+		)
+		os.Exit(-1)
+	}
+
+	return symbols.PackageSymbol{}, false
 }
 
 // </TYPES> -------------------------------------------------------------------

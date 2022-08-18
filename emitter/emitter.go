@@ -27,6 +27,9 @@ type Emitter struct {
 	// referenced classes
 	Classes map[string]*Class
 
+	// referenced packages
+	Packages map[string]*Package
+
 	// global variables
 	Globals          map[string]Global
 	Functions        map[string]Function
@@ -67,9 +70,15 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		Classes:          make(map[string]*Class),
 		FunctionWrappers: make(map[string]*ir.Func),
 		Temps:            make([]string, 0),
+		Packages:         make(map[string]*Package),
 	}
 
 	emitter.EmitBuiltInFunctions()
+
+	// import all package functions and classes
+	for _, pck := range emitter.Program.Packages {
+		emitter.ImportPackage(pck)
+	}
 
 	// declare all class structs
 	for _, cls := range emitter.Program.Classes {
@@ -751,6 +760,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	case boundnodes.BoundCallExpression:
 		return emt.EmitCallExpression(blk, expr.(boundnodes.BoundCallExpressionNode))
 
+	case boundnodes.BoundPackageCallExpression:
+		return emt.EmitPackageCallExpression(blk, expr.(boundnodes.BoundPackageCallExpressionNode))
+
 	case boundnodes.BoundTypeCallExpression:
 		return emt.EmitTypeCallExpression(blk, expr.(boundnodes.BoundTypeCallExpressionNode))
 
@@ -1388,6 +1400,38 @@ func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCall
 	return call
 }
 
+func (emt *Emitter) EmitPackageCallExpression(blk **ir.Block, expr boundnodes.BoundPackageCallExpressionNode) value.Value {
+	arguments := make([]value.Value, 0)
+
+	for _, arg := range expr.Arguments {
+		expression := emt.EmitExpression(blk, arg)
+
+		// if this is an object -> increase its reference counter
+		// (only do this for variables)
+		if arg.IsPersistent() {
+			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
+				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
+				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
+			}
+		}
+
+		arguments = append(arguments, expression)
+	}
+
+	functionName := emt.Id(expr.Function)
+	call := (*blk).NewCall(emt.Packages[emt.Id(expr.Package)].Functions[functionName], arguments...)
+
+	// this is an external function so it doesn't implement the garbage collector
+	// meaning we have to clean up its arguments ourselves
+	for i, arg := range arguments {
+		if expr.Arguments[i].Type().IsObject {
+			emt.DestroyReference(blk, arg, "ReturnARC of external function '"+functionName+"'")
+		}
+	}
+
+	return call
+}
+
 func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.BoundTypeCallExpressionNode) value.Value {
 	// load the base value
 	// -------------------
@@ -1740,6 +1784,11 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 		}
 	}
 
+	// classes
+	if expr.ToType.IsObject && expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+		return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
+	}
+
 	fmt.Println("Unknown Conversion!")
 	return nil
 }
@@ -1759,6 +1808,8 @@ func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) cons
 		return constant.NewFloat(types.Float, 0)
 	case builtins.String.Fingerprint():
 		return constant.NewNull(emt.IRTypes(builtins.String).(*types.PointerType))
+	case builtins.Any.Fingerprint():
+		return constant.NewNull(emt.IRTypes(builtins.Any).(*types.PointerType))
 	}
 
 	if typ.Name == builtins.Array.Name {

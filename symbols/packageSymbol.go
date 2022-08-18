@@ -2,6 +2,8 @@ package symbols
 
 import (
 	"ReCT-Go-Compiler/print"
+
+	"github.com/llir/llvm/ir"
 )
 
 type PackageSymbol struct {
@@ -12,6 +14,8 @@ type PackageSymbol struct {
 	Name      string
 	Functions []FunctionSymbol
 	Classes   []ClassSymbol
+
+	Module *ir.Module
 }
 
 // implement the symbol interface
@@ -28,11 +32,12 @@ func (s PackageSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreatePackageSymbol(name string, functions []FunctionSymbol, classes []ClassSymbol) PackageSymbol {
+func CreatePackageSymbol(name string, functions []FunctionSymbol, classes []ClassSymbol, module *ir.Module) PackageSymbol {
 	return PackageSymbol{
 		Exists:    true,
 		Name:      name,
 		Functions: functions,
 		Classes:   classes,
+		Module:    module,
 	}
 }

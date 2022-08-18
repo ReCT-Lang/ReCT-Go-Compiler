@@ -104,6 +104,25 @@ func (s Scope) GetAllClasses() []symbols.ClassSymbol {
 	return classes
 }
 
+func (s Scope) GetAllPackages() []symbols.PackageSymbol {
+	packages := make([]symbols.PackageSymbol, 0)
+
+	for _, sym := range s.Symbols {
+		if sym.SymbolType() == symbols.Package {
+			packages = append(packages, sym.(symbols.PackageSymbol))
+		}
+	}
+
+	morePackages := make([]symbols.PackageSymbol, 0)
+	if s.Parent != nil {
+		morePackages = s.Parent.GetAllPackages()
+	}
+
+	packages = append(packages, morePackages...)
+
+	return packages
+}
+
 // constructor
 func CreateScope(parent *Scope) Scope {
 	return Scope{
