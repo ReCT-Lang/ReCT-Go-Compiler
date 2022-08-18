@@ -10,27 +10,30 @@
 #include <math.h>
 #include <time.h>
 
-#include "objects.h"
-#include "arc.h"
-#include "exceptions.h"
+#include "../systemlib/objects.h"
+#include "../systemlib/arc.h"
+#include "../systemlib/exceptions.h"
 
 #define BUFFER 1042
 
 bool isCursorVisible = true;
 
-void rct_Print(class_String *text)
+void sys_Print(class_String *text)
 {
-	exc_ThrowIfNull(text);
-    printf("%s\n", text->buffer);
+	// if theres no string, do a little trolling
+	if (text == NULL)
+		printf("\n");
+	else
+    	printf("%s\n", text->buffer);
 }
 
-void rct_Write(class_String *text)
+void sys_Write(class_String *text)
 {
-	exc_ThrowIfNull(text);
-    printf("%s", text->buffer);
+	if (text != NULL)
+    	printf("%s", text->buffer);
 }
 
-class_String* rct_Input()
+class_String* sys_Input()
 {
     char *str = malloc(sizeof(char) * BUFFER), *err;
     int pos;
@@ -57,17 +60,17 @@ class_String* rct_Input()
     return strInstance;
 }
 
-void rct_Clear()
+void sys_Clear()
 {
     printf("\033[2J\033[H");
 }
 
-void rct_SetCursor(int x, int y)
+void sys_SetCursor(int x, int y)
 {
     printf("%c[%d;%df", 0x1B, y, x);
 }
 
-void rct_SetCursorVisible(bool state)
+void sys_SetCursorVisible(bool state)
 {
     isCursorVisible = state;
 
@@ -79,17 +82,17 @@ void rct_SetCursorVisible(bool state)
     printf("\e[?251]");
 }
 
-bool rct_GetCursorVisible()
+bool sys_GetCursorVisible()
 {
     return isCursorVisible;
 }
 
-int rct_Random(int maxValue)
+int sys_Random(int maxValue)
 {
     return rand() % maxValue;
 }
 
-void rct_Sleep(int ms)
+void sys_Sleep(int ms)
 {
     #ifdef _WIN32
 	Sleep(ms);
@@ -98,17 +101,17 @@ void rct_Sleep(int ms)
     #endif
 }
 
-int rct_Sqrt(int num)
+int sys_Sqrt(int num)
 {
     return (int)floor(sqrt((double)num));
 }
 
-int rct_Now()
+int sys_Now()
 {
     return (int)clock();
 }
 
-class_String *rct_Char(int index)
+class_String *sys_Char(int index)
 {
 	char *singleChar = (char*)malloc(1);
 	singleChar[0] = (char)index;

@@ -1,5 +1,5 @@
-; ModuleID = './systemlib.c'
-source_filename = "./systemlib.c"
+; ModuleID = './sys.c'
+source_filename = "./sys.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
@@ -16,7 +16,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.4 = private unnamed_addr constant [8 x i8] c"\1B[?251]\00", align 1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Print(%struct.class_String* noundef %0) #0 {
+define dso_local void @sys_Print(%struct.class_String* noundef %0) #0 {
   %2 = alloca %struct.class_String*, align 8
   store %struct.class_String* %0, %struct.class_String** %2, align 8
   %3 = load %struct.class_String*, %struct.class_String** %2, align 8
@@ -34,7 +34,7 @@ declare void @exc_ThrowIfNull(i8* noundef) #1
 declare i32 @printf(i8* noundef, ...) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Write(%struct.class_String* noundef %0) #0 {
+define dso_local void @sys_Write(%struct.class_String* noundef %0) #0 {
   %2 = alloca %struct.class_String*, align 8
   store %struct.class_String* %0, %struct.class_String** %2, align 8
   %3 = load %struct.class_String*, %struct.class_String** %2, align 8
@@ -48,7 +48,7 @@ define dso_local void @rct_Write(%struct.class_String* noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local %struct.class_String* @rct_Input() #0 {
+define dso_local %struct.class_String* @sys_Input() #0 {
   %1 = alloca i8*, align 8
   %2 = alloca i8*, align 8
   %3 = alloca i32, align 4
@@ -173,13 +173,13 @@ declare void @String_public_Load(%struct.class_String* noundef, i8* noundef) #1
 declare void @arc_RegisterReference(%struct.class_Any* noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Clear() #0 {
+define dso_local void @sys_Clear() #0 {
   %1 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([8 x i8], [8 x i8]* @.str.2, i64 0, i64 0))
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_SetCursor(i32 noundef %0, i32 noundef %1) #0 {
+define dso_local void @sys_SetCursor(i32 noundef %0, i32 noundef %1) #0 {
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   store i32 %0, i32* %3, align 4
@@ -191,7 +191,7 @@ define dso_local void @rct_SetCursor(i32 noundef %0, i32 noundef %1) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_SetCursorVisible(i1 noundef zeroext %0) #0 {
+define dso_local void @sys_SetCursorVisible(i1 noundef zeroext %0) #0 {
   %2 = alloca i8, align 1
   %3 = zext i1 %0 to i8
   store i8 %3, i8* %2, align 1
@@ -216,14 +216,14 @@ define dso_local void @rct_SetCursorVisible(i1 noundef zeroext %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local zeroext i1 @rct_GetCursorVisible() #0 {
+define dso_local zeroext i1 @sys_GetCursorVisible() #0 {
   %1 = load i8, i8* @isCursorVisible, align 1
   %2 = trunc i8 %1 to i1
   ret i1 %2
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @rct_Random(i32 noundef %0) #0 {
+define dso_local i32 @sys_Random(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = call i32 @rand() #4
@@ -236,7 +236,7 @@ define dso_local i32 @rct_Random(i32 noundef %0) #0 {
 declare i32 @rand() #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @rct_Sleep(i32 noundef %0) #0 {
+define dso_local void @sys_Sleep(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
@@ -248,7 +248,7 @@ define dso_local void @rct_Sleep(i32 noundef %0) #0 {
 declare i32 @usleep(i32 noundef) #1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @rct_Sqrt(i32 noundef %0) #0 {
+define dso_local i32 @sys_Sqrt(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
@@ -266,7 +266,7 @@ declare double @sqrt(double noundef) #2
 declare double @llvm.floor.f64(double) #3
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local i32 @rct_Now() #0 {
+define dso_local i32 @sys_Now() #0 {
   %1 = call i64 @clock() #4
   %2 = trunc i64 %1 to i32
   ret i32 %2
@@ -276,7 +276,7 @@ define dso_local i32 @rct_Now() #0 {
 declare i64 @clock() #2
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local %struct.class_String* @rct_Char(i32 noundef %0) #0 {
+define dso_local %struct.class_String* @sys_Char(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i8*, align 8
   %4 = alloca %struct.class_String*, align 8

@@ -38,6 +38,8 @@
 		"algorithm": "c",
 		"__bit_reference": "c",
 		"map": "c",
-		"set": "c"
+		"set": "c",
+		"objects.h": "c",
+		"exceptions.h": "c"
 	}
 }

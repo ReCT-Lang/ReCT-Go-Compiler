@@ -1,0 +1,2 @@
+package sys;
+sys::Print("elo");

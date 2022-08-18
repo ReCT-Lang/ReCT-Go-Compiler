@@ -1,10 +1,7 @@
 package emitter
 
 import (
-	"ReCT-Go-Compiler/binder"
-	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/irtools"
-	"ReCT-Go-Compiler/symbols"
 	"strings"
 
 	"github.com/llir/llvm/ir"
@@ -21,9 +18,6 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 
 	// link our classes and arc
 	emt.EmitClassAndArcReferences(module)
-
-	// link our built-ins
-	emt.EmitSystemFuncReferences(module)
 
 	// Version()
 	//Version := emt.Module.NewFunc("rct_Version", types.I8Ptr)
@@ -70,27 +64,6 @@ func (emt *Emitter) EmitCLibReferences() {
 
 	atof := emt.Module.NewFunc("atof", types.Double, ir.NewParam("str", types.I8Ptr))
 	emt.CFuncs["atof"] = atof
-}
-
-func (emt *Emitter) EmitSystemFuncReferences(module *ir.Module) {
-
-	rctFuncs := irtools.FindFunctionsWithPrefix(module, "rct_")
-
-	for _, fnc := range rctFuncs {
-		functionName := strings.Split(fnc.Name(), "_")[1]
-		functionSymbol := symbols.FunctionSymbol{}
-
-		// find what system function symbol this links to
-		for _, sysFnc := range builtins.Functions {
-			if functionName == sysFnc.Name {
-				functionSymbol = sysFnc
-				break
-			}
-		}
-
-		importedFunction := emt.ImportFunction(fnc)
-		emt.Functions[emt.Id(functionSymbol)] = Function{IRFunction: importedFunction, BoundFunction: binder.BoundFunction{Symbol: functionSymbol}}
-	}
 }
 
 func (emt *Emitter) EmitClassAndArcReferences(module *ir.Module) {

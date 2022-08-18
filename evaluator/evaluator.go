@@ -14,8 +14,6 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Evaluator struct {
@@ -396,71 +394,7 @@ func (evl *Evaluator) EvaluateBinaryExpression(expr boundnodes.BoundBinaryExpres
 
 func (evl *Evaluator) EvaluateCallExpression(expr boundnodes.BoundCallExpressionNode) interface{} {
 	// Built in functions
-	if expr.Function.Fingerprint() == builtins.Print.Fingerprint() {
-		text := evl.EvaluateExpression(expr.Arguments[0])
-		fmt.Println(text)
-		return nil
-
-	} else if expr.Function.Fingerprint() == builtins.Write.Fingerprint() {
-		text := evl.EvaluateExpression(expr.Arguments[0])
-		fmt.Print(text)
-		return nil
-
-	} else if expr.Function.Fingerprint() == builtins.Input.Fingerprint() {
-		text, _ := reader.ReadString('\n')
-		return text
-
-	} else if expr.Function.Fingerprint() == builtins.InputKey.Fingerprint() {
-		b := make([]byte, 1)
-		os.Stdin.Read(b)
-		return string(b)
-
-	} else if expr.Function.Fingerprint() == builtins.Clear.Fingerprint() {
-		fmt.Print("\033[2J")            // clear screen
-		fmt.Printf("\033[%d;%dH", 0, 0) // set cursor
-		return nil
-
-	} else if expr.Function.Fingerprint() == builtins.SetCursor.Fingerprint() {
-		x := evl.EvaluateExpression(expr.Arguments[0])
-		y := evl.EvaluateExpression(expr.Arguments[1])
-		fmt.Printf("\033[%d;%dH", y, x) // set cursor
-		return nil
-
-	} else if expr.Function.Fingerprint() == builtins.SetCursorVisible.Fingerprint() {
-		visible := evl.EvaluateExpression(expr.Arguments[0])
-		cursorVisible = visible.(bool)
-
-		if cursorVisible {
-			fmt.Print("\033[?25h")
-		} else {
-			fmt.Print("\033[?25l")
-		}
-
-		return nil
-
-	} else if expr.Function.Fingerprint() == builtins.GetCursorVisible.Fingerprint() {
-		return cursorVisible
-
-	} else if expr.Function.Fingerprint() == builtins.GetSizeX.Fingerprint() {
-		width, _, _ := terminal.GetSize(0)
-		return width
-
-	} else if expr.Function.Fingerprint() == builtins.GetSizeY.Fingerprint() {
-		_, height, _ := terminal.GetSize(0)
-		return height
-
-	} else if expr.Function.Fingerprint() == builtins.Random.Fingerprint() {
-		max := evl.EvaluateExpression(expr.Arguments[0])
-		return rand.Intn(max.(int))
-
-	} else if expr.Function.Fingerprint() == builtins.Sleep.Fingerprint() {
-		mills := evl.EvaluateExpression(expr.Arguments[0])
-		time.Sleep(time.Duration(mills.(int)) * time.Millisecond)
-		return nil
-
-	} else if expr.Function.Fingerprint() == builtins.Version.Fingerprint() {
-		return "1.1"
-	}
+	// they uh... they dont exist anymore
 
 	locals := make(map[string]interface{})
 	for i, arg := range expr.Arguments {

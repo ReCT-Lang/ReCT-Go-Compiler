@@ -126,22 +126,7 @@ func BindParentScope(globalScope GlobalScope) Scope {
 func BindRootScope() Scope {
 	scope := CreateScope(nil)
 
-	scope.TryDeclareSymbol(builtins.Print)
-	scope.TryDeclareSymbol(builtins.Write)
-	scope.TryDeclareSymbol(builtins.Input)
-	scope.TryDeclareSymbol(builtins.InputKey)
-	scope.TryDeclareSymbol(builtins.Clear)
-	scope.TryDeclareSymbol(builtins.SetCursor)
-	scope.TryDeclareSymbol(builtins.GetSizeX)
-	scope.TryDeclareSymbol(builtins.GetSizeY)
-	scope.TryDeclareSymbol(builtins.SetCursorVisible)
-	scope.TryDeclareSymbol(builtins.GetCursorVisible)
-	scope.TryDeclareSymbol(builtins.Random)
-	scope.TryDeclareSymbol(builtins.Sleep)
-	scope.TryDeclareSymbol(builtins.Version)
-	scope.TryDeclareSymbol(builtins.Sqrt)
-	scope.TryDeclareSymbol(builtins.Now)
-	scope.TryDeclareSymbol(builtins.Char)
+	// no more builtins which could go here...
 
 	return scope
 }
