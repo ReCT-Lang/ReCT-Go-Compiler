@@ -55,6 +55,9 @@ type Emitter struct {
 
 const verboseARC = false
 
+var CompileAsPackage bool
+var PackageName string
+
 func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	emitter := Emitter{
 		Program:          program,
@@ -104,7 +107,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 
 	// declare all function names
 	for _, fnc := range emitter.Program.Functions {
-		if !fnc.Symbol.BuiltIn {
+		if !fnc.Symbol.BuiltIn && !(CompileAsPackage && fnc.Symbol.Name == "main") {
 			function := Function{IRFunction: emitter.EmitFunction(fnc.Symbol, fnc.Body), BoundFunction: fnc}
 			functionName := emitter.Id(fnc.Symbol)
 			emitter.Functions[functionName] = function
@@ -112,9 +115,11 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	}
 
 	// emit main function first
-	mainName := emitter.Id(program.MainFunction)
-	emitter.FunctionSym = emitter.Functions[mainName].BoundFunction.Symbol
-	emitter.EmitBlockStatement(emitter.Functions[mainName].BoundFunction.Symbol, emitter.Functions[mainName].IRFunction, emitter.Functions[mainName].BoundFunction.Body)
+	if !CompileAsPackage {
+		mainName := emitter.Id(program.MainFunction)
+		emitter.FunctionSym = emitter.Functions[mainName].BoundFunction.Symbol
+		emitter.EmitBlockStatement(emitter.Functions[mainName].BoundFunction.Symbol, emitter.Functions[mainName].IRFunction, emitter.Functions[mainName].BoundFunction.Body)
+	}
 
 	// emit function bodies
 	for _, fnc := range emitter.Functions {
@@ -165,6 +170,18 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	emt.Classes[emt.Id(cls.Symbol.Type)] = &Class{
 		Name: cls.Symbol.Name,
 		Type: &types.StructType{},
+	}
+
+	// if this is a package
+	if CompileAsPackage {
+		// create a constant which holds all the field names
+		fieldNameStrings := make([]constant.Constant, 0)
+		for _, fld := range cls.Symbol.Fields {
+			fieldNameStrings = append(fieldNameStrings, emt.GetConstantStringConstant(fld.SymbolName()))
+		}
+
+		fieldNameArr := constant.NewArray(types.NewArray(uint64(len(fieldNameStrings)), types.I8Ptr), fieldNameStrings...)
+		emt.Module.NewGlobalDef(cls.Symbol.Name+"_Fields_Const", fieldNameArr)
 	}
 }
 
@@ -427,7 +444,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	returnType := emt.IRTypes(sym.Type)
 
 	// the function name
-	functionName := emt.Id(sym)
+	functionName := tern(CompileAsPackage, PackageName+"_"+sym.Name, emt.Id(sym))
 	irName := tern(sym.Fingerprint() == emt.Program.MainFunction.Fingerprint(), "main", functionName)
 
 	// create an IR function definition
@@ -1858,8 +1875,14 @@ func (emt *Emitter) GetStringConstant(blk **ir.Block, literal string) value.Valu
 	// add a null byte at the end
 	str := literal + "\x00"
 
+	// optional prefix
+	prefix := ""
+	if CompileAsPackage {
+		prefix = "." + PackageName
+	}
+
 	// create a global to store our literal
-	global := emt.Module.NewGlobalDef(fmt.Sprintf(".str.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
+	global := emt.Module.NewGlobalDef(fmt.Sprintf(prefix+".str.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
 	global.Immutable = true
 	emt.StrNameCounter++
 
@@ -1873,8 +1896,14 @@ func (emt *Emitter) GetConstantStringConstant(literal string) constant.Constant 
 	// add a null byte at the end
 	str := literal + "\x00"
 
+	// optional prefix
+	prefix := ""
+	if CompileAsPackage {
+		prefix = "." + PackageName
+	}
+
 	// create a global to store our literal
-	global := emt.Module.NewGlobalDef(fmt.Sprintf(".str.c.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
+	global := emt.Module.NewGlobalDef(fmt.Sprintf(prefix+".str.c.%d", emt.StrNameCounter), constant.NewCharArrayFromString(str))
 	global.Immutable = true
 	emt.StrNameCounter++
 	pointer := constant.NewGetElementPtr(types.NewArray(uint64(len(str)), types.I8), global, CIC32(0), CIC32(0))

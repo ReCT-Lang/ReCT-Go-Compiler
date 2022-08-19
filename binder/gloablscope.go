@@ -103,6 +103,10 @@ func BindParentScope(globalScope GlobalScope) Scope {
 	parent := BindRootScope()
 	workingScope := CreateScope(&parent)
 
+	for _, pck := range globalScope.Packages {
+		workingScope.TryDeclareSymbol(pck)
+	}
+
 	for _, cls := range globalScope.Classes {
 		workingScope.TryDeclareSymbol(cls)
 	}

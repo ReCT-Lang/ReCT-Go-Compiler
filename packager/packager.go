@@ -15,7 +15,7 @@ import (
 )
 
 // all packages weve already loaded
-var packagesSoFar = make([]symbols.PackageSymbol, 0)
+var PackagesSoFar = make([]symbols.PackageSymbol, 0)
 
 func ResolvePackage(name string) symbols.PackageSymbol {
 	// the path where the package *should* be
@@ -47,7 +47,7 @@ func ResolvePackage(name string) symbols.PackageSymbol {
 
 	// create a package symbol
 	pack := symbols.CreatePackageSymbol(name, funcs, classes, module)
-	packagesSoFar = append(packagesSoFar, pack)
+	PackagesSoFar = append(PackagesSoFar, pack)
 
 	return pack
 }
@@ -58,7 +58,7 @@ func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes [
 
 	for _, fnc := range funcs {
 		fncSym := CreateFunctionSymbolFromModule(fnc, prefix, true, classes)
-		print.PrintCF(print.Cyan, "Importing Function '%s'...", fncSym.Name)
+		//print.PrintCF(print.Cyan, "Importing Function '%s'...", fncSym.Name)
 		syms = append(syms, fncSym)
 	}
 
@@ -108,7 +108,7 @@ func CreateClassSymbolsFromModule(module *ir.Module) ([]symbols.ClassSymbol, []*
 				continue
 			}
 
-			print.PrintCF(print.Cyan, "Importing Class '%s'...", className)
+			//print.PrintCF(print.Cyan, "Importing Class '%s'...", className)
 
 			// create a placeholder symbol
 			class := symbols.CreateClassSymbol(
@@ -149,8 +149,7 @@ func CreateClassSymbolsFromModule(module *ir.Module) ([]symbols.ClassSymbol, []*
 				fncSym := CreateFunctionSymbolFromModule(fnc, class.Name+"_public_", true, classes)
 				fncSym.Parameters = fncSym.Parameters[1:]
 
-				print.PrintCF(print.Yellow, " Importing Method '%s'...", fncSym.Name)
-				fncSym.Type.Print("")
+				//print.PrintCF(print.Yellow, " Importing Method '%s'...", fncSym.Name)
 
 				class.Functions = append(class.Functions, fncSym)
 			}
@@ -182,7 +181,7 @@ func CreateClassSymbolsFromModule(module *ir.Module) ([]symbols.ClassSymbol, []*
 			fieldName := strings.TrimSuffix(fieldNames[i-2], "\x00")
 			fieldType := ResolveType(clsType.Fields[i], classes)
 
-			print.PrintCF(print.Blue, " Importing Field '%s' (%s)...", fieldName, fieldType.Name)
+			//print.PrintCF(print.Blue, " Importing Field '%s' (%s)...", fieldName, fieldType.Name)
 
 			fields = append(fields, symbols.CreateGlobalVariableSymbol(
 				fieldName,
@@ -327,7 +326,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 		}
 	}
 
-	for _, pkg := range packagesSoFar {
+	for _, pkg := range PackagesSoFar {
 		for _, cls := range pkg.Classes {
 			if typeName == cls.Name {
 				return &cls.Type

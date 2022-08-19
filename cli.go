@@ -5,12 +5,15 @@ import (
 	"ReCT-Go-Compiler/emitter"
 	"ReCT-Go-Compiler/evaluator"
 	"ReCT-Go-Compiler/lexer"
+	"ReCT-Go-Compiler/packager"
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/print"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path"
 	"strings"
 )
 
@@ -31,6 +34,11 @@ var debug bool         // -xx
 var tests bool         // Just for running test file like test.rct ( -t )
 var files []string
 var lookup int // For looking up error details
+var outputPath string
+var llvm bool
+
+var CompileAsPackage bool
+var PackageName string
 
 // Constants that are used throughout code
 // Should be updated when necessary
@@ -48,6 +56,9 @@ func Init() {
 	// Test (-t) will not be in the help message as it's only really going ot be used for testing compiler features.
 	flag.BoolVar(&tests, "t", false, "For compiler test files (developers only)")
 	flag.IntVar(&lookup, "lookup", 0, "Displays further detail and examples of Errors")
+	flag.StringVar(&outputPath, "o", "", "Output file")
+	flag.BoolVar(&llvm, "llvm", false, "Compile to LLVM Module")
+	flag.StringVar(&PackageName, "package", "", "Compile as a package with the given name")
 	flag.Parse()
 
 	// needs to be called after flag.Parse() or it'll be empty lol
@@ -83,6 +94,11 @@ func ProcessFlags() {
 			InterpretFile(files[0])
 
 		} else {
+			if PackageName != "" {
+				emitter.CompileAsPackage = true
+				emitter.PackageName = PackageName
+			}
+
 			CompileFile(files[0])
 		}
 	}
@@ -103,9 +119,118 @@ func CompileFile(file string) {
 	//fmt.Println(module)
 	output := module.String()
 
-	print.PrintC(print.Green, "Compiled successfully!")
+	print.PrintC(print.Green, "Compiled module successfully!")
 
-	os.WriteFile("./out.ll", []byte(output), 0644)
+	// if we're just after the LL Module
+	if llvm {
+		// check if we need to generate a path
+		outPath := outputPath
+		if outputPath == "" {
+			ext := path.Ext(file)
+			outPath = file[0:len(file)-len(ext)] + ".ll"
+		}
+
+		// write the module
+		os.WriteFile(outPath, []byte(output), 0644)
+
+		// we're done
+		return
+	}
+
+	// if thats not the case -> spin up a temp dir
+	os.Mkdir("./.tmp", os.ModePerm)
+
+	// write the module there
+	os.WriteFile("./.tmp/prgout.ll", []byte(output), 0644)
+
+	// opt all used packages
+	linkFiles := make([]string, 0)
+	for _, pck := range packager.PackagesSoFar {
+		// run the opt command
+		cmd := exec.Command("opt", "./packages/"+pck.Name+".ll", "-o", "./.tmp/"+pck.Name+".bc")
+		o, err := cmd.Output()
+
+		// if something goes wrong -> report that to the user
+		if err != nil {
+			print.PrintCF(print.Red, "Error compiling package '%s' into llvm bitcode!", pck.Name)
+			fmt.Println(err.Error())
+			fmt.Println(string(o))
+
+			// delete the temp dir and die
+			os.RemoveAll("./.tmp")
+			os.Exit(-1)
+		}
+
+		// if everything is fine, add this file to the linking list
+		linkFiles = append(linkFiles, "./.tmp/"+pck.Name+".bc")
+	}
+
+	// opt this module
+	cmd := exec.Command("opt", "./.tmp/prgout.ll", "-o", "./.tmp/prgout.bc")
+	o, err := cmd.Output()
+
+	// if something goes wrong -> report that to the user
+	if err != nil {
+		print.PrintC(print.Red, "Error compiling this llvm module into llvm bitcode!")
+		fmt.Println(err.Error())
+		fmt.Println(string(o))
+
+		// delete the temp dir and die
+		os.RemoveAll("./.tmp")
+		os.Exit(-1)
+	}
+
+	// if everything is fine, add our module to the linking list
+	linkFiles = append(linkFiles, "./.tmp/prgout.bc")
+
+	// add the systemlib to the linklist
+	linkFiles = append(linkFiles, "./systemlib/systemlib_lin.bc")
+
+	// args for llvm link
+	linkArgs := append(linkFiles, "-o", "./.tmp/completeout.bc")
+
+	// call the llvm linker
+	cmd = exec.Command("llvm-link", linkArgs...)
+	o, err = cmd.Output()
+
+	// if something goes wrong -> report that to the user
+	if err != nil {
+		print.PrintC(print.Red, "Error linking llvm bitcode!")
+		fmt.Println(cmd)
+		fmt.Println(err.Error())
+		fmt.Println(string(o))
+
+		// delete the temp dir and die
+		//os.RemoveAll("./.tmp")
+		os.Exit(-1)
+	}
+
+	// lastly, clang the bitcode into an executable
+	outPath := outputPath
+	if outputPath == "" {
+		ext := path.Ext(file)
+		outPath = file[0 : len(file)-len(ext)]
+	}
+
+	// call clang
+	cmd = exec.Command("clang", "-lm", "-pthread", "-rdynamic", "./.tmp/completeout.bc", "-o", outPath)
+	o, err = cmd.Output()
+
+	// if something goes wrong -> report that to the user
+	if err != nil {
+		print.PrintC(print.Red, "Error compiling llvm bitcode to executable!")
+		fmt.Println(err.Error())
+		fmt.Println(string(o))
+
+		// delete the temp dir and die
+		os.RemoveAll("./.tmp")
+		os.Exit(-1)
+	}
+
+	// utterly destroy the temp dir
+	os.RemoveAll("./.tmp")
+
+	print.PrintC(print.Cyan, "Compiled executable successfully!")
 }
 
 // Prepare runs the lexer, parser, binder, and lowerer. This is used before evaluation or emitting.
@@ -116,9 +241,6 @@ func Prepare(file string) binder.BoundProgram {
 
 	//print.WriteC(print.Yellow, "-> Parsing... ")
 	members := parser.Parse(tokens)
-	for _, v := range members {
-		v.Print("")
-	}
 	//print.PrintC(print.Green, "Done!")
 
 	//print.WriteC(print.Red, "-> Binding... ")

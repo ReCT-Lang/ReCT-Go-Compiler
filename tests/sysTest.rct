@@ -1,2 +1,12 @@
 package sys;
+package tst;
+
 sys::Print("elo");
+tst::PrintString("this is a string");
+
+var inst <- make tst::TestClass();
+inst->FieldOne <- "cool string";
+inst->FieldTwo <- 100;
+
+sys::Print(inst->FieldOne);
+sys::Print(string(inst->FieldTwo));

@@ -1,0 +1,10 @@
+package sys
+
+class TestClass {
+	set string FieldOne;
+	set int FieldTwo;
+}
+
+function PrintString(someString string) {
+	sys::Print("a");
+}
