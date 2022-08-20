@@ -1665,6 +1665,8 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		return builtins.Byte, true
 	case "int":
 		return builtins.Int, true
+	case "long":
+		return builtins.Long, true
 	case "float":
 		return builtins.Float, true
 	case "string":
@@ -1738,6 +1740,8 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 		return builtins.Byte, true
 	case "int":
 		return builtins.Int, true
+	case "long":
+		return builtins.Long, true
 	case "float":
 		return builtins.Float, true
 	case "string":
@@ -1753,7 +1757,7 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 				0,
 				0, // needs extra data added and passed into the function
 				0, // Probably wrong, but it works - that's the tokorv guarantee
-				"Couldn't find datatype \"%s\"! Are you sure it exists?",
+				"Couldn't find primitive datatype \"%s\"! Are you sure it exists?",
 				name,
 			)
 			os.Exit(-1)

@@ -228,6 +228,11 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSym
 		return builtins.Int
 	}
 
+	// long primitive type
+	if typ.Equal(types.I64) {
+		return builtins.Long
+	}
+
 	// float primitive type
 	if typ.Equal(types.Float) {
 		return builtins.Float
@@ -259,7 +264,7 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSym
 
 func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLower bool) *symbols.TypeSymbol {
 	// disallow boxed types
-	if typeName == "Int" || typeName == "Byte" || typeName == "Float" || typeName == "Bool" {
+	if typeName == "Int" || typeName == "Byte" || typeName == "Long" || typeName == "Float" || typeName == "Bool" {
 		print.Error(
 			"PACKAGER",
 			"lil error",
@@ -344,6 +349,10 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol) symbol
 
 	if typeName == "Byte" || typeName == "byte" {
 		return builtins.Byte
+	}
+
+	if typeName == "Long" || typeName == "long" {
+		return builtins.Long
 	}
 
 	if typeName == "Int" || typeName == "int" {

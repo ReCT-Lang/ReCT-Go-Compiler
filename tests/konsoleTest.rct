@@ -1,0 +1,14 @@
+package sys;
+package konsole;
+
+from (i <- 0) to 7 {
+	konsole::WriteInt(string("#"), i)
+}
+
+sys::Print("");
+
+from (i <- 0) to 7 {
+	konsole::WriteInt(string("#"), i+8)
+}
+
+sys::Print("");

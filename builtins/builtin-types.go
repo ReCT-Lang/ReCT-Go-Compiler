@@ -7,6 +7,7 @@ var (
 	Bool   = symbols.CreateTypeSymbol("bool", make([]symbols.TypeSymbol, 0), false, false)
 	Byte   = symbols.CreateTypeSymbol("byte", make([]symbols.TypeSymbol, 0), false, false)
 	Int    = symbols.CreateTypeSymbol("int", make([]symbols.TypeSymbol, 0), false, false)
+	Long   = symbols.CreateTypeSymbol("long", make([]symbols.TypeSymbol, 0), false, false)
 	Float  = symbols.CreateTypeSymbol("float", make([]symbols.TypeSymbol, 0), false, false)
 	String = symbols.CreateTypeSymbol("string", make([]symbols.TypeSymbol, 0), true, false)
 	Any    = symbols.CreateTypeSymbol("any", make([]symbols.TypeSymbol, 0), true, false)
@@ -26,6 +27,6 @@ var (
 	Identity = symbols.CreateTypeSymbol("¯\\_(ツ)_/¯", make([]symbols.TypeSymbol, 0), false, false)
 
 	Types = []symbols.TypeSymbol{
-		Void, Bool, Int, Float, String, Any, Action, Array, PArray, Thread,
+		Void, Bool, Byte, Int, Long, Float, String, Any, Action, Array, PArray, Thread,
 	}
 )

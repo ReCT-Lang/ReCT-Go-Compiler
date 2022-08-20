@@ -11,6 +11,10 @@ typedef struct String_vTable String_vTable;
 typedef struct class_String  class_String;
 typedef struct Int_vTable    Int_vTable;
 typedef struct class_Int     class_Int;
+typedef struct Byte_vTable    Byte_vTable;
+typedef struct class_Byte     class_Byte;
+typedef struct Long_vTable    Long_vTable;
+typedef struct class_Long     class_Long;
 typedef struct Float_vTable  Float_vTable;
 typedef struct class_Float   class_Float;
 typedef struct Bool_vTable   Bool_vTable;
@@ -29,6 +33,8 @@ typedef void (*DiePointer)(void*);
 void Any_public_Die    (void*);
 void String_public_Die (void*);
 void Int_public_Die    (void*);
+void Byte_public_Die   (void*);
+void Long_public_Die   (void*);
 void Float_public_Die  (void*);
 void Bool_public_Die   (void*);
 void Array_public_Die  (void*);
@@ -39,6 +45,8 @@ void Thread_public_Die (void*);
 void Any_public_Constructor(class_Any*);
 void String_public_Constructor(class_String*);
 void Int_public_Constructor(class_Int*, int);
+void Byte_public_Constructor(class_Byte*, char);
+void Long_public_Constructor(class_Long*, long);
 void Float_public_Constructor(class_Float*, float);
 void Bool_public_Constructor(class_Bool*, bool);
 void Array_public_Constructor(class_Array*, int);
@@ -104,7 +112,7 @@ class_String *String_public_Substring(class_String*, int, int);
 struct Int_vTable {
 	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
 	const char* className;          // will be "Int"
-	DiePointer dieFunction;          // destructor function pointer
+	DiePointer dieFunction;         // destructor function pointer
 };
 
 // the objects struct
@@ -116,6 +124,50 @@ struct class_Int {
 
 // the objects methods
 int Int_public_GetValue(class_Int*);
+
+// -----------------------------------------------------------------------------
+// "byte" object type
+// Note: this is an object version of a byte, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// the object's vtable (for method lookup and method overriding)
+struct Byte_vTable {
+	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
+	const char* className;          // will be "Byte"
+	DiePointer dieFunction;         // destructor function pointer
+};
+
+// the objects struct
+struct class_Byte {
+	const Byte_vTable* vtable;  // our vTable
+	int referenceCounter;       // implementation of the reference counter
+	char value;
+};
+
+// the objects methods
+char Byte_public_GetValue(class_Byte*);
+
+// -----------------------------------------------------------------------------
+// "long" object type
+// Note: this is an object version of a long, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// the object's vtable (for method lookup and method overriding)
+struct Long_vTable {
+	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
+	const char* className;          // will be "Long"
+	DiePointer dieFunction;         // destructor function pointer
+};
+
+// the objects struct
+struct class_Long {
+	const Long_vTable* vtable;  // our vTable
+	int referenceCounter;       // implementation of the reference counter
+	long value;
+};
+
+// the objects methods
+long Long_public_GetValue(class_Long*);
 
 // -----------------------------------------------------------------------------
 // "float" object type

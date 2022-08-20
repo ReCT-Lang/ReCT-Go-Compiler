@@ -213,6 +213,60 @@ int Int_public_GetValue(class_Int* this) {
 }
 
 // -----------------------------------------------------------------------------
+// "byte" object type
+// Note: this is an object version of a byte, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// definition for the Int vTable
+const Byte_vTable Byte_vTable_Const = {&Any_vTable_Const, "Byte", &Byte_public_Die};
+
+// definition for the objects constructor
+void Byte_public_Constructor(class_Byte* this, char value) {
+	this->vtable = &Byte_vTable_Const;
+	this->referenceCounter = 0;
+	this->value = value;
+}
+
+// definition for the objects destructor
+void Byte_public_Die(void* this) {}
+
+// definition for an int.GetValue() method
+char Byte_public_GetValue(class_Byte* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return 0;
+
+	// if not -> return the stored value
+	return this->value;
+}
+
+// -----------------------------------------------------------------------------
+// "long" object type
+// Note: this is an object version of a long, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// definition for the Int vTable
+const Long_vTable Long_vTable_Const = {&Any_vTable_Const, "Long", &Long_public_Die};
+
+// definition for the objects constructor
+void Long_public_Constructor(class_Long* this, long value) {
+	this->vtable = &Long_vTable_Const;
+	this->referenceCounter = 0;
+	this->value = value;
+}
+
+// definition for the objects destructor
+void Long_public_Die(void* this) {}
+
+// definition for an int.GetValue() method
+long Long_public_GetValue(class_Long* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return 0;
+
+	// if not -> return the stored value
+	return this->value;
+}
+
+// -----------------------------------------------------------------------------
 // "float" object type
 // Note: this is an object version of a float, this is to box and crunch it
 // -----------------------------------------------------------------------------

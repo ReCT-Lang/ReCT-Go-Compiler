@@ -55,10 +55,11 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 		return ExplicitConversion
 	}
 
-	// converting from bool, byte, int, or float to string
+	// converting from bool, byte, int, long, or float to string
 	if (from.Fingerprint() == builtins.Bool.Fingerprint() ||
 		from.Fingerprint() == builtins.Byte.Fingerprint() ||
 		from.Fingerprint() == builtins.Int.Fingerprint() ||
+		from.Fingerprint() == builtins.Long.Fingerprint() ||
 		from.Fingerprint() == builtins.Float.Fingerprint()) &&
 		to.Fingerprint() == builtins.String.Fingerprint() {
 		return ExplicitConversion
@@ -81,6 +82,18 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 	// allow IMPLICIT int -> byte
 	if from.Fingerprint() == builtins.Int.Fingerprint() &&
 		to.Fingerprint() == builtins.Byte.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT long -> int
+	if from.Fingerprint() == builtins.Long.Fingerprint() &&
+		to.Fingerprint() == builtins.Int.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT int -> long
+	if from.Fingerprint() == builtins.Int.Fingerprint() &&
+		to.Fingerprint() == builtins.Long.Fingerprint() {
 		return ImplicitConversion
 	}
 

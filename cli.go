@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -36,6 +37,7 @@ var files []string
 var lookup int // For looking up error details
 var outputPath string
 var llvm bool
+var optimize bool
 
 var CompileAsPackage bool
 var PackageName string
@@ -59,6 +61,7 @@ func Init() {
 	flag.StringVar(&outputPath, "o", "", "Output file")
 	flag.BoolVar(&llvm, "llvm", false, "Compile to LLVM Module")
 	flag.StringVar(&PackageName, "package", "", "Compile as a package with the given name")
+	flag.BoolVar(&optimize, "O", false, "Use compiler optimizations")
 	flag.Parse()
 
 	// needs to be called after flag.Parse() or it'll be empty lol
@@ -113,8 +116,23 @@ func InterpretFile(file string) {
 
 // CompileFile compiles everything and outputs an LLVM file, currently only supports up to one file as well
 func CompileFile(file string) {
+	// remember the cwd
+	cwd, _ := os.Getwd()
+
+	// get the rgoc executable path
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exPath := filepath.Dir(ex)
+
+	// lex, parse, and bind the program
 	boundProgram := Prepare(file)
-	//print.PrintC(print.Cyan, "-> Emitting!")
+
+	if debug {
+		emitter.VerboseARC = true
+	}
+
 	module := emitter.Emit(boundProgram, true)
 	//fmt.Println(module)
 	output := module.String()
@@ -129,6 +147,9 @@ func CompileFile(file string) {
 			ext := path.Ext(file)
 			outPath = file[0:len(file)-len(ext)] + ".ll"
 		}
+
+		// change the cwd back
+		os.Chdir(cwd)
 
 		// write the module
 		os.WriteFile(outPath, []byte(output), 0644)
@@ -211,9 +232,16 @@ func CompileFile(file string) {
 		ext := path.Ext(file)
 		outPath = file[0 : len(file)-len(ext)]
 	}
+	os.Chdir(cwd)
+
+	// optimize?
+	opt := "-O0"
+	if optimize {
+		opt = "-O3"
+	}
 
 	// call clang
-	cmd = exec.Command("clang", "-lm", "-pthread", "-rdynamic", "./.tmp/completeout.bc", "-o", outPath)
+	cmd = exec.Command("clang", opt, "-lm", "-pthread", "-rdynamic", exPath+"/.tmp/completeout.bc", "-o", outPath)
 	o, err = cmd.Output()
 
 	// if something goes wrong -> report that to the user
@@ -235,17 +263,48 @@ func CompileFile(file string) {
 
 // Prepare runs the lexer, parser, binder, and lowerer. This is used before evaluation or emitting.
 func Prepare(file string) binder.BoundProgram {
-	//print.WriteC(print.Green, "-> Lexing...  ")
+	if debug {
+		print.WriteC(print.Green, "-> Lexing...  ")
+	}
+
 	tokens := lexer.Lex(file)
-	//print.PrintC(print.Green, "Done!")
 
-	//print.WriteC(print.Yellow, "-> Parsing... ")
+	if debug {
+		print.PrintC(print.Green, "Done!")
+	}
+
+	if debug {
+		print.WriteC(print.Yellow, "-> Parsing... ")
+	}
+
 	members := parser.Parse(tokens)
-	//print.PrintC(print.Green, "Done!")
 
-	//print.WriteC(print.Red, "-> Binding... ")
+	if debug {
+		print.PrintC(print.Green, "Done!")
+		for _, mem := range members {
+			mem.Print("")
+		}
+	}
+
+	// change the current working directory
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exPath := filepath.Dir(ex)
+	os.Chdir(exPath)
+
+	if debug {
+		print.WriteC(print.Red, "-> Binding... ")
+	}
+
 	boundProgram := binder.BindProgram(members)
-	//print.PrintC(print.Green, "Done!")
+
+	if debug {
+		print.PrintC(print.Green, "Done!")
+		boundProgram.Print()
+	}
+
 	//boundProgram.Print()
 	//boundProgram.PrintStatements()
 
@@ -292,9 +351,13 @@ func Help() {
 
 	helpSegments := []HelpSegment{
 		{"Help", executableName + " -h", "disabled (default)", "Shows this help message!"},
-		{"Interpret", executableName + " -i", "disabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
-		{"File logging", executableName + " -l", "disabled (default)", "Logs process information in a log file"},
-		{"Debug", executableName + " -xx", "disabled (default)", "Shows brief process information in the command line"},
+		//{"Interpret", executableName + " -i", "disabled (default)", "Enables interpreter mode, source code will be interpreted instead of compiled."},
+		//{"File logging", executableName + " -l", "disabled (default)", "Logs process information in a log file"},
+		{"Output", executableName + " -o", "altered source path", "Sets the compiler's output path"},
+		{"LLVM", executableName + " --llvm", "disabled (default)", "Output a LLVM Module (.ll) file instead of an executable"},
+		{"Optimize", executableName + " -O", "disabled (default)", "Compile the executable with -O2 compiler optimizations enabled"},
+		{"Package", executableName + " --package", "none (default)", "Compile as a package with the given name"},
+		{"Debug", executableName + " -xx", "disabled (default)", "Shows brief process information in the command line and enable verbose ARC"},
 		{"Look up", executableName + " -lookup", "no code (default)", "Shows further detail about errors you may have encountered"},
 	}
 
