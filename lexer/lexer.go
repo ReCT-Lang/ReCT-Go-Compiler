@@ -60,6 +60,12 @@ func (lxr *Lexer) getNumber() {
 	buffer := string(lxr.Code[lxr.Index])
 	lxr.Increment()
 
+	if lxr.Code[lxr.Index] == 'x' {
+		lxr.Increment() // skip the 0x prefix
+		lxr.getNumberHex()
+		return
+	}
+
 	// Checks if rune value is a digit, dot or underscore
 	// Simplifies code
 	isDigitOrDotOrUnderScore := func(c rune) bool {
@@ -114,6 +120,47 @@ func (lxr *Lexer) getNumber() {
 		}
 		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.Line, lxr.Column))
 	}
+}
+
+// getNumberHex keeps getting bytes until it finds a character that isn't 0-9 or A-F
+// then it generates an integer token and slaps it back to the lexer.
+func (lxr *Lexer) getNumberHex() {
+	allowedChars := "abcdefABCDEF"
+
+	// buffer for our number string
+	buffer := string(lxr.Code[lxr.Index])
+	lxr.Increment()
+
+	// Checks if rune value is a digit or one of the valid letters
+	// Simplifies code
+	isDigitOrAllowedLetter := func(c rune) bool {
+		return unicode.IsDigit(c) || strings.ContainsRune(allowedChars, c)
+	}
+
+	for lxr.Index < len(lxr.Code) && isDigitOrAllowedLetter(lxr.Code[lxr.Index]) {
+
+		// Here we check for, and remove underscores.
+		// Underscores are removed by simply not appending them to the buffer
+		if lxr.Code[lxr.Index] != '_' {
+			buffer += string(lxr.Code[lxr.Index])
+		}
+		lxr.Increment()
+	}
+
+	// convert the hex string into an actual integer
+	realValueBuffer, err := strconv.ParseInt(buffer, 16, 32)
+	if err != nil {
+		print.Error(
+			"LEXER",
+			print.RealValueConversionError,
+			lxr.Line,
+			lxr.Column,
+			0,
+			"hex value \"%s\" could not be converted to real value [int] (NumberToken)!",
+			buffer,
+		)
+	}
+	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, int(realValueBuffer), NumberToken, lxr.Line, lxr.Column))
 }
 
 // getString once it finds an " it'll keep getting bytes until it finds another "

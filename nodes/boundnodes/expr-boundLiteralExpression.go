@@ -49,7 +49,7 @@ func CreateBoundLiteralExpressionNode(value interface{}) BoundLiteralExpressionN
 		_type = builtins.String
 	case bool:
 		_type = builtins.Bool
-	case int:
+	case int, int32:
 		_type = builtins.Int
 	case float32:
 		_type = builtins.Float
