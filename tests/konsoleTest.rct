@@ -1,14 +1,65 @@
 package sys;
 package konsole;
 
-from (i <- 0) to 7 {
-	konsole::WriteInt(string("#"), i)
+Header("Indexed foreground color:");
+
+from (i <- 0) to 15 {
+	konsole::SetFgInt(i);
+	konsole::WriteAndReset(string("#"))
 }
 
-sys::Print("");
+Header("\n\nIndexed background color:");
 
-from (i <- 0) to 7 {
-	konsole::WriteInt(string("#"), i+8)
+from (i <- 0) to 15 {
+	konsole::SetBgInt(i);
+	konsole::WriteAndReset(string("#"))
 }
 
-sys::Print("");
+Header("\n\nIndexed foreground and background colors:");
+
+from (i <- 0) to 15 {
+	konsole::SetFgInt(i);
+	konsole::SetBgInt(i);
+	konsole::WriteAndReset(string(" "))
+}
+
+Header("\n\nRGB:");
+
+from (y <- 0) to 10 {
+	from (x <- 0) to 10 {
+		konsole::SetBgRGB(int(25.5 * y), int(25.5 * x), 255 - int(25.5 * x));
+		konsole::WriteAndReset(string("  "))
+	}
+	sys::Print("");
+}
+
+Header("\n\nHex:");
+konsole::SetBgCol(0xff6666);
+konsole::PrintAndReset(string("This is 0xff6666"))
+
+Header("\n\nOther formatting things:");
+
+konsole::Bold();
+konsole::PrintAndReset("Bold");
+
+konsole::Italic();
+konsole::PrintAndReset("Italic");
+
+konsole::Underline();
+konsole::PrintAndReset("Underline");
+
+konsole::CrossedOut();
+konsole::PrintAndReset("CrossedOut");
+
+Header("\n\n" + konsole::GetGradient("GRADIENTS", false, 168, 50, 50, 168, 111, 50));
+
+konsole::PrintGradient("This is a gradient.", 0, 0, 0, 255, 255, 255);
+konsole::PrintBgGradient("This is a gradient.", 0, 0, 0, 255, 255, 255);
+konsole::WriteBgGradient("                               ", "This text is very colorful",   50, 168, 84,   50, 144, 168   );
+konsole::PrintBgGradient("                               ", 50, 168, 84, 50, 144, 168);
+
+function Header(text string) {
+	konsole::Bold();
+	konsole::Underline();
+	konsole::PrintAndReset(text);
+}

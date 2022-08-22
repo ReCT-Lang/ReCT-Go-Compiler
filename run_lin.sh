@@ -1,4 +1,4 @@
-go run . -- $1
+./rgoc -llvm -o ./out.ll $1
 
 opt ./out.ll > ./out.bc
 opt ./packages/sys.ll > ./packages/sys.bc

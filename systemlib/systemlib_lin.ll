@@ -54,6 +54,9 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.7.21 = private unnamed_addr constant [5 x i8] c".dll\00", align 1
 @.str.8.22 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @.str.9.23 = private unnamed_addr constant [54 x i8] c"Null-Pointer exception! The given reference was null.\00", align 1
+@.str.10.24 = private unnamed_addr constant [90 x i8] c"Conversion vTable for output type could not be found! This indicates a broken executable.\00", align 1
+@.str.11.25 = private unnamed_addr constant [4 x i8] c"Any\00", align 1
+@.str.12.26 = private unnamed_addr constant [50 x i8] c"Object of type %s could not be casted to type %s!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @arc_RegisterReference(%struct.class_Any* noundef %0) #0 {
@@ -1597,6 +1600,168 @@ define dso_local void @exc_ThrowIfNull(i8* noundef %0) #0 {
   ret void
 }
 
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @exc_ThrowIfInvalidCast(%struct.class_Any* noundef %0, %struct.Any_vTable* noundef %1) #0 {
+  %3 = alloca %struct.class_Any*, align 8
+  %4 = alloca %struct.Any_vTable*, align 8
+  %5 = alloca %struct.Any_vTable*, align 8
+  %6 = alloca %struct.Any_vTable*, align 8
+  %7 = alloca i8*, align 8
+  %8 = alloca i8*, align 8
+  store %struct.class_Any* %0, %struct.class_Any** %3, align 8
+  store %struct.Any_vTable* %1, %struct.Any_vTable** %4, align 8
+  %9 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %10 = icmp eq %struct.class_Any* %9, null
+  br i1 %10, label %11, label %12
+
+11:                                               ; preds = %2
+  br label %104
+
+12:                                               ; preds = %2
+  %13 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %14 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %13, i32 0, i32 0
+  %15 = load %struct.Any_vTable*, %struct.Any_vTable** %14, align 8
+  store %struct.Any_vTable* %15, %struct.Any_vTable** %5, align 8
+  %16 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %17 = icmp eq %struct.Any_vTable* %16, null
+  br i1 %17, label %18, label %19
+
+18:                                               ; preds = %12
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([90 x i8], [90 x i8]* @.str.10.24, i64 0, i64 0))
+  br label %19
+
+19:                                               ; preds = %18, %12
+  %20 = load %struct.Any_vTable*, %struct.Any_vTable** %5, align 8
+  %21 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %20, i32 0, i32 1
+  %22 = load i8*, i8** %21, align 8
+  %23 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %24 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %23, i32 0, i32 1
+  %25 = load i8*, i8** %24, align 8
+  %26 = call i32 @strcmp(i8* noundef %22, i8* noundef %25) #8
+  %27 = icmp eq i32 %26, 0
+  br i1 %27, label %28, label %29
+
+28:                                               ; preds = %19
+  br label %104
+
+29:                                               ; preds = %19
+  %30 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %31 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %30, i32 0, i32 1
+  %32 = load i8*, i8** %31, align 8
+  %33 = call i32 @strcmp(i8* noundef %32, i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.11.25, i64 0, i64 0)) #8
+  %34 = icmp eq i32 %33, 0
+  br i1 %34, label %35, label %36
+
+35:                                               ; preds = %29
+  br label %104
+
+36:                                               ; preds = %29
+  %37 = load %struct.Any_vTable*, %struct.Any_vTable** %5, align 8
+  %38 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %37, i32 0, i32 0
+  %39 = load i8*, i8** %38, align 8
+  %40 = bitcast i8* %39 to %struct.Any_vTable*
+  store %struct.Any_vTable* %40, %struct.Any_vTable** %6, align 8
+  br label %41
+
+41:                                               ; preds = %54, %36
+  %42 = load %struct.Any_vTable*, %struct.Any_vTable** %6, align 8
+  %43 = icmp ne %struct.Any_vTable* %42, null
+  br i1 %43, label %44, label %59
+
+44:                                               ; preds = %41
+  %45 = load %struct.Any_vTable*, %struct.Any_vTable** %6, align 8
+  %46 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %45, i32 0, i32 1
+  %47 = load i8*, i8** %46, align 8
+  %48 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %49 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %48, i32 0, i32 1
+  %50 = load i8*, i8** %49, align 8
+  %51 = call i32 @strcmp(i8* noundef %47, i8* noundef %50) #8
+  %52 = icmp eq i32 %51, 0
+  br i1 %52, label %53, label %54
+
+53:                                               ; preds = %44
+  br label %104
+
+54:                                               ; preds = %44
+  %55 = load %struct.Any_vTable*, %struct.Any_vTable** %6, align 8
+  %56 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %55, i32 0, i32 0
+  %57 = load i8*, i8** %56, align 8
+  %58 = bitcast i8* %57 to %struct.Any_vTable*
+  store %struct.Any_vTable* %58, %struct.Any_vTable** %6, align 8
+  br label %41, !llvm.loop !10
+
+59:                                               ; preds = %41
+  %60 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %61 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %60, i32 0, i32 0
+  %62 = load i8*, i8** %61, align 8
+  %63 = bitcast i8* %62 to %struct.Any_vTable*
+  store %struct.Any_vTable* %63, %struct.Any_vTable** %6, align 8
+  br label %64
+
+64:                                               ; preds = %77, %59
+  %65 = load %struct.Any_vTable*, %struct.Any_vTable** %6, align 8
+  %66 = icmp ne %struct.Any_vTable* %65, null
+  br i1 %66, label %67, label %82
+
+67:                                               ; preds = %64
+  %68 = load %struct.Any_vTable*, %struct.Any_vTable** %6, align 8
+  %69 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %68, i32 0, i32 1
+  %70 = load i8*, i8** %69, align 8
+  %71 = load %struct.Any_vTable*, %struct.Any_vTable** %5, align 8
+  %72 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %71, i32 0, i32 1
+  %73 = load i8*, i8** %72, align 8
+  %74 = call i32 @strcmp(i8* noundef %70, i8* noundef %73) #8
+  %75 = icmp eq i32 %74, 0
+  br i1 %75, label %76, label %77
+
+76:                                               ; preds = %67
+  br label %104
+
+77:                                               ; preds = %67
+  %78 = load %struct.Any_vTable*, %struct.Any_vTable** %6, align 8
+  %79 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %78, i32 0, i32 0
+  %80 = load i8*, i8** %79, align 8
+  %81 = bitcast i8* %80 to %struct.Any_vTable*
+  store %struct.Any_vTable* %81, %struct.Any_vTable** %6, align 8
+  br label %64, !llvm.loop !11
+
+82:                                               ; preds = %64
+  store i8* getelementptr inbounds ([50 x i8], [50 x i8]* @.str.12.26, i64 0, i64 0), i8** %7, align 8
+  %83 = load i8*, i8** %7, align 8
+  %84 = load %struct.Any_vTable*, %struct.Any_vTable** %5, align 8
+  %85 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %84, i32 0, i32 1
+  %86 = load i8*, i8** %85, align 8
+  %87 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %88 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %87, i32 0, i32 1
+  %89 = load i8*, i8** %88, align 8
+  %90 = call i32 (i8*, i64, i8*, ...) @snprintf(i8* noundef null, i64 noundef 0, i8* noundef %83, i8* noundef %86, i8* noundef %89) #7
+  %91 = add nsw i32 %90, 1
+  %92 = sext i32 %91 to i64
+  %93 = call noalias i8* @malloc(i64 noundef %92) #7
+  store i8* %93, i8** %8, align 8
+  %94 = load i8*, i8** %8, align 8
+  %95 = load i8*, i8** %7, align 8
+  %96 = load %struct.Any_vTable*, %struct.Any_vTable** %5, align 8
+  %97 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %96, i32 0, i32 1
+  %98 = load i8*, i8** %97, align 8
+  %99 = load %struct.Any_vTable*, %struct.Any_vTable** %4, align 8
+  %100 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %99, i32 0, i32 1
+  %101 = load i8*, i8** %100, align 8
+  %102 = call i32 (i8*, i8*, ...) @sprintf(i8* noundef %94, i8* noundef %95, i8* noundef %98, i8* noundef %101) #7
+  %103 = load i8*, i8** %8, align 8
+  call void @exc_Throw(i8* noundef %103)
+  br label %104
+
+104:                                              ; preds = %82, %76, %53, %35, %28, %11
+  ret void
+}
+
+; Function Attrs: nounwind
+declare i32 @snprintf(i8* noundef, i64 noundef, i8* noundef, ...) #1
+
+; Function Attrs: nounwind
+declare i32 @sprintf(i8* noundef, i8* noundef, ...) #1
+
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
@@ -1622,3 +1787,5 @@ attributes #10 = { noreturn nounwind }
 !7 = !{!"llvm.loop.mustprogress"}
 !8 = distinct !{!8, !7}
 !9 = distinct !{!9, !7}
+!10 = distinct !{!10, !7}
+!11 = distinct !{!11, !7}

@@ -1682,6 +1682,9 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 	} else if expr.ToType.Fingerprint() == builtins.String.Fingerprint() {
 		switch expr.Expression.Type().Fingerprint() {
 		case builtins.Any.Fingerprint():
+			// make sure this conversion is valid
+			emt.EmitValidConversionCheck(blk, builtins.String, value)
+
 			// change the pointer type from any to string
 			return (*blk).NewBitCast(value, emt.IRTypes(builtins.String))
 		case builtins.Bool.Fingerprint():
@@ -1763,6 +1766,9 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			return (*blk).NewICmp(enum.IPredEQ, result, CI32(0))
 
 		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// make sure this conversion is valid
+			emt.EmitValidConversionCheck(blk, builtins.Bool, value)
+
 			// bitcast to boxed bool
 			boxedBool := (*blk).NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Bool)].Type))
 
@@ -1792,6 +1798,9 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			return result
 
 		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// make sure this conversion is valid
+			emt.EmitValidConversionCheck(blk, builtins.Int, value)
+
 			// bitcast to boxed int
 			boxedInt := (*blk).NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Int)].Type))
 
@@ -1854,6 +1863,9 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			return floatRes
 
 		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// make sure this conversion is valid
+			emt.EmitValidConversionCheck(blk, builtins.Float, value)
+
 			// bitcast to boxed float
 			boxedFloat := (*blk).NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Float)].Type))
 
@@ -1883,17 +1895,26 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 		if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
 			// object arrays
 			if expr.ToType.SubTypes[0].IsObject {
+				// make sure this conversion is valid
+				emt.EmitValidConversionCheck(blk, builtins.Array, value)
+
 				// change the pointer type
-				return (*blk).NewBitCast(value, emt.IRTypes(builtins.Array))
+				return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 			} else {
+				// make sure this conversion is valid
+				emt.EmitValidConversionCheck(blk, builtins.PArray, value)
+
 				// change the pointer type
-				return (*blk).NewBitCast(value, emt.IRTypes(builtins.PArray))
+				return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 			}
 		}
 	}
 
 	// classes
 	if expr.ToType.IsObject && expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+		// make sure this conversion is valid
+		emt.EmitValidConversionCheck(blk, expr.ToType, value)
+
 		return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 	}
 
@@ -1903,6 +1924,10 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 // </EXPRESSIONS>--------------------------------------------------------------
 // <UTILS>---------------------------------------------------------------------
+
+func (emt *Emitter) EmitValidConversionCheck(blk **ir.Block, typ symbols.TypeSymbol, val value.Value) {
+	(*blk).NewCall(emt.ExcFuncs["ThrowIfInvalidCast"], (*blk).NewBitCast(val, emt.IRTypes(builtins.Any)), (*blk).NewBitCast(emt.Classes[emt.Id(typ)].vConstant, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].vTable)))
+}
 
 func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) constant.Constant {
 	switch typ.Fingerprint() {

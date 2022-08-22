@@ -2,6 +2,8 @@
 #include<stdio.h>
 #include<execinfo.h>
 #include<string.h>
+
+#include "objects.h"
 #include "exceptions.h"
 
 // Very advanced ReCT exceptions
@@ -71,4 +73,51 @@ void exc_Throw(char *message) {
 void exc_ThrowIfNull(void* pointer) {
 	if (pointer == NULL)
 	 exc_Throw("Null-Pointer exception! The given reference was null.");
+}
+
+// shortcut for invalid casting errors
+void exc_ThrowIfInvalidCast(class_Any* fromObj, Any_vTable *to) {
+	// source object hasnt been initialized yet
+	// in that case we allow conversion because NULL is the same, no matter what type
+	if (fromObj == NULL) return;
+
+	// get the source's vtable for convenience
+	const Any_vTable *from = fromObj->vtable;
+
+	// goal vTable is null, this is not allowed to happen and indicates a broken program
+	if (to == NULL)
+		exc_Throw("Conversion vTable for output type could not be found! This indicates a broken executable.");
+
+	// check if the source is the same as the goal already, just casted to something else
+	if (strcmp(from->className, to->className) == 0) return;
+
+	// if the goal type is "Any", all objects are always allowed to cast to it
+	if (strcmp(to->className, "Any") == 0) return;
+
+	// check if the source inherits from the goal
+	const Any_vTable *parent = from->parentVTable;
+	while (parent != NULL) {
+		// inheritance found
+		if (strcmp(parent->className, to->className) == 0) return;
+
+		// if not, continue searching up the chain
+		parent = parent->parentVTable;
+	}
+
+	// check if the goal inherits from the source
+	parent = to->parentVTable;
+	while (parent != NULL) {
+		// inheritance found
+		if (strcmp(parent->className, from->className) == 0) return;
+
+		// if not, continue searching up the chain
+		parent = parent->parentVTable;
+	}
+
+	// if all those checks fail -> this cast is invalid
+	char *errorTpl = "Object of type %s could not be casted to type %s!";
+	char *errorMsg = malloc(snprintf(NULL, 0, errorTpl, from->className, to->className) + 1);
+	sprintf(errorMsg, errorTpl, from->className, to->className);
+
+	exc_Throw(errorMsg);
 }
