@@ -135,8 +135,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 		emt.ImportType(vTable)
 
 		// 3. finding and importing the types vtable constant
-		vConstantName := strings.Split(vTableType, ".")[1] + "_Const"
-		vTableConstant := irtools.FindGlobal(module, vConstantName)
+		vConstantName := cls.Name + "_vTable_Const"
+		vTableConstant := irtools.FindGlobalSuffix(module, vConstantName)
 		if vTableConstant == nil {
 			print.Error(
 				"EMITTER",

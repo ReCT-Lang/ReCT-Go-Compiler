@@ -1,0 +1,7 @@
+package sys;
+package Dictionary;
+
+var dict <- make Dictionary::Dictionary();
+dict->Set("elem1", 100);
+//dict->Set("elem2", 200.0);
+//dict->Set("elem3", "a");

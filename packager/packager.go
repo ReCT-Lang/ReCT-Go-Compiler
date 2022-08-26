@@ -57,6 +57,13 @@ func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes [
 	syms := make([]symbols.FunctionSymbol, 0)
 
 	for _, fnc := range funcs {
+		namePure := strings.TrimPrefix(fnc.Name(), prefix)
+
+		// check if this is reeeeeally a function and not a method in disguise
+		if strings.HasPrefix(namePure, "public_") || strings.HasPrefix(namePure, "private_") {
+			continue
+		}
+
 		fncSym := CreateFunctionSymbolFromModule(fnc, prefix, true, classes)
 		//print.PrintCF(print.Cyan, "Importing Function '%s'...", fncSym.Name)
 		syms = append(syms, fncSym)
@@ -67,11 +74,22 @@ func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes [
 
 func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, classes []*symbols.ClassSymbol) symbols.FunctionSymbol {
 	namePure := strings.TrimPrefix(fnc.Name(), prefix)
-	returnType := ResolveType(fnc.Sig.RetType, classes)
+	returnType, ok := ResolveType(fnc.Sig.RetType, classes)
+	if !ok {
+		print.PrintCF(print.Red, "Unable to process function '%s'!", fnc.Name())
+		os.Exit(-1)
+	}
+
 	params := make([]symbols.ParameterSymbol, 0)
 
 	for i, v := range fnc.Params {
-		params = append(params, symbols.CreateParameterSymbol(v.LocalName, i, ResolveType(v.Typ, classes)))
+		typ, ok := ResolveType(v.Typ, classes)
+		if !ok {
+			print.PrintCF(print.Red, "Unable to process function '%s'!", fnc.Name())
+			os.Exit(-1)
+		}
+
+		params = append(params, symbols.CreateParameterSymbol(v.LocalName, i, typ))
 	}
 
 	symbol := symbols.CreateFunctionSymbol(namePure, params, returnType, nodes.FunctionDeclarationMember{}, public)
@@ -179,7 +197,11 @@ func CreateClassSymbolsFromModule(module *ir.Module) ([]symbols.ClassSymbol, []*
 
 		for i := 2; i < len(clsType.Fields); i++ {
 			fieldName := strings.TrimSuffix(fieldNames[i-2], "\x00")
-			fieldType := ResolveType(clsType.Fields[i], classes)
+			fieldType, ok := ResolveType(clsType.Fields[i], classes)
+			if !ok {
+				print.PrintCF(print.Red, "Unable to process field '%s' of class '%s'!", fieldName, class.Name)
+				os.Exit(-1)
+			}
 
 			//print.PrintCF(print.Blue, " Importing Field '%s' (%s)...", fieldName, fieldType.Name)
 
@@ -202,7 +224,7 @@ func CreateClassSymbolsFromModule(module *ir.Module) ([]symbols.ClassSymbol, []*
 	return clsInstances, classes
 }
 
-func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSymbol {
+func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) (symbols.TypeSymbol, bool) {
 
 	// =========================================================================
 	// PRIMITIVES
@@ -210,41 +232,45 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSym
 
 	// void type
 	if typ.Equal(types.Void) {
-		return builtins.Void
+		return builtins.Void, true
 	}
 
 	// bool primitive type
 	if typ.Equal(types.I1) {
-		return builtins.Bool
+		return builtins.Bool, true
 	}
 
 	// byte primitive type
 	if typ.Equal(types.I8) {
-		return builtins.Byte
+		return builtins.Byte, true
 	}
 
 	// int primitive type
 	if typ.Equal(types.I32) {
-		return builtins.Int
+		return builtins.Int, true
 	}
 
 	// long primitive type
 	if typ.Equal(types.I64) {
-		return builtins.Long
+		return builtins.Long, true
 	}
 
 	// float primitive type
 	if typ.Equal(types.Float) {
-		return builtins.Float
+		return builtins.Float, true
 	}
 
 	// =========================================================================
 	// OBJECTS
 	// =========================================================================
-	typeName := ProcessTypeName(typ.LLString())
+	typeName, ok := ProcessTypeName(typ.LLString())
+	if !ok {
+		return symbols.TypeSymbol{}, false
+	}
+
 	typeSymbol := ResolveObjectType(typeName, classes, false)
 	if typeSymbol != nil {
-		return *typeSymbol
+		return *typeSymbol, true
 	}
 
 	// aaaaand if we found nothing -> cry
@@ -259,7 +285,7 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol) symbols.TypeSym
 	)
 	os.Exit(-1)
 
-	return symbols.TypeSymbol{}
+	return symbols.TypeSymbol{}, false
 }
 
 func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLower bool) *symbols.TypeSymbol {
@@ -289,7 +315,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 
 	// thread type
 	if typeName == "Any" || (allowLower && typeName == "any") {
-		return &builtins.Thread
+		return &builtins.Any
 	}
 
 	// array types
@@ -382,7 +408,7 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol) symbol
 	return symbols.TypeSymbol{}
 }
 
-func ProcessTypeName(name string) string {
+func ProcessTypeName(name string) (string, bool) {
 	// if this type name doesnt match the rect class pattern and also isnt a primitive
 	// => no idea what the fuck this is
 	if !strings.HasPrefix(name, "%struct.class_") {
@@ -395,7 +421,7 @@ func ProcessTypeName(name string) string {
 			"referenced type '%s' does not match ReCT class pattern! Absolutely no clue what todo with it lol",
 			name,
 		)
-		os.Exit(-1)
+		return "", false
 	}
 
 	// if this is a valid class but not a pointer -> hm?????
@@ -414,7 +440,7 @@ func ProcessTypeName(name string) string {
 	}
 
 	// if all those things are alright we can cut away all the un-needed stuff
-	return strings.TrimSuffix(strings.TrimPrefix(name, "%struct.class_"), "*")
+	return strings.TrimSuffix(strings.TrimPrefix(name, "%struct.class_"), "*"), true
 }
 
 func ResolveArrayType(typeName string, isPrimitive bool, classes []*symbols.ClassSymbol) symbols.TypeSymbol {

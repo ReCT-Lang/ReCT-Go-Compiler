@@ -169,7 +169,7 @@ func CompileFile(file string) {
 	for _, pck := range packager.PackagesSoFar {
 		// run the opt command
 		cmd := exec.Command("opt", "./packages/"+pck.Name+".ll", "-o", "./.tmp/"+pck.Name+".bc")
-		o, err := cmd.Output()
+		o, err := cmd.CombinedOutput()
 
 		// if something goes wrong -> report that to the user
 		if err != nil {
@@ -188,7 +188,7 @@ func CompileFile(file string) {
 
 	// opt this module
 	cmd := exec.Command("opt", "./.tmp/prgout.ll", "-o", "./.tmp/prgout.bc")
-	o, err := cmd.Output()
+	o, err := cmd.CombinedOutput()
 
 	// if something goes wrong -> report that to the user
 	if err != nil {
@@ -212,7 +212,7 @@ func CompileFile(file string) {
 
 	// call the llvm linker
 	cmd = exec.Command("llvm-link", linkArgs...)
-	o, err = cmd.Output()
+	o, err = cmd.CombinedOutput()
 
 	// if something goes wrong -> report that to the user
 	if err != nil {
@@ -242,7 +242,7 @@ func CompileFile(file string) {
 
 	// call clang
 	cmd = exec.Command("clang", opt, "-lm", "-pthread", "-rdynamic", exPath+"/.tmp/completeout.bc", "-o", outPath)
-	o, err = cmd.Output()
+	o, err = cmd.CombinedOutput()
 
 	// if something goes wrong -> report that to the user
 	if err != nil {

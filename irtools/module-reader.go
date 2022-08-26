@@ -2,6 +2,7 @@ package irtools
 
 import (
 	"ReCT-Go-Compiler/print"
+	"fmt"
 	"os"
 	"strings"
 
@@ -17,18 +18,29 @@ func ReadModule(path string) *ir.Module {
 	module := string(moduleBytes)
 
 	// do a regex replace to replace all function content with 'ret void'
-	re := regexp2.MustCompile(`{\n.*?}\n`, regexp2.Singleline)
+	re := regexp2.MustCompile(`{\n.*?^}\n`, regexp2.Singleline|regexp2.Multiline)
 	module, _ = re.Replace(module, " {\n  ret void\n}\n", 0, -1)
 
 	// do a regex replace to remove invalid function declarations
 	re2 := regexp2.MustCompile(`(?<=declare.*?)align [0-9]*`, regexp2.Multiline)
 	module, _ = re2.Replace(module, " ", 0, -1)
 
+	// do a regex replace to remove invalid function declarations
+	re3 := regexp2.MustCompile(`(?<=define.*?)align [0-9]*`, regexp2.Multiline)
+	module, _ = re3.Replace(module, " ", 0, -1)
+
+	os.WriteFile("./mod.ll", []byte(module), os.ModePerm)
+
+	// do a regex replace to remove new fangled sret
+	//re3 := regexp2.MustCompile(`sret\(.*?\)`, regexp2.Multiline)
+	//module, _ = re3.Replace(module, " ", 0, -1)
+
 	// parse the module using llir/llvm
 	irModule, err := asm.ParseString(path, module)
 	if err != nil {
 		print.PrintC(print.Red, "Couldnt load module '"+path+"'")
-		return nil
+		fmt.Println(module)
+		panic(err)
 	}
 
 	return irModule
@@ -70,6 +82,17 @@ func TryFindFunction(module *ir.Module, name string) *ir.Func {
 func FindGlobal(module *ir.Module, name string) *ir.Global {
 	for _, glb := range module.Globals {
 		if glb.Name() == name {
+			return glb
+		}
+	}
+
+	print.PrintC(print.Red, "Couldnt find global '"+name+"'")
+	return nil
+}
+
+func FindGlobalSuffix(module *ir.Module, name string) *ir.Global {
+	for _, glb := range module.Globals {
+		if strings.HasSuffix(glb.Name(), name) {
 			return glb
 		}
 	}
