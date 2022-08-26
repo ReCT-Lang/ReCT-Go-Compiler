@@ -4,6 +4,10 @@
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // declare all struct names
 typedef struct Any_vTable    Any_vTable;
 typedef struct class_Any     class_Any;
@@ -333,5 +337,9 @@ struct class_Thread {
 void Thread_public_Start(class_Thread*);
 void Thread_public_Join(class_Thread*);
 void Thread_public_Kill(class_Thread*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
