@@ -1,0 +1,9 @@
+// one.rct
+package sys;
+
+deez();
+
+function deez() {
+    sys::Write("deez ");
+    nutz();
+}

@@ -1,1 +1,7 @@
-Print("Hello World!");
+package sys;
+
+function main_impostor() {
+  sys::Print("Hello, world!");
+}
+
+main_impostor();

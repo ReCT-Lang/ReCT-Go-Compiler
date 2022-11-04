@@ -5,6 +5,7 @@ import (
 	"ReCT-Go-Compiler/emitter"
 	"ReCT-Go-Compiler/evaluator"
 	"ReCT-Go-Compiler/lexer"
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/packager"
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/print"
@@ -102,7 +103,7 @@ func ProcessFlags() {
 				emitter.PackageName = PackageName
 			}
 
-			CompileFile(files[0])
+			CompileFiles(files)
 		}
 	}
 }
@@ -114,8 +115,8 @@ func InterpretFile(file string) {
 	evaluator.Evaluate(boundProgram)
 }
 
-// CompileFile compiles everything and outputs an LLVM file, currently only supports up to one file as well
-func CompileFile(file string) {
+// CompileFiles compiles everything and outputs an LLVM file
+func CompileFiles(files []string) {
 	// remember the cwd
 	cwd, _ := os.Getwd()
 
@@ -127,13 +128,13 @@ func CompileFile(file string) {
 	exPath := filepath.Dir(ex)
 
 	// lex, parse, and bind the program
-	boundProgram := Prepare(file)
+	boundProgram := PrepareMultifile(files)
 
 	if debug {
 		emitter.VerboseARC = true
 	}
 
-	module := emitter.Emit(boundProgram, true)
+	module := emitter.Emit(boundProgram, false)
 	//fmt.Println(module)
 	output := module.String()
 
@@ -144,8 +145,8 @@ func CompileFile(file string) {
 		// check if we need to generate a path
 		outPath := outputPath
 		if outputPath == "" {
-			ext := path.Ext(file)
-			outPath = file[0:len(file)-len(ext)] + ".ll"
+			ext := path.Ext(files[0])
+			outPath = files[0][0:len(files[0])-len(ext)] + ".ll"
 		}
 
 		// change the cwd back
@@ -222,15 +223,15 @@ func CompileFile(file string) {
 		fmt.Println(string(o))
 
 		// delete the temp dir and die
-		//os.RemoveAll("./.tmp")
+		os.RemoveAll("./.tmp")
 		os.Exit(-1)
 	}
 
 	// lastly, clang the bitcode into an executable
 	outPath := outputPath
 	if outputPath == "" {
-		ext := path.Ext(file)
-		outPath = file[0 : len(file)-len(ext)]
+		ext := path.Ext(files[0])
+		outPath = files[0][0 : len(files[0])-len(ext)]
 	}
 	os.Chdir(cwd)
 
@@ -241,7 +242,7 @@ func CompileFile(file string) {
 	}
 
 	// call clang
-	cmd = exec.Command("clang", opt, "-lm", "-pthread", "-rdynamic", exPath+"/.tmp/completeout.bc", "-o", outPath)
+	cmd = exec.Command("clang", opt, "-lstdc++", "-lm", "-pthread", "-rdynamic", exPath+"/.tmp/completeout.bc", "-o", outPath)
 	o, err = cmd.CombinedOutput()
 
 	// if something goes wrong -> report that to the user
@@ -251,7 +252,7 @@ func CompileFile(file string) {
 		fmt.Println(string(o))
 
 		// delete the temp dir and die
-		os.RemoveAll("./.tmp")
+		//os.RemoveAll("./.tmp")
 		os.Exit(-1)
 	}
 
@@ -299,6 +300,67 @@ func Prepare(file string) binder.BoundProgram {
 	}
 
 	boundProgram := binder.BindProgram(members)
+
+	if debug {
+		print.PrintC(print.Green, "Done!")
+		boundProgram.Print()
+	}
+
+	//boundProgram.Print()
+	//boundProgram.PrintStatements()
+
+	return boundProgram
+}
+
+// PrepareMultifile runs the lexer and parser for each given file and then feeds the result to the binder and lowerer.
+// This is used before evaluation or emitting.
+func PrepareMultifile(files []string) binder.BoundProgram {
+	if debug {
+		print.WriteC(print.Green, "-> Lexing...  ")
+	}
+
+	lexes := make([][]lexer.Token, 0) // all tokens of all lexer runs
+
+	// lex all given files
+	for _, file := range files {
+		tokens := lexer.Lex(file)
+		lexes = append(lexes, tokens)
+	}
+
+	if debug {
+		print.PrintC(print.Green, "Done!")
+		print.WriteC(print.Yellow, "-> Parsing... ")
+	}
+
+	memberList := make([]nodes.MemberNode, 0)
+
+	for _, lex := range lexes {
+		members := parser.Parse(lex)
+
+		// we mergin'
+		memberList = append(memberList, members...)
+	}
+
+	if debug {
+		print.PrintC(print.Green, "Done!")
+		for _, mem := range memberList {
+			mem.Print("")
+		}
+	}
+
+	// change the current working directory
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exPath := filepath.Dir(ex)
+	os.Chdir(exPath)
+
+	if debug {
+		print.WriteC(print.Red, "-> Binding... ")
+	}
+
+	boundProgram := binder.BindProgram(memberList)
 
 	if debug {
 		print.PrintC(print.Green, "Done!")

@@ -1141,13 +1141,12 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
 	if symbol == nil ||
 		symbol.SymbolType() != symbols.Function {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.UndefinedFunctionCallError,
-			line+1,
-			column,
-			length,
+			0,
+			0,
+			0,
 			"Function \"%s\" does not exist!",
 			expr.Identifier.Value,
 		)
@@ -1157,13 +1156,12 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	functionSymbol := symbol.(symbols.FunctionSymbol)
 	if len(boundArguments) != len(functionSymbol.Parameters) {
 		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			0,
+			0,
+			0,
 			"type function \"%s\" expects %d arguments but got %d!",
 			expr.Identifier,
 			len(functionSymbol.Parameters),
@@ -1178,26 +1176,24 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 
 	// if we are inside a class, dont allow calls to Constructor() and Die()
 	if bin.InClass && functionSymbol.Name == "Constructor" {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			"placeholder",
-			line,
-			column,
-			length,
+			0,
+			0,
+			0,
 			"Call to Constructor in own class is not allowed!",
 		)
 		os.Exit(-1)
 	}
 
 	if bin.InClass && functionSymbol.Name == "Die" {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			"placeholder",
-			line,
-			column,
-			length,
+			0,
+			0,
+			0,
 			"Class is not allowed to destruct itself!",
 		)
 		os.Exit(-1)
