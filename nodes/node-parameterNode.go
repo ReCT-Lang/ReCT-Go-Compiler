@@ -20,10 +20,8 @@ func (ParameterNode) NodeType() NodeType { return Parameter }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ParameterNode) Position() (int, int, int) {
-	_, _, length := node.TypeClause.Position()
-	length += len(node.Identifier.Value)
-	return node.Identifier.Line, node.Identifier.Column, length
+func (node ParameterNode) Span() print.TextSpan {
+	return node.Identifier.Span.SpanBetween(node.TypeClause.Span())
 }
 
 // node print function

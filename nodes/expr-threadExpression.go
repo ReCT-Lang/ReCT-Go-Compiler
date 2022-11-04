@@ -10,8 +10,9 @@ import (
 type ThreadExpressionNode struct {
 	StatementNode
 
-	Keyword    lexer.Token
-	Expression NameExpressionNode
+	Keyword      lexer.Token
+	Expression   NameExpressionNode
+	ClosingToken lexer.Token
 }
 
 // NodeType Copy + Paste
@@ -20,8 +21,8 @@ func (ThreadExpressionNode) NodeType() NodeType { return ThreadExpression }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient. (this sucks gonna change it one day)
-func (node ThreadExpressionNode) Position() (int, int, int) {
-	return 0, 0, 0 // l8r
+func (node ThreadExpressionNode) Span() print.TextSpan {
+	return node.Keyword.Span.SpanBetween(node.ClosingToken.Span)
 }
 
 // Print Prints beautiful stuff in console
@@ -38,9 +39,10 @@ func (node ThreadExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain - Same -_-
-func CreateThreadExpressionNode(keyword lexer.Token, expression NameExpressionNode) ThreadExpressionNode {
+func CreateThreadExpressionNode(keyword lexer.Token, expression NameExpressionNode, closing lexer.Token) ThreadExpressionNode {
 	return ThreadExpressionNode{
-		Keyword:    keyword,
-		Expression: expression,
+		Keyword:      keyword,
+		Expression:   expression,
+		ClosingToken: closing,
 	}
 }

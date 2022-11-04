@@ -124,7 +124,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 		if vTable == nil {
 			print.Error(
 				"EMITTER",
-				"ow", 0, 0, 0,
+				print.UnknownVTableError,
+				pack.ErrorLocation,
 				"Couldn't find vTable for class \"%s\" from package \"%s\"! Is the package set up correctly?",
 				cls.Name,
 				pack.Name,
@@ -140,7 +141,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 		if vTableConstant == nil {
 			print.Error(
 				"EMITTER",
-				"ow", 0, 0, 0,
+				print.UnknownVTableError,
+				pack.ErrorLocation,
 				"Couldn't find vTable-Constant for class \"%s\" from package \"%s\"! Is the package set up correctly?",
 				cls.Name,
 				pack.Name,
@@ -166,7 +168,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 		if constructor == nil {
 			print.Error(
 				"EMITTER",
-				"ow", 0, 0, 0,
+				print.UnknownConstructorError,
+				pack.ErrorLocation,
 				"Couldn't find Constructor for class \"%s\" from package \"%s\"! Is the package set up correctly?",
 				class.Name,
 				pack.Name,
@@ -180,7 +183,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 		if destructor == nil {
 			print.Error(
 				"EMITTER",
-				"ow", 0, 0, 0,
+				print.UnknownDestructorError,
+				pack.ErrorLocation,
 				"Couldn't find Destructor for class \"%s\" from package \"%s\"! Is the package set up correctly?",
 				class.Name,
 				pack.Name,

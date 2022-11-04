@@ -19,10 +19,8 @@ func (AssignmentExpressionNode) NodeType() NodeType { return AssignmentExpressio
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node AssignmentExpressionNode) Position() (int, int, int) {
-	_, _, exprLength := node.Expression.Position()
-	length := len(node.Identifier.Value) + exprLength
-	return node.Identifier.Line, node.Identifier.Column, length
+func (node AssignmentExpressionNode) Span() print.TextSpan {
+	return node.Identifier.Span.SpanBetween(node.Expression.Span())
 }
 
 // node print function

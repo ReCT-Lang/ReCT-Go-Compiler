@@ -23,11 +23,8 @@ func (IfStatementNode) NodeType() NodeType { return IfStatement }
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 // IfStatementNode we don't do the Statement because it can be super long (i.e., a block statement)
-func (node IfStatementNode) Position() (int, int, int) {
-	length := len(node.IfKeyword.Value)
-	_, _, conditionLength := node.Condition.Position()
-
-	return node.IfKeyword.Line, node.IfKeyword.Column, length + conditionLength
+func (node IfStatementNode) Span() print.TextSpan {
+	return node.IfKeyword.Span.SpanBetween(node.ThenStatement.Span()).SpanBetween(node.ElseClause.Span())
 }
 
 // node print function

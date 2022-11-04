@@ -9,12 +9,17 @@ import (
 type BoundBinaryExpressionNode struct {
 	BoundExpressionNode
 
-	Left  BoundExpressionNode
-	Op    BoundBinaryOperator
-	Right BoundExpressionNode
+	Left      BoundExpressionNode
+	Op        BoundBinaryOperator
+	Right     BoundExpressionNode
+	BoundSpan print.TextSpan
 }
 
 func (BoundBinaryExpressionNode) NodeType() BoundType { return BoundBinaryExpression }
+
+func (node BoundBinaryExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
 
 func (node BoundBinaryExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundBinaryExpressionNode")
@@ -30,10 +35,11 @@ func (BoundBinaryExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundBinaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 
-func CreateBoundBinaryExpressionNode(left BoundExpressionNode, op BoundBinaryOperator, right BoundExpressionNode) BoundBinaryExpressionNode {
+func CreateBoundBinaryExpressionNode(left BoundExpressionNode, op BoundBinaryOperator, right BoundExpressionNode, span print.TextSpan) BoundBinaryExpressionNode {
 	return BoundBinaryExpressionNode{
-		Left:  left,
-		Op:    op,
-		Right: right,
+		Left:      left,
+		Op:        op,
+		Right:     right,
+		BoundSpan: span,
 	}
 }

@@ -23,12 +23,14 @@ func (VariableDeclarationStatementNode) NodeType() NodeType { return VariableDec
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node VariableDeclarationStatementNode) Position() (int, int, int) {
-	length := len(node.Keyword.Value) + len(node.Identifier.Value) + len(node.AssignToken.Value)
-	_, _, typeLength := node.TypeClause.Position()
-	_, _, initLength := node.Initializer.Position()
+func (node VariableDeclarationStatementNode) Span() print.TextSpan {
+	span := node.Keyword.Span.SpanBetween(node.Identifier.Span)
 
-	return node.Keyword.Line, node.Keyword.Column, length + typeLength + initLength
+	if node.Initializer != nil {
+		span = span.SpanBetween(node.Initializer.Span())
+	}
+
+	return span
 }
 
 // node print function

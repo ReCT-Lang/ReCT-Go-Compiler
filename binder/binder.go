@@ -91,13 +91,10 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 		for i, p := range boundParameters {
 			if p.Name == pName {
 				// I haven't done bound nodes yet so I just get the syntax node parameter using the same index
-				line, column, length := mem.Parameters[i].Position() // Very hacky :/
 				print.Error(
 					"BINDER",
 					print.DuplicateParameterError,
-					line,
-					column,
-					length,
+					mem.Parameters[i].Span(),
 					// Kind of a hacky way of getting the values and positions needed for the error
 					"a parameter with the name \"%s\" already exists for function \"%s\"!",
 					pName,
@@ -120,39 +117,30 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 	// make sure reserved functions like Constructor() and Die() meet certain requirements
 	if inClass {
 		if functionSymbol.Name == "Constructor" && functionSymbol.Public {
-			line, column, length := mem.Position()
 			print.Error(
 				"BINDER",
-				print.DuplicateFunctionError,
-				line,
-				column,
-				length,
+				print.IllegalFunctionSignatureError,
+				mem.Identifier.Span,
 				"reserved function 'Constructor' is not allowed to be public!",
 			)
 			os.Exit(-1)
 		}
 
 		if functionSymbol.Name == "Die" && functionSymbol.Public {
-			line, column, length := mem.Position()
 			print.Error(
 				"BINDER",
-				print.DuplicateFunctionError,
-				line,
-				column,
-				length,
+				print.IllegalFunctionSignatureError,
+				mem.Identifier.Span,
 				"reserved function 'Die' is not allowed to be public!",
 			)
 			os.Exit(-1)
 		}
 
 		if functionSymbol.Name == "Die" && len(boundParameters) > 0 {
-			line, column, length := mem.Position()
 			print.Error(
 				"BINDER",
-				print.DuplicateFunctionError,
-				line,
-				column,
-				length,
+				print.IllegalFunctionSignatureError,
+				mem.Identifier.Span,
 				"reserved function 'Die' is not allowed to take in any parameters!",
 			)
 			os.Exit(-1)
@@ -161,13 +149,10 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 
 	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
 		//print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
-		line, column, length := mem.Position()
 		print.Error(
 			"BINDER",
 			print.DuplicateFunctionError,
-			line,
-			column,
-			length,
+			mem.Identifier.Span,
 			"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
 			functionSymbol.Name,
 			functionSymbol.Name,
@@ -190,10 +175,8 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 		} else if member.NodeType() == nodes.ClassDeclaration {
 			print.Error(
 				"BINDER",
-				"placeholdererror",
-				0,
-				0,
-				0,
+				print.IllegalNestedClassesError,
+				member.Span(),
 				// yes
 				"Nested classes = illegal! >:(",
 			)
@@ -221,6 +204,7 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 	// if the class doenst have a constructor -> create an empty one
 	if !hasConstructor {
 		binder.BindFunctionDeclaration(nodes.CreateFunctionDeclarationMember(
+			lexer.Token{},
 			lexer.Token{Kind: lexer.IdToken, Value: "Constructor"},
 			make([]nodes.ParameterNode, 0),
 			nodes.TypeClauseNode{},
@@ -234,10 +218,8 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 		if stmt.Statement.NodeType() != nodes.VariableDeclaration {
 			print.Error(
 				"BINDER",
-				"placeholdererror",
-				0,
-				0,
-				0,
+				print.InvalidStatementPlacementError,
+				stmt.Span(),
 				// yes
 				"Only variable declarations are allowed in a class' global scope!",
 			)
@@ -248,10 +230,8 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 		if stmt.Statement.(nodes.VariableDeclarationStatementNode).Keyword.Kind != lexer.SetKeyword {
 			print.Error(
 				"BINDER",
-				"placeholdererror",
-				0,
-				0,
-				0,
+				print.InvalidStatementPlacementError,
+				stmt.Span(),
 				// yes
 				"Only global variable declarations are allowed in a class' global scope!",
 			)
@@ -271,13 +251,10 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 	classSym := symbols.CreateClassSymbol(mem.Identifier.Value, mem, funcs, vars)
 
 	if !bin.ActiveScope.TryDeclareSymbol(classSym) {
-		line, column, length := mem.Position()
 		print.Error(
 			"BINDER",
 			print.DuplicateFunctionError,
-			line,
-			column,
-			length,
+			mem.Span(),
 			"A class with the name \"%s\" already exists! \"%s\" could not be defined!",
 			classSym.Name,
 			classSym.Name,
@@ -287,15 +264,12 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 }
 
 func (bin *Binder) BindPackageReference(mem nodes.PackageReferenceMember) {
-	pack := packager.ResolvePackage(mem.Package.Value)
+	pack := packager.ResolvePackage(mem.Package.Value, mem.Span())
 	if !bin.ActiveScope.TryDeclareSymbol(pack) {
-		line, column, length := mem.Position()
 		print.Error(
 			"BINDER",
-			print.DuplicateFunctionError,
-			line,
-			column,
-			length,
+			print.DuplicatePackageImportError,
+			mem.Span(),
 			"a package with the name \"%s\" has already been loaded! \"%s\" could not be referenced!",
 			pack.Name,
 			pack.Name,
@@ -325,13 +299,10 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 
 		if !allowed {
 			//print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
-			line, column, length := stmt.Position()
 			print.Error(
 				"BINDER",
 				print.UnexpectedExpressionStatementError,
-				line,
-				column,
-				length,
+				stmt.Span(),
 				"cannot use \"%s\" as statement, only call and assignment expressions can be used as statements!",
 				exprStmt.Expression.NodeType(),
 			)
@@ -367,13 +338,10 @@ func (bin *Binder) BindStatementInternal(stmt nodes.StatementNode) boundnodes.Bo
 	}
 
 	// print.PrintC(print.Red, "Unexpected statement node! Got: '"+string(stmt.NodeType())+"'")
-	line, column, length := stmt.Position()
 	print.Error(
-		"Parser",
+		"BINDER",
 		print.UnknownStatementError,
-		line,
-		column,
-		length,
+		stmt.Span(),
 		"\"%s\" Statement found. This was unexpected!",
 	)
 	os.Exit(-1)
@@ -388,7 +356,7 @@ func (bin *Binder) BindBlockStatement(stmt nodes.BlockStatementNode) boundnodes.
 		statements = append(statements, bin.BindStatement(statement))
 	}
 
-	return boundnodes.CreateBoundBlockStatementNode(statements)
+	return boundnodes.CreateBoundBlockStatementNode(statements, stmt.Span())
 }
 
 func (bin *Binder) BindVariableDeclaration(stmt nodes.VariableDeclarationStatementNode) boundnodes.BoundVariableDeclarationStatementNode {
@@ -412,14 +380,11 @@ func (bin *Binder) BindVariableDeclaration(stmt nodes.VariableDeclarationStateme
 
 	// if there's no clause but also no initializer -> throw error!
 	if variableType.Name == "" && stmt.Initializer == nil {
-		line, column, length := stmt.Position()
 		print.Error(
 			"BINDER",
-			print.IllegalVariableDeclaration,
-			line+1,
-			column,
-			length,
-			"Variable declaration is neither given a type, nor an ",
+			print.IllegalVariableDeclarationError,
+			stmt.Span(),
+			"Variable declaration is neither given a type, nor an initializer!",
 		)
 		os.Exit(-1)
 	}
@@ -427,20 +392,20 @@ func (bin *Binder) BindVariableDeclaration(stmt nodes.VariableDeclarationStateme
 	variable := bin.BindVariableCreation(stmt.Identifier, false, isGlobal, variableType)
 
 	if initializer != nil {
-		convertedInitializer = bin.BindConversion(initializer, variableType, false)
+		convertedInitializer = bin.BindConversion(initializer, variableType, false, stmt.Initializer.Span())
 	}
 
-	return boundnodes.CreateBoundVariableDeclarationStatementNode(variable, convertedInitializer)
+	return boundnodes.CreateBoundVariableDeclarationStatementNode(variable, convertedInitializer, stmt.Span())
 }
 
 func (bin *Binder) BindIfStatement(stmt nodes.IfStatementNode) boundnodes.BoundIfStatementNode {
 	condition := bin.BindExpression(stmt.Condition)
-	convertedCondition := bin.BindConversion(condition, builtins.Bool, false)
+	convertedCondition := bin.BindConversion(condition, builtins.Bool, false, stmt.Condition.Span())
 
 	thenStatement := bin.BindStatement(stmt.ThenStatement)
 	elseStatement := bin.BindElseClause(stmt.ElseClause)
 
-	return boundnodes.CreateBoundIfStatementNode(convertedCondition, thenStatement, elseStatement)
+	return boundnodes.CreateBoundIfStatementNode(convertedCondition, thenStatement, elseStatement, stmt.Span())
 }
 
 func (bin *Binder) BindElseClause(clause nodes.ElseClauseNode) boundnodes.BoundStatementNode {
@@ -455,13 +420,10 @@ func (bin *Binder) BindThreadStatement(stmt nodes.ThreadExpressionNode) boundnod
 	symbol := bin.ActiveScope.TryLookupSymbol(stmt.Expression.Identifier.Value)
 
 	if symbol == nil || symbol.SymbolType() != symbols.Function {
-		line, column, length := stmt.Expression.Position()
 		print.Error(
 			"BINDER",
 			print.UndefinedFunctionCallError,
-			line+1,
-			column,
-			length,
+			stmt.Expression.Span(),
 			"Function \"%s\" does not exist! (THREAD)",
 			stmt.Expression.Identifier.Value,
 		)
@@ -472,13 +434,10 @@ func (bin *Binder) BindThreadStatement(stmt nodes.ThreadExpressionNode) boundnod
 
 	// This technically shouldn't be possible, but never underestimate the human spirit... And shitty code.
 	if len(functionSymbol.Parameters) > 0 {
-		line, column, length := stmt.Expression.Position()
 		print.Error(
 			"BINDER",
 			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			stmt.Expression.Span(),
 			"type function \"%s\" expects %d arguments but got %d!",
 			stmt.Expression.Identifier,
 			0,
@@ -487,7 +446,7 @@ func (bin *Binder) BindThreadStatement(stmt nodes.ThreadExpressionNode) boundnod
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundThreadExpressionNode(functionSymbol)
+	return boundnodes.CreateBoundThreadExpressionNode(functionSymbol, stmt.Span())
 }
 
 func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnodes.BoundReturnStatementNode {
@@ -500,13 +459,10 @@ func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnode
 	// if we're not in any function
 	if !bin.FunctionSymbol.Exists {
 		//print.PrintC(print.Red, "Cannot return when outside of a function!")
-		line, column, length := stmt.Position()
 		print.Error(
 			"BINDER",
 			print.OutsideReturnError,
-			line,
-			column,
-			length,
+			stmt.Span(),
 			"cannot use \"%s\" outside of a function!",
 			stmt.Keyword.Value,
 		)
@@ -518,20 +474,17 @@ func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnode
 		bin.FunctionSymbol.Type.Fingerprint() == builtins.Void.Fingerprint() &&
 		expression != nil {
 		//print.PrintC(print.Red, "Cannot return a value inside a void function!")
-		line, column, length := stmt.Position()
 		print.Error(
 			"BINDER",
 			print.VoidReturnError,
-			line,
-			column,
-			length,
+			stmt.Span(),
 			"cannot use \"%s\" inside of a void function!",
 			stmt.Keyword.Value,
 		)
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundReturnStatementNode(expression)
+	return boundnodes.CreateBoundReturnStatementNode(expression, stmt.Span())
 }
 
 func (bin *Binder) BindForStatement(stmt nodes.ForStatementNode) boundnodes.BoundForStatementNode {
@@ -540,7 +493,7 @@ func (bin *Binder) BindForStatement(stmt nodes.ForStatementNode) boundnodes.Boun
 	variable := bin.BindVariableDeclaration(stmt.Initaliser)
 
 	condition := bin.BindExpression(stmt.Condition)
-	convertedCondition := bin.BindConversion(condition, builtins.Bool, false)
+	convertedCondition := bin.BindConversion(condition, builtins.Bool, false, stmt.Condition.Span())
 
 	updation := bin.BindStatement(stmt.Updation)
 
@@ -548,7 +501,7 @@ func (bin *Binder) BindForStatement(stmt nodes.ForStatementNode) boundnodes.Boun
 
 	bin.PopScope()
 
-	return boundnodes.CreateBoundForStatementNode(variable, convertedCondition, updation, body, breakLabel, continueLabel)
+	return boundnodes.CreateBoundForStatementNode(variable, convertedCondition, updation, body, breakLabel, continueLabel, stmt.Span())
 }
 
 func (bin *Binder) BindLoopBody(stmt nodes.StatementNode) (boundnodes.BoundStatementNode, boundnodes.BoundLabel, boundnodes.BoundLabel) {
@@ -568,12 +521,12 @@ func (bin *Binder) BindWhileStatement(stmt nodes.WhileStatementNode) boundnodes.
 	bin.PushScope(CreateScope(bin.ActiveScope))
 
 	condition := bin.BindExpression(stmt.Condition)
-	convertedCondition := bin.BindConversion(condition, builtins.Bool, false)
+	convertedCondition := bin.BindConversion(condition, builtins.Bool, false, stmt.Condition.Span())
 
 	body, breakLabel, continueLabel := bin.BindLoopBody(stmt.Statement)
 
 	bin.PopScope()
-	return boundnodes.CreateBoundWhileStatementNode(convertedCondition, body, breakLabel, continueLabel)
+	return boundnodes.CreateBoundWhileStatementNode(convertedCondition, body, breakLabel, continueLabel, stmt.Span())
 }
 
 func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnodes.BoundFromToStatementNode {
@@ -584,25 +537,19 @@ func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnode
 	upperBound := bin.BindExpression(stmt.UpperBound)
 
 	if lowerBound.Type().Fingerprint() != builtins.Int.Fingerprint() {
-		line, column, length := stmt.LowerBound.Position()
 		print.Error(
 			"BINDER",
 			print.UnexpectedNonIntegerValueError,
-			line,
-			column,
-			length,
+			stmt.LowerBound.Span(),
 			"FromTo statement was expecting an integer value but instead got \"%s\"!\n",
 			lowerBound.Type().Name,
 		)
 		os.Exit(-1)
 	} else if upperBound.Type().Fingerprint() != builtins.Int.Fingerprint() {
-		line, column, length := stmt.UpperBound.Position()
 		print.Error(
 			"BINDER",
 			print.UnexpectedNonIntegerValueError,
-			line,
-			column,
-			length,
+			stmt.UpperBound.Span(),
 			"FromTo statement was expecting an integer value but instead got \"%s\"!\n",
 			upperBound.Type().Name,
 		)
@@ -612,20 +559,17 @@ func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnode
 	body, breakLabel, continueLabel := bin.BindLoopBody(stmt.Statement)
 
 	bin.PopScope()
-	return boundnodes.CreateBoundFromToStatementNode(variable, lowerBound, upperBound, body, breakLabel, continueLabel)
+	return boundnodes.CreateBoundFromToStatementNode(variable, lowerBound, upperBound, body, breakLabel, continueLabel, stmt.Span())
 }
 
 func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.BoundGotoStatementNode {
 	// if we're not in any loop
 	if len(bin.BreakLabels) == 0 {
 		//print.PrintC(print.Red, "Cannot use break statement outside a loop!")
-		line, column, length := stmt.Position()
 		print.Error(
 			"BINDER",
 			print.OutsideBreakError,
-			line,
-			column,
-			length,
+			stmt.Span(),
 			"cannot use \"%s\" outside of a loop!",
 			stmt.Keyword.Value,
 		)
@@ -633,20 +577,17 @@ func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.
 	}
 
 	breakLabel, _ := bin.GetLabels()
-	return boundnodes.CreateBoundGotoStatementNode(breakLabel)
+	return boundnodes.CreateBoundGotoStatementNode(breakLabel, stmt.Span())
 }
 
 func (bin *Binder) BindContinueStatement(stmt nodes.ContinueStatementNode) boundnodes.BoundGotoStatementNode {
 	// if we're not in any loop
 	if len(bin.BreakLabels) == 0 {
 		//print.PrintC(print.Red, "Cannot use continue statement outside a loop!")
-		line, column, length := stmt.Position()
 		print.Error(
 			"BINDER",
 			print.OutsideContinueError,
-			line,
-			column,
-			length,
+			stmt.Span(),
 			"cannot use \"%s\" outside of a loop!",
 			stmt.Keyword.Value,
 		)
@@ -654,12 +595,12 @@ func (bin *Binder) BindContinueStatement(stmt nodes.ContinueStatementNode) bound
 	}
 
 	_, continueLabel := bin.GetLabels()
-	return boundnodes.CreateBoundGotoStatementNode(continueLabel)
+	return boundnodes.CreateBoundGotoStatementNode(continueLabel, stmt.Span())
 }
 
 func (bin *Binder) BindExpressionStatement(stmt nodes.ExpressionStatementNode) boundnodes.BoundExpressionStatementNode {
 	expression := bin.BindExpression(stmt.Expression)
-	return boundnodes.CreateBoundExpressionStatementNode(expression)
+	return boundnodes.CreateBoundExpressionStatementNode(expression, stmt.Span())
 }
 
 // </STATEMENTS> --------------------------------------------------------------
@@ -706,13 +647,10 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 
 	default:
 		//print.PrintC(print.Red, "Not implemented!")
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.NotImplementedError,
-			line,
-			column,
-			length,
+			expr.Span(),
 			"\"%s\" is not implemented yet! (cringe)",
 			expr.NodeType(),
 		)
@@ -722,7 +660,7 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 }
 
 func (bin *Binder) BindLiteralExpression(expr nodes.LiteralExpressionNode) boundnodes.BoundLiteralExpressionNode {
-	return boundnodes.CreateBoundLiteralExpressionNode(expr.LiteralValue)
+	return boundnodes.CreateBoundLiteralExpressionNode(expr.LiteralValue, expr.Span())
 }
 
 func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressionNode) boundnodes.BoundExpressionNode {
@@ -732,29 +670,29 @@ func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressio
 func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.BoundExpressionNode {
 	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
 	if symbol == nil || symbol.SymbolType() != symbols.Function {
-		variable := bin.BindVariableReference(expr.Identifier.Value)
-		return boundnodes.CreateBoundVariableExpressionNode(variable)
+		variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
+		return boundnodes.CreateBoundVariableExpressionNode(variable, expr.Span())
 	} else {
 		functionSymbol := symbol.(symbols.FunctionSymbol)
-		return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol)
+		return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
 	}
 
 }
 
 func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
-	variable := bin.BindVariableReference(expr.Identifier.Value)
+	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
 	expression := bin.BindExpression(expr.Expression)
-	convertedExpression := bin.BindConversion(expression, variable.VarType(), false)
+	convertedExpression := bin.BindConversion(expression, variable.VarType(), false, expr.Expression.Span())
 
-	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression)
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression, expr.Span())
 }
 
 func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpressionNode) boundnodes.BoundAssignmentExpressionNode {
 	// bind the variable
-	variable := bin.BindVariableReference(expr.Identifier.Value)
+	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
 
 	// create a placeholder expression of value 1
-	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNode(1)
+	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNode(1, expr.Span())
 
 	// if we have an expression given, use it instead
 	if expr.Expression != nil {
@@ -762,13 +700,13 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 	}
 
 	binaryExpression := bin.BindBinaryExpressionInternal(
-		boundnodes.CreateBoundVariableExpressionNode(variable),
+		boundnodes.CreateBoundVariableExpressionNode(variable, expr.Span()),
 		expression,
 		expr.Operator.Kind,
 	)
 
 	// return it as an assignment
-	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression)
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression, expr.Span())
 }
 
 func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
@@ -777,8 +715,12 @@ func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNod
 
 	// check if the variable is an array
 	if baseExpression.Type().Name != "array" {
-		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol
-		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", baseExpression.Type().Name)
+		print.Error(
+			"BINDER",
+			print.UnexpectedNonArrayValueError,
+			expr.Span(),
+			"Trying to Array access non-Array type (%s)", baseExpression.Type().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -786,7 +728,7 @@ func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNod
 	index := bin.BindExpression(expr.Index)
 
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index)
+	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index, expr.Span())
 }
 
 func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
@@ -795,8 +737,12 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 
 	// check if the variable is an array
 	if baseExpression.Type().Name != "array" {
-		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol #2
-		print.PrintCF(print.Red, "Trying to Array access non-Array type (%s)", baseExpression.Type().Name)
+		print.Error(
+			"BINDER",
+			print.UnexpectedNonArrayValueError,
+			expr.Span(),
+			"Trying to Array access non-Array type (%s)", baseExpression.Type().Name,
+		)
 		os.Exit(-1)
 	}
 
@@ -808,26 +754,28 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 
 	// check if the value matches the array's type
 	if value.Type().Fingerprint() != baseExpression.Type().SubTypes[0].Fingerprint() {
-		// TODO(Tokorv): hey could you add some cool errors? i have no idea how the error system works lol #3
-		print.PrintCF(print.Red, "Array assignment types dont match! (trying to put %s into %s-Array)", value.Type().Name, baseExpression.Type().SubTypes[0].Name)
+		print.Error(
+			"BINDER",
+			print.ConversionError,
+			expr.Span(),
+			"Array assignment types dont match! (trying to put %s into %s-Array)",
+			value.Type().Name, baseExpression.Type().SubTypes[0].Name,
+		)
 		os.Exit(-1)
 	}
 
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value)
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value, expr.Span())
 }
 
 func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.BoundMakeExpressionNode {
 	// this is not allowed in a class' global scope
 	// because at the point in time its bound, constructors doesnt exist yet
 	if bin.PreInitialTypeset != nil {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
-			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			print.OutsideConstructorCallError,
+			expr.Span(),
 			"Constructor calls are not allowed in the global scope of a class!",
 		)
 		os.Exit(-1)
@@ -838,15 +786,15 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 	// check if this refers to a package class
 	if expr.Package != nil {
 		// look up this package
-		pack, _ := bin.LookupPackage(expr.Package.Value, false)
+		pack, _ := bin.LookupPackage(expr.Package.Value, false, expr.Package.Span)
 
 		// get the class
-		bType, _ := LookupClassInPackage(expr.BaseType.Value, pack, false)
+		bType, _ := LookupClassInPackage(expr.BaseType.Value, pack, false, expr.Package.Span.SpanBetween(expr.BaseType.Span))
 		baseType = bType
 
 	} else {
 		// resolve the type symbol
-		bType, _ := bin.LookupClass(expr.BaseType.Value, false)
+		bType, _ := bin.LookupClass(expr.BaseType.Value, false, expr.BaseType.Span)
 		baseType = bType
 	}
 
@@ -872,13 +820,10 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 		// make sure we got the right number of arguments
 		if len(boundArguments) != len(constructor.Parameters) {
 			//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
-			line, column, length := expr.Position()
 			print.Error(
 				"BINDER",
 				print.BadNumberOfParametersError,
-				line,
-				column,
-				length,
+				expr.Span(),
 				"Constructor for class \"%s\" expects %d arguments but got %d!",
 				baseType.Name,
 				len(constructor.Parameters),
@@ -889,18 +834,15 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 
 		// make sure all arguments are the right type
 		for i, arg := range boundArguments {
-			boundArguments[i] = bin.BindConversion(arg, constructor.Parameters[i].VarType(), false)
+			boundArguments[i] = bin.BindConversion(arg, constructor.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 		}
 	} else {
 		// if there is no constructor, make sure we dont have any arguments
 		if len(boundArguments) != 0 {
-			line, column, length := expr.Position()
 			print.Error(
 				"BINDER",
 				print.BadNumberOfParametersError,
-				line,
-				column,
-				length,
+				expr.Span(),
 				"Constructor for class \"%s\" expects %d arguments but got %d!",
 				baseType.Name,
 				0,
@@ -910,7 +852,7 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 		}
 	}
 
-	return boundnodes.CreateBoundMakeExpressionNode(baseType, boundArguments)
+	return boundnodes.CreateBoundMakeExpressionNode(baseType, boundArguments, expr.Span())
 }
 
 func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
@@ -933,14 +875,14 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 			boundLiteral := bin.BindExpression(literal)
 
 			// make sure the literal has the correct type
-			convertedLiteral := bin.BindConversion(boundLiteral, baseType, false)
+			convertedLiteral := bin.BindConversion(boundLiteral, baseType, false, literal.Span())
 
 			// add the literal to the list
 			literals = append(literals, convertedLiteral)
 		}
 
 		// return the bound node
-		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(baseType, literals)
+		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(baseType, literals, expr.Span())
 	}
 }
 
@@ -950,7 +892,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 	// if this is an object and the function is "Die()" and has 0 arguments -> this is a destructor call
 	if baseExpression.Type().IsObject &&
 		expr.CallIdentifier.Value == "Die" && len(expr.Arguments) == 0 {
-		return boundnodes.CreateBoundClassDestructionExpressionNode(baseExpression)
+		return boundnodes.CreateBoundClassDestructionExpressionNode(baseExpression, expr.Span())
 	}
 
 	// if the base type is a class, redirect to BindClassCallExpression
@@ -958,15 +900,12 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 		return bin.BindClassCallExpression(expr, baseExpression)
 	}
 
-	function := bin.LookupTypeFunction(expr.CallIdentifier.Value, baseExpression.Type()) // Should be a string anyway
+	function := bin.LookupTypeFunction(expr.CallIdentifier.Value, baseExpression.Type(), expr.CallIdentifier.Span) // Should be a string anyway
 	if function.OriginType.Name != baseExpression.Type().Name {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.IncorrectTypeFunctionCallError,
-			line,
-			column,
-			length,
+			expr.Span(),
 			"the use of builtin function \"%s\" on \"%s\" datatype is undefined!",
 			function.Name,
 			baseExpression.Type().Name,
@@ -984,13 +923,10 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 	// make sure we got the right number of arguments
 	if len(boundArguments) != len(function.Parameters) {
 		//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			expr.Span(),
 			"type function \"%s\" expects %d arguments but got %d!",
 			function.Name,
 			len(function.Parameters),
@@ -1001,16 +937,16 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 
 	// make sure all arguments are the right type
 	for i, arg := range boundArguments {
-		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false)
+		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
-	return boundnodes.CreateBoundTypeCallExpressionNode(baseExpression, function, boundArguments)
+	return boundnodes.CreateBoundTypeCallExpressionNode(baseExpression, function, boundArguments, expr.Span())
 }
 
 func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, baseExpression boundnodes.BoundExpressionNode) boundnodes.BoundExpressionNode {
 
 	// try finding the function meant to be called
-	function := bin.LookupClassFunction(expr.CallIdentifier.Value, baseExpression.Type()) // Should be a string anyway
+	function := bin.LookupClassFunction(expr.CallIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.CallIdentifier.Span)) // Should be a string anyway
 
 	// bind all given arguments
 	boundArguments := make([]boundnodes.BoundExpressionNode, 0)
@@ -1022,13 +958,10 @@ func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, ba
 	// make sure we got the right number of arguments
 	if len(boundArguments) != len(function.Parameters) {
 		//print.PrintCF(print.Red, "Type function '%s' expects %d arguments, got %d!", function.Name, len(function.Parameters), len(boundArguments))
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			expr.Span(),
 			"type function \"%s\" expects %d arguments but got %d!",
 			function.Name,
 			len(function.Parameters),
@@ -1039,10 +972,10 @@ func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, ba
 
 	// make sure all arguments are the right type
 	for i, arg := range boundArguments {
-		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false)
+		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
-	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments)
+	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments, expr.Span())
 }
 
 func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExpressionNode) boundnodes.BoundClassFieldAccessExpressionNode {
@@ -1050,13 +983,10 @@ func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExp
 
 	// if the base type is a class, it cant have any fields
 	if !baseExpression.Type().IsUserDefined {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
-			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			print.InvalidClassAccessError,
+			expr.Span(),
 			"Can not use field access on non-class '%s'!",
 			baseExpression.Type().Name,
 		)
@@ -1064,9 +994,9 @@ func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExp
 	}
 
 	// try finding the field meant to be accessed
-	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type())
+	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
 
-	return boundnodes.CreateBoundClassFieldAccessExpressionNode(baseExpression, field)
+	return boundnodes.CreateBoundClassFieldAccessExpressionNode(baseExpression, field, expr.Span())
 }
 
 func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssignmentExpressionNode) boundnodes.BoundClassFieldAssignmentExpressionNode {
@@ -1074,13 +1004,10 @@ func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssig
 
 	// if the base type is a class, it cant have any fields
 	if !baseExpression.Type().IsUserDefined {
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
-			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			print.InvalidClassAccessError,
+			expr.Span(),
 			"Can not use field access on non-class '%s'!",
 			baseExpression.Type().Name,
 		)
@@ -1088,11 +1015,11 @@ func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssig
 	}
 
 	// try finding the field meant to be accessed
-	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type())
+	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
 	expression := bin.BindExpression(expr.Value)
-	convertedExpression := bin.BindConversion(expression, field.VarType(), false)
+	convertedExpression := bin.BindConversion(expression, field.VarType(), false, expr.Span())
 
-	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(baseExpression, field, convertedExpression)
+	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(baseExpression, field, convertedExpression, expr.Span())
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
@@ -1100,23 +1027,23 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	// -----------------------
 
 	// check if it's a primitive cast
-	typeSymbol, exists := LookupPrimitiveType(expr.Identifier.Value, true)
+	typeSymbol, exists := LookupPrimitiveType(expr.Identifier.Value, true, expr.Identifier.Span)
 
 	// if it worked -> create a primitive conversion
 	if exists && len(expr.Arguments) == 1 {
 		// bind the expression and return a conversion
 		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, typeSymbol, true)
+		return bin.BindConversion(expression, typeSymbol, true, expr.Span())
 	}
 
 	// check if it's a class cast
-	classSymbol, exists := bin.LookupClass(expr.Identifier.Value, true)
+	classSymbol, exists := bin.LookupClass(expr.Identifier.Value, true, expr.Identifier.Span)
 
 	// if it worked -> create a class conversion
 	if exists && len(expr.Arguments) == 1 {
 		// bind the expression and return a conversion
 		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, classSymbol.Type, true)
+		return bin.BindConversion(expression, classSymbol.Type, true, expr.Span())
 	}
 
 	// check if it's a complex cast
@@ -1126,7 +1053,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	if exists && len(expr.Arguments) == 1 {
 		// bind the expression and return a conversion
 		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, complexTypeSymbol, true)
+		return bin.BindConversion(expression, complexTypeSymbol, true, expr.Span())
 	}
 
 	// normal function calling
@@ -1144,9 +1071,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		print.Error(
 			"BINDER",
 			print.UndefinedFunctionCallError,
-			0,
-			0,
-			0,
+			expr.Span(),
 			"Function \"%s\" does not exist!",
 			expr.Identifier.Value,
 		)
@@ -1159,9 +1084,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		print.Error(
 			"BINDER",
 			print.BadNumberOfParametersError,
-			0,
-			0,
-			0,
+			expr.Span(),
 			"type function \"%s\" expects %d arguments but got %d!",
 			expr.Identifier,
 			len(functionSymbol.Parameters),
@@ -1171,17 +1094,15 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	for i := 0; i < len(boundArguments); i++ {
-		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false)
+		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
 	// if we are inside a class, dont allow calls to Constructor() and Die()
 	if bin.InClass && functionSymbol.Name == "Constructor" {
 		print.Error(
 			"BINDER",
-			"placeholder",
-			0,
-			0,
-			0,
+			print.IllegalConstructorCallError,
+			expr.Span(),
 			"Call to Constructor in own class is not allowed!",
 		)
 		os.Exit(-1)
@@ -1190,33 +1111,31 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	if bin.InClass && functionSymbol.Name == "Die" {
 		print.Error(
 			"BINDER",
-			"placeholder",
-			0,
-			0,
-			0,
+			print.IllegalDestructorCallError,
+			expr.Span(),
 			"Class is not allowed to destruct itself!",
 		)
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments)
+	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.Span())
 }
 
 func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNode) boundnodes.BoundExpressionNode {
 	// find out what package this is refering to
-	pack, _ := bin.LookupPackage(expr.Package.Value, false)
+	pack, _ := bin.LookupPackage(expr.Package.Value, false, expr.Package.Span)
 
 	// check if this is a cast
 	// -----------------------
 
 	// check if it's a class cast
-	typeSymbol, exists := LookupClassInPackage(expr.Identifier.Value, pack, true)
+	typeSymbol, exists := LookupClassInPackage(expr.Identifier.Value, pack, true, expr.Package.Span.SpanBetween(expr.Identifier.Span))
 
 	// if it worked -> create a conversion
 	if exists && len(expr.Arguments) == 1 {
 		// bind the expression and return a conversion
 		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, typeSymbol.Type, true)
+		return bin.BindConversion(expression, typeSymbol.Type, true, expr.Span())
 	}
 
 	// normal function calling
@@ -1228,16 +1147,13 @@ func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNod
 		boundArguments = append(boundArguments, boundArg)
 	}
 
-	functionSymbol := LookupFunctionInPackage(expr.Identifier.Value, pack)
+	functionSymbol := LookupFunctionInPackage(expr.Identifier.Value, pack, expr.Package.Span.SpanBetween(expr.Identifier.Span))
 	if len(boundArguments) != len(functionSymbol.Parameters) {
 		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.BadNumberOfParametersError,
-			line,
-			column,
-			length,
+			expr.Span(),
 			"function \"%s\" (in package \"%s\") expects %d arguments but got %d!",
 			functionSymbol.Name,
 			pack.Name,
@@ -1248,10 +1164,10 @@ func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNod
 	}
 
 	for i := 0; i < len(boundArguments); i++ {
-		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false)
+		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
-	return boundnodes.CreateBoundPackageCallExpressionNode(pack, functionSymbol, boundArguments)
+	return boundnodes.CreateBoundPackageCallExpressionNode(pack, functionSymbol, boundArguments, expr.Span())
 }
 
 func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnodes.BoundUnaryExpressionNode {
@@ -1260,13 +1176,10 @@ func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnode
 
 	if !op.Exists {
 		//print.PrintC(print.Red, "Unary operator '"+expr.Operator.Value+"' is not defined for type '"+operand.Type().Name+"'!")
-		line, column, length := expr.Position()
 		print.Error(
 			"BINDER",
 			print.UnaryOperatorTypeError,
-			line,
-			column,
-			length,
+			expr.Span(),
 			"the use of unary operator \"%s\" with type \"%s\" is undefined!",
 			expr.Operator.Value,
 			operand.Type().Name,
@@ -1274,7 +1187,7 @@ func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnode
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundUnaryExpressionNode(op, operand)
+	return boundnodes.CreateBoundUnaryExpressionNode(op, operand, expr.Span())
 }
 
 func (bin *Binder) BindBinaryExpression(expr nodes.BinaryExpressionNode) boundnodes.BoundBinaryExpressionNode {
@@ -1293,20 +1206,17 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 
 		// if the conversion exists and its allowed to be done, do that (this also allows for explicit conversions)
 		if conv.Exists && !conv.IsIdentity {
-			right = bin.BindConversion(right, left.Type(), true)
+			right = bin.BindConversion(right, left.Type(), true, right.Span())
 			op = boundnodes.BindBinaryOperator(opkind, left.Type(), right.Type())
 		}
 
 		// now that we may or may not have converted our right value -> check the operation again#
 		if !op.Exists {
 			//print.PrintC(print.Red, "Binary operator '"+expr.Operator.Value+"' is not defined for types '"+left.Type().Name+"' and '"+right.Type().Name+"'!")
-			line, column, length := 0, 0, 0
 			print.Error(
 				"BINDER",
 				print.BinaryOperatorTypeError,
-				line,
-				column,
-				length,
+				left.Span().SpanBetween(right.Span()),
 				"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
 				opkind,
 				left.Type().Name,
@@ -1317,7 +1227,7 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 
 	}
 
-	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right)
+	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right, left.Span().SpanBetween(right.Span()))
 }
 
 func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) boundnodes.BoundTernaryExpressionNode {
@@ -1326,13 +1236,10 @@ func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) bound
 
 	// the condition needs to be a bool!
 	if condition.Type().Fingerprint() != builtins.Bool.Fingerprint() {
-		line, column, length := expr.Condition.Position()
 		print.Error(
 			"BINDER",
-			print.BinaryOperatorTypeError,
-			line,
-			column,
-			length,
+			print.TernaryOperatorTypeError,
+			expr.Condition.Span(),
 			"Condition of ternary operation needs to be of type 'bool'!",
 		)
 		os.Exit(-1)
@@ -1344,13 +1251,10 @@ func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) bound
 
 	// check if the left and right types are the same
 	if left.Type().Fingerprint() != right.Type().Fingerprint() {
-		line, column, length := expr.Else.Position()
 		print.Error(
 			"BINDER",
-			print.BinaryOperatorTypeError,
-			line,
-			column,
-			length,
+			print.TernaryOperatorTypeError,
+			expr.Else.Span(),
 			"Types of left and right side of ternary need to match!",
 		)
 		os.Exit(-1)
@@ -1359,7 +1263,7 @@ func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) bound
 	// create a temporary variable symbol to keep track of the result
 	tmp := symbols.CreateLocalVariableSymbol(symbols.GetTempName(), false, left.Type())
 
-	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right, tmp)
+	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right, tmp, expr.Span())
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------
@@ -1379,9 +1283,7 @@ func (bin *Binder) BindVariableCreation(id lexer.Token, isReadOnly bool, isGloba
 		print.Error(
 			"BINDER",
 			print.DuplicateVariableDeclarationError,
-			id.Line,
-			id.Column,
-			len(id.Value)+3+2+len(variable.VarType().Name), // Probably wrong, but it works - that's the tokorv guarantee
+			id.Span,
 			"Variable \"%s\" could not be declared! Variable with this name has already been declared!",
 			id.Value,
 		)
@@ -1391,7 +1293,7 @@ func (bin *Binder) BindVariableCreation(id lexer.Token, isReadOnly bool, isGloba
 	return variable
 }
 
-func (bin *Binder) BindVariableReference(name string) symbols.VariableSymbol {
+func (bin *Binder) BindVariableReference(name string, errorLocation print.TextSpan) symbols.VariableSymbol {
 	variable := bin.ActiveScope.TryLookupSymbol(name)
 
 	if variable == nil ||
@@ -1402,9 +1304,7 @@ func (bin *Binder) BindVariableReference(name string) symbols.VariableSymbol {
 		print.Error(
 			"BINDER",
 			print.UndefinedVariableReferenceError,
-			0,
-			0, // We have no data for where this variable reference is?
-			0,
+			errorLocation,
 			"Could not find variable \"%s\"! Are you sure it exists?",
 			name,
 		)
@@ -1426,10 +1326,10 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 	// if a package is given
 	if tc.Package != nil {
 		// look up this package
-		pack, _ := bin.LookupPackage(tc.Package.Value, false)
+		pack, _ := bin.LookupPackage(tc.Package.Value, false, tc.Package.Span)
 
 		// get the class
-		bType, _ := LookupClassInPackage(tc.TypeIdentifier.Value, pack, false)
+		bType, _ := LookupClassInPackage(tc.TypeIdentifier.Value, pack, false, tc.Span())
 		return bType.Type, true
 	}
 
@@ -1437,7 +1337,7 @@ func (bin *Binder) BindTypeClause(tc nodes.TypeClauseNode) (symbols.TypeSymbol, 
 	return typ, true
 }
 
-func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) symbols.TypeFunctionSymbol {
+func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol, errorLocation print.TextSpan) symbols.TypeFunctionSymbol {
 	switch name {
 	case "GetLength":
 		if baseType.Fingerprint() == builtins.String.Fingerprint() {
@@ -1473,9 +1373,7 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) 
 		print.Error(
 			"BINDER",
 			print.TypeFunctionDoesNotExistError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			errorLocation,
 			"Could not find builtin TypeFunctionSymbol \"%s\"!",
 			name,
 		)
@@ -1484,7 +1382,7 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol) 
 	return symbols.TypeFunctionSymbol{}
 }
 
-func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol) symbols.FunctionSymbol {
+func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol, errorLocation print.TextSpan) symbols.FunctionSymbol {
 	// try locating the class
 	clsSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
 
@@ -1503,10 +1401,8 @@ func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol)
 	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
 		print.Error(
 			"BINDER",
-			print.TypeFunctionDoesNotExistError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			print.UnknownClassError,
+			errorLocation,
 			"Could not find class \"%s\" in lookup, did something not load correctly?",
 			baseType.Name,
 		)
@@ -1522,10 +1418,8 @@ func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol)
 			if !fnc.Public {
 				print.Error(
 					"BINDER",
-					print.TypeFunctionDoesNotExistError,
-					0,
-					0, // needs extra data added and passed into the function
-					0, // Probably wrong, but it works - that's the tokorv guarantee
+					print.FunctionAccessViolationError,
+					errorLocation,
 					"Function \"%s\" in class \"%s\" is not accessable, is the function intended to be private?",
 					name,
 					baseType.Name,
@@ -1540,9 +1434,7 @@ func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol)
 	print.Error(
 		"BINDER",
 		print.TypeFunctionDoesNotExistError,
-		0,
-		0, // needs extra data added and passed into the function
-		0, // Probably wrong, but it works - that's the tokorv guarantee
+		errorLocation,
 		"Could not find function \"%s\" in class \"%s\", does the function exist?",
 		name,
 		baseType.Name,
@@ -1552,7 +1444,7 @@ func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol)
 	return symbols.FunctionSymbol{}
 }
 
-func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) symbols.VariableSymbol {
+func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol, errorLocation print.TextSpan) symbols.VariableSymbol {
 	// try locating the class
 	clsSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
 
@@ -1571,10 +1463,8 @@ func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) sy
 	if clsSym == nil || clsSym.SymbolType() != symbols.Class {
 		print.Error(
 			"BINDER",
-			print.TypeFunctionDoesNotExistError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			print.UnknownClassError,
+			errorLocation,
 			"Could not find class \"%s\" in lookup, did something not load correctly?",
 			baseType.Name,
 		)
@@ -1593,10 +1483,8 @@ func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) sy
 
 	print.Error(
 		"BINDER",
-		"eatborger",
-		0,
-		0, // needs extra data added and passed into the function
-		0, // Probably wrong, but it works - that's the tokorv guarantee
+		print.UnknownFieldError,
+		errorLocation,
 		"Could not find field \"%s\" in class \"%s\", does the field exist?",
 		name,
 		baseType.Name,
@@ -1609,7 +1497,7 @@ func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol) sy
 // </IDEK> --------------------------------------------------------------------
 // <TYPES> --------------------------------------------------------------------
 
-func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbols.TypeSymbol, allowExplicit bool) boundnodes.BoundExpressionNode {
+func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbols.TypeSymbol, allowExplicit bool, errorLocation print.TextSpan) boundnodes.BoundExpressionNode {
 	conversionType := ClassifyConversion(expr.Type(), to)
 
 	if !conversionType.Exists {
@@ -1617,9 +1505,7 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 		print.Error(
 			"BINDER",
 			print.ConversionError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			errorLocation,
 			"Cannot convert type \"%s\" to \"%s\"!",
 			expr.Type().Name,
 			to.Name,
@@ -1633,9 +1519,7 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 		print.Error(
 			"BINDER",
 			print.ExplicitConversionError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			errorLocation,
 			"Cannot convert type \"%s\" to \"%s\"! (An explicit conversion exists. Are you missing a cast?)",
 			expr.Type().Name,
 			to.Name,
@@ -1648,7 +1532,7 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 		return expr
 	}
 
-	return boundnodes.CreateBoundConversionExpressionNode(to, expr)
+	return boundnodes.CreateBoundConversionExpressionNode(to, expr, expr.Span())
 }
 
 func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymbol, bool) {
@@ -1671,13 +1555,10 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		return builtins.Any, true
 	case "array":
 		if len(typeClause.SubClauses) != 1 {
-			line, column, length := typeClause.Position()
 			print.Error(
 				"BINDER",
-				print.ExplicitConversionError,
-				line,
-				column, // needs extra data added and passed into the function
-				length, // Probably wrong, but it works - that's the tokorv guarantee
+				print.InvalidNumberOfSubtypesError,
+				typeClause.Span(),
 				"Datatype \"%s\" takes in exactly one subtype!",
 				typeClause.TypeIdentifier.Value,
 			)
@@ -1689,7 +1570,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 
 	default:
 		// check if this might be a class
-		cls, ok := bin.LookupClass(typeClause.TypeIdentifier.Value, true)
+		cls, ok := bin.LookupClass(typeClause.TypeIdentifier.Value, true, typeClause.TypeIdentifier.Span)
 		if ok {
 			return cls.Type, true
 		}
@@ -1709,13 +1590,10 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 
 		// otherwise, die()
 		if !canFail {
-			line, column, length := typeClause.Position()
 			print.Error(
 				"BINDER",
-				print.ExplicitConversionError,
-				line,
-				column, // needs extra data added and passed into the function
-				length, // Probably wrong, but it works - that's the tokorv guarantee
+				print.UnknownDataTypeError,
+				typeClause.Span(),
 				"Couldn't find datatype \"%s\"! Are you sure it exists?",
 				typeClause.TypeIdentifier.Value,
 			)
@@ -1726,7 +1604,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 	}
 }
 
-func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
+func LookupPrimitiveType(name string, canFail bool, errorLocation print.TextSpan) (symbols.TypeSymbol, bool) {
 	switch name {
 	case "void":
 		return builtins.Void, true
@@ -1749,10 +1627,8 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 			//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
 			print.Error(
 				"BINDER",
-				print.ExplicitConversionError,
-				0,
-				0, // needs extra data added and passed into the function
-				0, // Probably wrong, but it works - that's the tokorv guarantee
+				print.UnknownDataTypeError,
+				errorLocation,
 				"Couldn't find primitive datatype \"%s\"! Are you sure it exists?",
 				name,
 			)
@@ -1763,33 +1639,33 @@ func LookupPrimitiveType(name string, canFail bool) (symbols.TypeSymbol, bool) {
 	}
 }
 
-func (bin Binder) LookupClass(name string, canFail bool) (symbols.ClassSymbol, bool) {
+func (bin Binder) LookupClass(name string, canFail bool, errorLocaton print.TextSpan) (symbols.ClassSymbol, bool) {
 	cls := bin.ActiveScope.TryLookupSymbol(name)
 	if cls == nil {
-		return FailClassLookup(name, canFail)
+		return FailClassLookup(name, canFail, errorLocaton)
 	}
 
 	if cls.SymbolType() != symbols.Class {
-		return FailClassLookup(name, canFail)
+		return FailClassLookup(name, canFail, errorLocaton)
 	}
 
 	return cls.(symbols.ClassSymbol), true
 }
 
-func (bin Binder) LookupPackage(name string, canFail bool) (symbols.PackageSymbol, bool) {
+func (bin Binder) LookupPackage(name string, canFail bool, errorLocaton print.TextSpan) (symbols.PackageSymbol, bool) {
 	pck := bin.ActiveScope.TryLookupSymbol(name)
 	if pck == nil {
-		return FailPackageLookup(name, canFail)
+		return FailPackageLookup(name, canFail, errorLocaton)
 	}
 
 	if pck.SymbolType() != symbols.Package {
-		return FailPackageLookup(name, canFail)
+		return FailPackageLookup(name, canFail, errorLocaton)
 	}
 
 	return pck.(symbols.PackageSymbol), true
 }
 
-func LookupClassInPackage(name string, pack symbols.PackageSymbol, canFail bool) (symbols.ClassSymbol, bool) {
+func LookupClassInPackage(name string, pack symbols.PackageSymbol, canFail bool, errorLocation print.TextSpan) (symbols.ClassSymbol, bool) {
 	for _, cls := range pack.Classes {
 		if cls.Name == name {
 			return cls, true
@@ -1799,10 +1675,8 @@ func LookupClassInPackage(name string, pack symbols.PackageSymbol, canFail bool)
 	if !canFail {
 		print.Error(
 			"BINDER",
-			print.ExplicitConversionError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			print.UnknownClassError,
+			errorLocation,
 			"Couldn't find class \"%s\" in package \"%s\"! Are you sure it exists?",
 			name,
 			pack.Name,
@@ -1813,7 +1687,7 @@ func LookupClassInPackage(name string, pack symbols.PackageSymbol, canFail bool)
 	return symbols.ClassSymbol{}, false
 }
 
-func LookupFunctionInPackage(name string, pack symbols.PackageSymbol) symbols.FunctionSymbol {
+func LookupFunctionInPackage(name string, pack symbols.PackageSymbol, errorLocation print.TextSpan) symbols.FunctionSymbol {
 	for _, fnc := range pack.Functions {
 		if fnc.Name == name {
 			return fnc
@@ -1822,10 +1696,8 @@ func LookupFunctionInPackage(name string, pack symbols.PackageSymbol) symbols.Fu
 
 	print.Error(
 		"BINDER",
-		print.ExplicitConversionError,
-		0,
-		0, // needs extra data added and passed into the function
-		0, // Probably wrong, but it works - that's the tokorv guarantee
+		print.UndefinedFunctionCallError,
+		errorLocation,
 		"Couldn't find function \"%s\" in package \"%s\"! Are you sure it exists?",
 		name,
 		pack.Name,
@@ -1835,15 +1707,13 @@ func LookupFunctionInPackage(name string, pack symbols.PackageSymbol) symbols.Fu
 	return symbols.FunctionSymbol{}
 }
 
-func FailClassLookup(name string, canFail bool) (symbols.ClassSymbol, bool) {
+func FailClassLookup(name string, canFail bool, errorLocation print.TextSpan) (symbols.ClassSymbol, bool) {
 	if !canFail {
 		//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
 		print.Error(
 			"BINDER",
-			print.ExplicitConversionError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			print.UnknownClassError,
+			errorLocation,
 			"Couldn't find class \"%s\"! Are you sure it exists?",
 			name,
 		)
@@ -1853,15 +1723,13 @@ func FailClassLookup(name string, canFail bool) (symbols.ClassSymbol, bool) {
 	return symbols.ClassSymbol{}, false
 }
 
-func FailPackageLookup(name string, canFail bool) (symbols.PackageSymbol, bool) {
+func FailPackageLookup(name string, canFail bool, errorLocation print.TextSpan) (symbols.PackageSymbol, bool) {
 	if !canFail {
 		//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
 		print.Error(
 			"BINDER",
-			print.ExplicitConversionError,
-			0,
-			0, // needs extra data added and passed into the function
-			0, // Probably wrong, but it works - that's the tokorv guarantee
+			print.UnknownPackageError,
+			errorLocation,
 			"Couldn't find package \"%s\"! Are you sure it was imported?",
 			name,
 		)

@@ -9,11 +9,16 @@ import (
 type BoundArrayAccessExpressionNode struct {
 	BoundExpressionNode
 
-	Base  BoundExpressionNode
-	Index BoundExpressionNode
+	Base      BoundExpressionNode
+	Index     BoundExpressionNode
+	BoundSpan print.TextSpan
 }
 
 func (BoundArrayAccessExpressionNode) NodeType() BoundType { return BoundArrayAccessExpression }
+
+func (node BoundArrayAccessExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
 
 func (node BoundArrayAccessExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundArrayAccessExpression")
@@ -30,9 +35,10 @@ func (node BoundArrayAccessExpressionNode) Type() symbols.TypeSymbol {
 	return node.Base.Type().SubTypes[0]
 }
 
-func CreateBoundArrayAccessExpressionNode(base BoundExpressionNode, index BoundExpressionNode) BoundArrayAccessExpressionNode {
+func CreateBoundArrayAccessExpressionNode(base BoundExpressionNode, index BoundExpressionNode, span print.TextSpan) BoundArrayAccessExpressionNode {
 	return BoundArrayAccessExpressionNode{
-		Base:  base,
-		Index: index,
+		Base:      base,
+		Index:     index,
+		BoundSpan: span,
 	}
 }

@@ -9,6 +9,9 @@ import (
 type MakeExpressionNode struct {
 	ExpressionNode
 
+	MakeKeyword  lexer.Token
+	ClosingToken lexer.Token
+
 	Package   *lexer.Token
 	BaseType  lexer.Token
 	Arguments []ExpressionNode
@@ -20,9 +23,8 @@ func (MakeExpressionNode) NodeType() NodeType { return MakeExpression }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node MakeExpressionNode) Position() (int, int, int) {
-	// TODO: aaaaAAAAAA (im sorry tokorv i cant deal with this rn lmao)
-	return 0, 0, 0
+func (node MakeExpressionNode) Span() print.TextSpan {
+	return node.MakeKeyword.Span.SpanBetween(node.ClosingToken.Span)
 }
 
 // node print function
@@ -36,10 +38,12 @@ func (node MakeExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateMakeExpressionNode(pack *lexer.Token, typ lexer.Token, args []ExpressionNode) MakeExpressionNode {
+func CreateMakeExpressionNode(pack *lexer.Token, typ lexer.Token, args []ExpressionNode, makeKw lexer.Token, closing lexer.Token) MakeExpressionNode {
 	return MakeExpressionNode{
-		Package:   pack,
-		BaseType:  typ,
-		Arguments: args,
+		Package:      pack,
+		BaseType:     typ,
+		Arguments:    args,
+		MakeKeyword:  makeKw,
+		ClosingToken: closing,
 	}
 }

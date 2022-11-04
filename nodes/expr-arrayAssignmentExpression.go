@@ -19,12 +19,8 @@ func (ArrayAssignmentExpressionNode) NodeType() NodeType { return ArrayAssignmen
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ArrayAssignmentExpressionNode) Position() (int, int, int) {
-	// TODO: aaaaAAAAAA
-	//length := len(node.Identifier.Value) + 2 // +2 for spaces and stuff
-	//_, _, exprLength := node.Index.Position()
-	//length += exprLength
-	return 0, 0, 0 //node.Identifier.Line, node.Identifier.Column, length
+func (node ArrayAssignmentExpressionNode) Span() print.TextSpan {
+	return node.Base.Span().SpanBetween(node.Value.Span())
 }
 
 // node print function

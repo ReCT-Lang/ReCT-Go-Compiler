@@ -12,6 +12,8 @@ type BoundWhileStatementNode struct {
 	Body          BoundStatementNode
 	BreakLabel    BoundLabel
 	ContinueLabel BoundLabel
+
+	BoundSpan print.TextSpan
 }
 
 // implement the interface
@@ -27,15 +29,20 @@ func (node BoundWhileStatementNode) Print(indent string) {
 	fmt.Printf("%s  └ ContinueLabel: %s\n", indent, node.ContinueLabel)
 }
 
+func (node BoundWhileStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 func (node BoundWhileStatementNode) LoopBreakLabel() BoundLabel    { return node.BreakLabel }
 func (node BoundWhileStatementNode) LoopContinueLabel() BoundLabel { return node.ContinueLabel }
 
 // constructor
-func CreateBoundWhileStatementNode(cond BoundExpressionNode, body BoundStatementNode, breakLabel BoundLabel, continueLabel BoundLabel) BoundWhileStatementNode {
+func CreateBoundWhileStatementNode(cond BoundExpressionNode, body BoundStatementNode, breakLabel BoundLabel, continueLabel BoundLabel, span print.TextSpan) BoundWhileStatementNode {
 	return BoundWhileStatementNode{
 		Condition:     cond,
 		Body:          body,
 		BreakLabel:    breakLabel,
 		ContinueLabel: continueLabel,
+		BoundSpan:     span,
 	}
 }

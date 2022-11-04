@@ -15,7 +15,8 @@ type PackageSymbol struct {
 	Functions []FunctionSymbol
 	Classes   []ClassSymbol
 
-	Module *ir.Module
+	Module        *ir.Module
+	ErrorLocation print.TextSpan
 }
 
 // implement the symbol interface
@@ -32,12 +33,13 @@ func (s PackageSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreatePackageSymbol(name string, functions []FunctionSymbol, classes []ClassSymbol, module *ir.Module) PackageSymbol {
+func CreatePackageSymbol(name string, functions []FunctionSymbol, classes []ClassSymbol, module *ir.Module, errorLocation print.TextSpan) PackageSymbol {
 	return PackageSymbol{
-		Exists:    true,
-		Name:      name,
-		Functions: functions,
-		Classes:   classes,
-		Module:    module,
+		Exists:        true,
+		Name:          name,
+		Functions:     functions,
+		Classes:       classes,
+		Module:        module,
+		ErrorLocation: errorLocation,
 	}
 }

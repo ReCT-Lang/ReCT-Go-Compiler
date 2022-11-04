@@ -10,7 +10,8 @@ import (
 type BoundClassDestructionExpressionNode struct {
 	BoundExpressionNode
 
-	Base BoundExpressionNode
+	Base      BoundExpressionNode
+	BoundSpan print.TextSpan
 }
 
 // implement node type from interface
@@ -23,6 +24,10 @@ func (node BoundClassDestructionExpressionNode) Type() symbols.TypeSymbol {
 	return builtins.Int
 }
 
+func (node BoundClassDestructionExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // node print function
 func (node BoundClassDestructionExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundClassDestructionExpressionNode")
@@ -33,8 +38,9 @@ func (node BoundClassDestructionExpressionNode) Print(indent string) {
 func (BoundClassDestructionExpressionNode) IsPersistent() bool { return false }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateBoundClassDestructionExpressionNode(base BoundExpressionNode) BoundClassDestructionExpressionNode {
+func CreateBoundClassDestructionExpressionNode(base BoundExpressionNode, span print.TextSpan) BoundClassDestructionExpressionNode {
 	return BoundClassDestructionExpressionNode{
-		Base: base,
+		Base:      base,
+		BoundSpan: span,
 	}
 }

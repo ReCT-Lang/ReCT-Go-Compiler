@@ -12,13 +12,15 @@ type PackageCallExpressionNode struct {
 	Package    lexer.Token
 	Identifier lexer.Token
 	Arguments  []ExpressionNode
+
+	ClosingToken lexer.Token
 }
 
 // implement node type from interface
 func (PackageCallExpressionNode) NodeType() NodeType { return PackageCallExpression }
 
-func (node PackageCallExpressionNode) Position() (int, int, int) {
-	return 0, 0, 0
+func (node PackageCallExpressionNode) Span() print.TextSpan {
+	return node.Package.Span.SpanBetween(node.ClosingToken.Span)
 }
 
 // node print function
@@ -34,10 +36,11 @@ func (node PackageCallExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreatePackageCallExpressionNode(pck lexer.Token, id lexer.Token, args []ExpressionNode) PackageCallExpressionNode {
+func CreatePackageCallExpressionNode(pck lexer.Token, id lexer.Token, args []ExpressionNode, closing lexer.Token) PackageCallExpressionNode {
 	return PackageCallExpressionNode{
-		Package:    pck,
-		Identifier: id,
-		Arguments:  args,
+		Package:      pck,
+		Identifier:   id,
+		Arguments:    args,
+		ClosingToken: closing,
 	}
 }

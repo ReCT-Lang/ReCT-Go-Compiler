@@ -11,6 +11,8 @@ type BoundIfStatementNode struct {
 	Condition     BoundExpressionNode
 	ThenStatement BoundStatementNode
 	ElseStatement BoundStatementNode
+
+	BoundSpan print.TextSpan
 }
 
 // implement the interface
@@ -30,11 +32,16 @@ func (node BoundIfStatementNode) Print(indent string) {
 	}
 }
 
+func (node BoundIfStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundIfStatementNode(cond BoundExpressionNode, thenStmt BoundStatementNode, elseStmt BoundStatementNode) BoundIfStatementNode {
+func CreateBoundIfStatementNode(cond BoundExpressionNode, thenStmt BoundStatementNode, elseStmt BoundStatementNode, span print.TextSpan) BoundIfStatementNode {
 	return BoundIfStatementNode{
 		Condition:     cond,
 		ThenStatement: thenStmt,
 		ElseStatement: elseStmt,
+		BoundSpan:     span,
 	}
 }

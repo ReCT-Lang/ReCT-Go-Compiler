@@ -18,8 +18,8 @@ func (ExpressionStatementNode) NodeType() NodeType { return ExpressionStatement 
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ExpressionStatementNode) Position() (int, int, int) {
-	return node.Expression.Position()
+func (node ExpressionStatementNode) Span() print.TextSpan {
+	return node.Expression.Span()
 }
 
 // node print function

@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/print"
 )
 
@@ -8,7 +9,9 @@ import (
 type ParenthesisedExpressionNode struct {
 	ExpressionNode
 
-	Expression ExpressionNode
+	OpenParenthesis   lexer.Token
+	Expression        ExpressionNode
+	ClosedParenthesis lexer.Token
 }
 
 // implement node type from interface
@@ -17,9 +20,8 @@ func (ParenthesisedExpressionNode) NodeType() NodeType { return ParenthesisedExp
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ParenthesisedExpressionNode) Position() (int, int, int) {
-	line, column, length := node.Expression.Position()
-	return line, column + 1, length + 1 // +1s for the parentheses
+func (node ParenthesisedExpressionNode) Span() print.TextSpan {
+	return node.OpenParenthesis.Span.SpanBetween(node.ClosedParenthesis.Span)
 }
 
 // node print function
@@ -29,8 +31,10 @@ func (node ParenthesisedExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateParenthesisedExpressionNode(expression ExpressionNode) ParenthesisedExpressionNode {
+func CreateParenthesisedExpressionNode(expression ExpressionNode, open lexer.Token, closed lexer.Token) ParenthesisedExpressionNode {
 	return ParenthesisedExpressionNode{
-		Expression: expression,
+		Expression:        expression,
+		OpenParenthesis:   open,
+		ClosedParenthesis: closed,
 	}
 }

@@ -33,7 +33,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	functionBodies := make([]BoundFunction, 0)
 	classes := make([]BoundClass, 0)
 
-	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements)
+	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements, print.TextSpan{})
 	loweredMainBody := lowerer.Lower(globalScope.MainFunction, mainBody)
 	functionBodies = append(functionBodies, BoundFunction{
 		Symbol: globalScope.MainFunction,

@@ -19,8 +19,8 @@ func (TernaryExpressionNode) NodeType() NodeType { return TernaryExpression }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node TernaryExpressionNode) Position() (int, int, int) {
-	return node.Condition.Position()
+func (node TernaryExpressionNode) Span() print.TextSpan {
+	return node.Condition.Span().SpanBetween(node.Else.Span())
 }
 
 // node print function

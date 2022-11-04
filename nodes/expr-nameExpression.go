@@ -19,8 +19,8 @@ func (NameExpressionNode) NodeType() NodeType { return NameExpression }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node NameExpressionNode) Position() (int, int, int) {
-	return node.Identifier.Line, node.Identifier.Column, len(node.Identifier.Value)
+func (node NameExpressionNode) Span() print.TextSpan {
+	return node.Identifier.Span
 }
 
 // node print function

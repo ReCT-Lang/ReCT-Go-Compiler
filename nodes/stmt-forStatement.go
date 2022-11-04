@@ -24,14 +24,8 @@ func (ForStatementNode) NodeType() NodeType { return ForStatement }
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 // ForStatementNode we don't do the Statement because it can be super long (i.e., a block statement)
-func (node ForStatementNode) Position() (int, int, int) {
-	length := len(node.Keyword.Value)
-	_, _, initLength := node.Initaliser.Position()
-	_, _, condLength := node.Condition.Position()
-	_, _, UpdaLength := node.Updation.Position()
-	length += initLength + condLength + UpdaLength
-
-	return node.Keyword.Line, node.Keyword.Column, length
+func (node ForStatementNode) Span() print.TextSpan {
+	return node.Keyword.Span.SpanBetween(node.Statement.Span())
 }
 
 // Print Prints beautiful stuff in console

@@ -11,6 +11,7 @@ type BoundConversionExpressionNode struct {
 
 	Expression BoundExpressionNode
 	ToType     symbols.TypeSymbol
+	BoundSpan  print.TextSpan
 }
 
 func (BoundConversionExpressionNode) NodeType() BoundType { return BoundConversionExpression }
@@ -21,6 +22,10 @@ func (node BoundConversionExpressionNode) Print(indent string) {
 	node.ToType.Print(indent + "    ")
 	fmt.Println(indent + "  └ Expression: ")
 	node.Expression.Print(indent + "    ")
+}
+
+func (node BoundConversionExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
 }
 
 func (node BoundConversionExpressionNode) IsPersistent() bool {
@@ -46,9 +51,10 @@ func (node BoundConversionExpressionNode) IsPersistent() bool {
 // implement the expression node interface
 func (node BoundConversionExpressionNode) Type() symbols.TypeSymbol { return node.ToType }
 
-func CreateBoundConversionExpressionNode(_type symbols.TypeSymbol, expression BoundExpressionNode) BoundConversionExpressionNode {
+func CreateBoundConversionExpressionNode(_type symbols.TypeSymbol, expression BoundExpressionNode, span print.TextSpan) BoundConversionExpressionNode {
 	return BoundConversionExpressionNode{
 		ToType:     _type,
 		Expression: expression,
+		BoundSpan:  span,
 	}
 }

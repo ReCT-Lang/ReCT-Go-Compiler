@@ -1587,7 +1587,7 @@ define dso_local noundef %struct.class_Any* @_ZN17rect_dictionaries10Dictionary3
 
 34:                                               ; preds = %33
   %35 = call noundef i8* @_ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5c_strEv(%"class.std::__cxx11::basic_string"* noundef nonnull align 8 dereferenceable(32) %13) #13
-  invoke void @_Z9exc_ThrowPc(i8* noundef %35)
+  invoke void @exc_Throw(i8* noundef %35)
           to label %36 unwind label %58
 
 36:                                               ; preds = %34
@@ -1781,7 +1781,7 @@ define linkonce_odr dso_local void @_ZStplIcSt11char_traitsIcESaIcEENSt7__cxx111
 ; Function Attrs: nounwind
 declare noundef i8* @_ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5c_strEv(%"class.std::__cxx11::basic_string"* noundef nonnull align 8 dereferenceable(32)) #1
 
-declare void @_Z9exc_ThrowPc(i8* noundef) #2
+declare void @exc_Throw(i8* noundef) #2
 
 ; Function Attrs: mustprogress noinline nounwind optnone sspstrong uwtable
 define linkonce_odr dso_local noundef %"struct.std::pair.0"* @_ZNKSt17_Rb_tree_iteratorISt4pairIKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEP9class_AnyEEptEv(%"struct.std::_Rb_tree_iterator"* noundef nonnull align 8 dereferenceable(8) %0) #4 comdat align 2 {
@@ -1994,7 +1994,7 @@ define dso_local void @_ZN17rect_dictionaries10Dictionary6RemoveEP12class_String
 
 36:                                               ; preds = %35
   %37 = call noundef i8* @_ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE5c_strEv(%"class.std::__cxx11::basic_string"* noundef nonnull align 8 dereferenceable(32) %13) #13
-  invoke void @_Z9exc_ThrowPc(i8* noundef %37)
+  invoke void @exc_Throw(i8* noundef %37)
           to label %38 unwind label %60
 
 38:                                               ; preds = %36

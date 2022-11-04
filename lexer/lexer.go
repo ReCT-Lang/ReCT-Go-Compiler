@@ -12,6 +12,7 @@ import (
 // Lexer : Lexer struct for lexing :GentlemenSphere:
 type Lexer struct {
 	Code   []rune
+	File   string
 	Line   int
 	Column int
 	Index  int
@@ -22,7 +23,7 @@ type Lexer struct {
 func Lex(filename string) []Token {
 	// Opens the file and returns its contents as a byte array
 	// It then creates a lexer pointer using the byte array and a few default values.
-	scanner := &Lexer{handleFileOpen(filename), 1, 1, 0, make([]Token, 0)}
+	scanner := &Lexer{handleFileOpen(filename), filename, 1, 1, 0, make([]Token, 0)}
 
 	// Scanning for all the juicy tokens
 	for scanner.Index < len(scanner.Code) {
@@ -50,7 +51,7 @@ func Lex(filename string) []Token {
 		}
 	}
 	// Finally, adding an End of File token to help detect the end of the file in the parser (syntax)
-	scanner.Tokens = append(scanner.Tokens, CreateToken("\000", EOF, scanner.Line, scanner.Column))
+	scanner.Tokens = append(scanner.Tokens, CreateToken("\000", EOF, scanner.GetCurrentTextSpan(0)))
 	return scanner.Tokens
 }
 
@@ -95,14 +96,13 @@ func (lxr *Lexer) getNumber() {
 			print.Error(
 				"LEXER",
 				print.RealValueConversionError,
-				lxr.Line,
-				lxr.Column,
-				0,
+				lxr.GetCurrentTextSpan(len(buffer)),
 				"value \"%s\" could not be converted to real value [float] (NumberToken)!",
 				buffer,
 			)
 		}
-		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, float32(realValueBuffer), NumberToken, lxr.Line, lxr.Column))
+
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, float32(realValueBuffer), NumberToken, lxr.GetCurrentTextSpan(len(buffer))))
 
 	} else {
 		// int real value
@@ -111,14 +111,12 @@ func (lxr *Lexer) getNumber() {
 			print.Error(
 				"LEXER",
 				print.RealValueConversionError,
-				lxr.Line,
-				lxr.Column,
-				0,
+				lxr.GetCurrentTextSpan(len(buffer)),
 				"value \"%s\" could not be converted to real value [int] (NumberToken)!",
 				buffer,
 			)
 		}
-		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.Line, lxr.Column))
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.GetCurrentTextSpan(len(buffer))))
 	}
 }
 
@@ -153,14 +151,12 @@ func (lxr *Lexer) getNumberHex() {
 		print.Error(
 			"LEXER",
 			print.RealValueConversionError,
-			lxr.Line,
-			lxr.Column,
-			0,
+			lxr.GetCurrentTextSpan(len(buffer)),
 			"hex value \"%s\" could not be converted to real value [int] (NumberToken)!",
 			buffer,
 		)
 	}
-	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, int(realValueBuffer), NumberToken, lxr.Line, lxr.Column))
+	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, int(realValueBuffer), NumberToken, lxr.GetCurrentTextSpan(len(buffer))))
 }
 
 // getString once it finds an " it'll keep getting bytes until it finds another "
@@ -183,7 +179,7 @@ func (lxr *Lexer) getString() {
 		lxr.Increment()
 	}
 	lxr.Increment()
-	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.Line, lxr.Column))
+	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.GetCurrentTextSpan(len(buffer)+2)))
 }
 
 // getComment we don't want to add comments to the Tokens because they have nothing of value
@@ -209,7 +205,7 @@ func (lxr *Lexer) Increment() {
 		return
 	} else if lxr.Code[lxr.Index] == '\n' {
 		lxr.Line++
-		lxr.Column = 1
+		lxr.Column = 0
 	}
 }
 
@@ -234,9 +230,9 @@ func (lxr *Lexer) getId() {
 
 	// Mmm converting true/false into actual boolean values
 	if kwType == TrueKeyword || kwType == FalseKeyword {
-		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, kwType == TrueKeyword, kwType, lxr.Line, lxr.Column))
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, kwType == TrueKeyword, kwType, lxr.GetCurrentTextSpan(len(buffer))))
 	} else {
-		lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, kwType, lxr.Line, lxr.Column))
+		lxr.Tokens = append(lxr.Tokens, CreateToken(buffer, kwType, lxr.GetCurrentTextSpan(len(buffer))))
 	}
 }
 
@@ -254,10 +250,6 @@ func (lxr *Lexer) getOperator() {
 
 	// save our current index for later
 	startIndex := lxr.Index
-
-	// save the line and column, so we're always using the first of possibly many characters
-	line := lxr.Line
-	column := lxr.Column
 
 	switch lxr.Code[lxr.Index] {
 	case '+':
@@ -347,9 +339,7 @@ func (lxr *Lexer) getOperator() {
 		print.Error(
 			"LEXER",
 			print.UnexpectedCharacterError,
-			lxr.Line,
-			lxr.Column,
-			5,
+			lxr.GetCurrentTextSpan(len(string(lxr.Code[lxr.Index]))),
 			"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)",
 			string(lxr.Code[lxr.Index]),
 		)
@@ -358,19 +348,19 @@ func (lxr *Lexer) getOperator() {
 	// AssignToken is 2 characters long while every other operator is 1 character.
 	// (that is why they are separated).
 
+	lxr.Increment()
+	buffer := string(lxr.Code)[startIndex:lxr.Index]
+
 	// Generalised this a little because we now got a few multi-char operators - Red, thanks - Tokorv xD
 	lxr.Tokens = append(
 		lxr.Tokens,
 		CreateTokenSpaced(
-			string(lxr.Code)[startIndex:lxr.Index+1],
+			buffer,
 			_token,
-			line,
-			column,
+			lxr.GetCurrentTextSpan(len(buffer)),
 			peek(1) == ' ',
 		),
 	)
-
-	lxr.Increment()
 }
 
 // handleFileOpen reads the file and returns a byte array ([]byte) // nah fam we usin runes
@@ -381,9 +371,7 @@ func handleFileOpen(filename string) []rune {
 		print.Error(
 			"LEXER",
 			print.FileDoesNotExistError,
-			0,
-			0,
-			0,
+			print.TextSpan{},
 			"file \"%s\" does not exist! Maybe you spelt it wrong?!",
 			filename,
 		)
@@ -392,9 +380,7 @@ func handleFileOpen(filename string) []rune {
 		print.Error(
 			"LEXER",
 			print.FilePermissionError,
-			0,
-			0,
-			0,
+			print.TextSpan{},
 			"do not have permissions to open file \"%s\"!",
 			filename,
 		)
@@ -403,18 +389,20 @@ func handleFileOpen(filename string) []rune {
 		print.Error(
 			"LEXER",
 			print.FileVoidError,
-			0,
-			0,
-			5,
+			print.TextSpan{},
 			"an unexpected error occurred when reading file \"%s\"!",
 			filename,
 		)
 		os.Exit(1)
 	}
+	// destroy all CR in the file
+	contents = []byte(strings.Replace(string(contents), "\r", "", -1))
+
 	// Offload a copy of contents for error handling
 	// Also split at new lines because that makes referencing easier
 	print.CodeReference = make([]string, 0)
 	print.CodeReference = strings.Split(string(contents), "\n")
+	print.SourceFiles[filename] = string(contents)
 	return []rune(string(contents))
 }
 
@@ -459,5 +447,20 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return PackageKeyword
 	default:
 		return IdToken
+	}
+}
+
+func (lxr *Lexer) GetCurrentTextSpan(buffer int) print.TextSpan {
+	return print.TextSpan{
+		File: lxr.File,
+
+		StartIndex: lxr.Index - buffer,
+		EndIndex:   lxr.Index,
+
+		StartLine: lxr.Line,
+		EndLine:   lxr.Line,
+
+		StartColumn: lxr.Column - buffer,
+		EndColumn:   lxr.Column,
 	}
 }

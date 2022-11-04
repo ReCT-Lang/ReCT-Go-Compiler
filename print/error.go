@@ -110,15 +110,17 @@ var CodeReference []string = []string{
 	"&dyvar &wjerr&r@&wy &w<- &g\"Hello, World\"&g;",
 }
 
+var SourceFiles = make(map[string]string)
+
 // When no data can be found for line, length or column
 
 // Error prints custom error message and code snippet to terminal/console
 // Uses old colour formatting method, will switch to Format() later
-func Error(area string, _type ErrorType, line, column, length int, message string, fargs ...interface{}) {
-	PrintCodeSnippet(line, column, length)
+func Error(area string, _type ErrorType, span TextSpan, message string, fargs ...interface{}) {
+	PrintCodeSnippet(span)
 	WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
 	WriteC(DarkCyan, string(_type))
-	WriteCF(Red, " Error(%d, %d): ", line, column)
+	WriteCF(Red, " Error(%d, %d, %s): ", span.StartLine, span.StartColumn, span.File)
 	WriteCF(DarkYellow, message, fargs...)
 	code := ErrorTypeToCode(_type)
 	WriteC(DarkYellow, "\n[> Error look up code: ")
@@ -130,15 +132,15 @@ func Error(area string, _type ErrorType, line, column, length int, message strin
 }
 
 // ErrorS basically Error but returns a string instead of printing
-func ErrorS(area string, _type ErrorType, line, column, length int, message string, a ...interface{}) string {
-	output := PrintCodeSnippetS(line, column, length)
+func ErrorS(area string, _type ErrorType, span TextSpan, message string, a ...interface{}) string {
+	output := PrintCodeSnippetS(span)
 	output += Format(
 		fmt.Sprintf(
 			"\n&dc[&c%s&dc] %s &rError(&dr%d&r, &dr%d&r): &dy%s\n[> &rError&dy look up code: &c%d&dy (use: &yrgoc -lookup=&c%d&dy, for more information!)]\n",
 			strings.ToUpper(area),
 			string(_type),
-			line,
-			column,
+			span.StartLine,
+			span.StartColumn,
 			fmt.Sprintf(message, a...),
 			ErrorTypeToCode(_type),
 			ErrorTypeToCode(_type),
@@ -149,37 +151,107 @@ func ErrorS(area string, _type ErrorType, line, column, length int, message stri
 }
 
 // PrintCodeSnippet does what it says on the label, it prints a snippet of the code in CodeReference.
-func PrintCodeSnippet(line, column, length int) {
-	if line <= 0 || column <= 0 || length <= 0 {
+func PrintCodeSnippet(span TextSpan) {
+	// no file? tough luck, you won't get a snippet
+	if span.File == "" {
 		return
 	}
-	PrintCF(White, "\n%d |  %s", line, CodeReference[line-1])
-	if column > 3 {
-		WriteC(Gray, strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line))))
-		PrintC(Red, strings.Repeat("^", length))
-	} else {
-		PrintC(Red, strings.Repeat("^", length+column))
+
+	errorFile := SourceFiles[span.File]
+	errorLines := strings.Split(errorFile, "\n")
+
+	// is the error contained on a single line?
+	if span.StartLine == span.EndLine {
+		line := errorLines[span.StartLine-1] // lines are 1-indexed
+
+		// output the line
+		offset := PrintLineOfCode(span.StartLine, line)
+		fmt.Printf("\n")
+
+		// spacer to the start of the error
+		WriteC(Gray, strings.Repeat(" ", span.StartColumn+offset-1))
+
+		// add the error marker
+		PrintC(Red, strings.Repeat("^", span.EndColumn-span.StartColumn))
+
+		// we don
+		return
 	}
+
+	// is the error not contained on a single line we'll show all affected lines with a start and end marker
+
+	offset := GetOffset(span.StartLine)
+
+	// spacer to the start of the error
+	WriteC(Gray, strings.Repeat(" ", span.StartColumn+offset-1))
+
+	// add the error marker for the start of the borblem
+	WriteC(Red, "v")
+
+	// loins
+	WriteC(Red, strings.Repeat("-", len(errorLines[span.StartLine])-span.StartColumn+1))
+
+	// print the lines
+	for i := span.StartLine; i < span.EndLine; i++ {
+		line := errorLines[i-1] // lines are 1-indexed
+
+		// output the line
+		PrintLineOfCode(i, line)
+	}
+	fmt.Printf("\n")
+
+	// spacer to the start of the error
+	WriteC(Red, strings.Repeat("-", span.EndColumn+GetOffset(span.EndLine)+1))
+
+	// add the error marker
+	WriteC(Red, "^")
+
+	fmt.Printf("\n")
 }
 
+func PrintLineOfCode(nr int, line string) int {
+	prefix := fmt.Sprintf("%d |  ", nr)
+	WriteCF(White, "\n%s%s", prefix, strings.Replace(line, "\t", " ", -1))
+
+	return len(prefix)
+}
+
+func GetOffset(nr int) int {
+	return len(fmt.Sprintf("%d |  ", nr))
+}
+
+// commented out and replaced with new method -Red
+//func PrintCodeSnippet(span TextSpan) {
+//	if span.StartLine <= 0 || span.StartColumn <= 0 || span.EndIndex-span.StartIndex <= 0 {
+//		return
+//	}
+//	PrintCF(White, "\n%d |  %s", span.StartLine, CodeReference[span.StartLine-1])
+//	if span.StartColumn > 3 {
+//		WriteC(Gray, strings.Repeat(" ", (span.StartColumn)+len(fmt.Sprintf("%d", span.StartLine))))
+//		PrintC(Red, strings.Repeat("^", span.EndIndex-span.EndIndex))
+//	} else {
+//		PrintC(Red, strings.Repeat("^", span.EndIndex-span.EndIndex+span.StartColumn))
+//	}
+//}
+
 // PrintCodeSnippetS returns a code snippet string instead of returning it like PrintCodeSnippet.
-func PrintCodeSnippetS(line, column, length int) string {
+func PrintCodeSnippetS(span TextSpan) string {
 	output := ""
-	if line <= 0 || column <= 0 || length <= 0 {
+	if span.StartLine <= 0 || span.StartColumn <= 0 || span.EndIndex-span.StartIndex <= 0 {
 		return output
 	}
 	output += Format(
-		fmt.Sprintf("\n%d | %s", line, CodeReference[line-1]),
+		fmt.Sprintf("\n%d | %s", span.StartLine, CodeReference[span.StartLine-1]),
 		Gray,
 	)
-	if column > 3 {
-		output += "\n" + strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line)))
+	if span.StartColumn > 3 {
+		output += "\n" + strings.Repeat(" ", (span.StartColumn)+len(fmt.Sprintf("%d", span.StartLine)))
 		output += Format(
-			strings.Repeat("^", length),
+			strings.Repeat("^", span.EndIndex-span.EndIndex),
 			Red,
 		)
 	} else {
-		output += strings.Repeat(" ", (column)+len(fmt.Sprintf("%d", line)))
+		output += strings.Repeat(" ", (span.StartColumn)+len(fmt.Sprintf("%d", span.StartLine)))
 	}
 	return output + "\n"
 }
@@ -227,6 +299,7 @@ const (
 	DuplicateParameterError            = "DuplicateParameter"
 	DuplicateFunctionError             = "DuplicateFunction"
 	DuplicateVariableDeclarationError  = "DuplicateVariableDeclaration"
+	DuplicatePackageImportError        = "DuplicatePackageImportError"
 	UndefinedVariableReferenceError    = "UndefinedVariableReference"
 	TypeFunctionDoesNotExistError      = "TypeFunctionDoesNotExist"
 	ConversionError                    = "Conversion"
@@ -244,7 +317,36 @@ const (
 	UnaryOperatorTypeError             = "UnaryOperatorType"
 	UnknownDataTypeError               = "UnknownDataType"
 	UnknownStatementError              = "UnknownStatement"
-	IllegalVariableDeclaration         = "IllegalVariableDeclaration"
+	IllegalVariableDeclarationError    = "IllegalVariableDeclarationError"
+	IllegalFunctionSignatureError      = "IllegalFunctionSignatureError"
+	IllegalNestedClassesError          = "IllegalNestedClassesError"
+	InvalidStatementPlacementError     = "InvalidStatementPlacementError"
+	OutsideConstructorCallError        = "OutsideConstructorCallError"
+	InvalidClassAccessError            = "InvalidClassAccessError"
+	IllegalConstructorCallError        = "IllegalConstructorCallError"
+	IllegalDestructorCallError         = "IllegalDestructorCallError"
+	TernaryOperatorTypeError           = "TernaryOperatorTypeError"
+	UnknownClassError                  = "UnknownClassError"
+	FunctionAccessViolationError       = "FunctionAccessViolationError"
+	UnknownFieldError                  = "UnknownFieldError"
+	InvalidNumberOfSubtypesError       = "InvalidNumberOfSubtypesError"
+	UnknownPackageError                = "UnknownPackageError"
+	UnexpectedNonArrayValueError       = "UnexpectedNonArrayValueError"
+
+	// Emitter Errors
+	UnknownVTableError      = "UnknownVTableError"
+	UnknownConstructorError = "UnknownConsructorError"
+	UnknownDestructorError  = "UnknownDestructorError"
+
+	// Packager Errors
+	UnknownPackageModuleFileError     = "UnknownPackageModuleFileError"
+	IllegalBoxedTypeError             = "IllegalBoxedTypeError"
+	IllegalUnspecificArrayTypeError   = "IllegalUnspecificArrayTypeError"
+	MonkeError                        = "MonkeError"
+	InvalidNonPointerReferenceError   = "InvalidNonPointerReferenceError"
+	UnparsableFingerprintError        = "UnparsableFingerprintError"
+	ImpossibleFunctionProcessingError = "ImpossibleFunctionProcessingError"
+	ImpossibleFieldProcessingError    = "ImpossibleFieldProcessingError"
 )
 
 // ErrorCode the numerical representation of an Error, this allows it to be "looked up"
@@ -274,6 +376,7 @@ const (
 	DuplicateParameterErrorCode            = iota + 3000 // 3009
 	DuplicateFunctionErrorCode             = iota + 3000
 	DuplicateVariableDeclarationErrorCode  = iota + 3000
+	DuplicatePackageImportErrorCode        = iota + 3000
 	UndefinedVariableReferenceErrorCode    = iota + 3000
 	TypeFunctionDoesNotExistErrorCode      = iota + 3000
 	ConversionErrorCode                    = iota + 3000
@@ -290,70 +393,103 @@ const (
 	UndefinedFunctionCallErrorCode         = iota + 3000
 	UnaryOperatorTypeErrorCode             = iota + 3000
 	UnknownDataTypeErrorCode               = iota + 3000 // NOTE: this error does not exist, and I have no idea why!
-	UnknownStatementErrorCode              = iota + 3000 // 3028
+	UnknownStatementErrorCode              = iota + 3000
+	IllegalVariableDeclarationErrorCode    = iota + 3000
+	IllegalFunctionSignatureErrorCode      = iota + 3000
+	IllegalNestedClassesErrorCode          = iota + 3000
+	InvalidStatementPlacementErrorCode     = iota + 3000
+	OutsideConstructorCallErrorCode        = iota + 3000
+	InvalidClassAccessErrorCode            = iota + 3000
+	IllegalConstructorCallErrorCode        = iota + 3000
+	IllegalDestructorCallErrorCode         = iota + 3000
+	TernaryOperatorTypeErrorCode           = iota + 3000
+	UnknownClassErrorCode                  = iota + 3000
+	FunctionAccessViolationErrorCode       = iota + 3000
+	UnknownFieldErrorCode                  = iota + 3000
+	InvalidNumberOfSubtypesErrorCode       = iota + 3000
+	UnknownPackageErrorCode                = iota + 3000
+	UnexpectedNonArrayValueErrorCode       = iota + 3000
+
+	// Emitter ErrorCodes
+	UnknownVTableErrorCode      = iota + 4000
+	UnknownConstructorErrorCode = iota + 4000
+	UnknownDestructorErrorCode  = iota + 4000
+
+	// Packager ErrorCodes
+	UnknownPackageModuleFileErrorCode     = iota + 5000
+	IllegalBoxedTypeErrorCode             = iota + 5000
+	IllegalUnspecificArrayTypeErrorCode   = iota + 5000
+	MonkeErrorCode                        = iota + 5000
+	InvalidNonPointerReferenceErrorCode   = iota + 5000
+	UnparsableFingerprintErrorCode        = iota + 5000
+	ImpossibleFunctionProcessingErrorCode = iota + 5000
+	ImpossibleFieldProcessingErrorCode    = iota + 5000
 )
+
+var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
+	UnexpectedCharacterError:           UnexpectedCharacterErrorCode,
+	NotImplementedError:                NotImplementedErrorCode,
+	FileDoesNotExistError:              FileDoesNotExistErrorCode,
+	FilePermissionError:                FilePermissionErrorCode,
+	FileVoidError:                      FileVoidErrorCode,
+	RealValueConversionError:           RealValueConversionErrorCode,
+	UnexpectedTokenError:               UnexpectedTokenErrorCode,
+	DuplicateParameterError:            DuplicateParameterErrorCode,
+	DuplicateFunctionError:             DuplicateFunctionErrorCode,
+	DuplicateVariableDeclarationError:  DuplicateVariableDeclarationErrorCode,
+	UndefinedVariableReferenceError:    UndefinedVariableReferenceErrorCode,
+	TypeFunctionDoesNotExistError:      TypeFunctionDoesNotExistErrorCode,
+	ConversionError:                    ConversionErrorCode,
+	ExplicitConversionError:            ExplicitConversionErrorCode,
+	UnexpectedExpressionStatementError: UnexpectedExpressionStatementErrorCode,
+	OutsideReturnError:                 OutsideReturnErrorCode,
+	VoidReturnError:                    VoidReturnErrorCode,
+	OutsideBreakError:                  OutsideBreakErrorCode,
+	UnexpectedNonIntegerValueError:     UnexpectedNonIntegerValueErrorCode,
+	OutsideContinueError:               OutsideContinueErrorCode,
+	BinaryOperatorTypeError:            BinaryOperatorTypeErrorCode,
+	IncorrectTypeFunctionCallError:     IncorrectTypeFunctionCallErrorCode,
+	BadNumberOfParametersError:         BadNumberOfParametersErrorCode,
+	UndefinedFunctionCallError:         UndefinedFunctionCallErrorCode,
+	UnaryOperatorTypeError:             UnaryOperatorTypeErrorCode,
+	UnknownDataTypeError:               UnknownDataTypeErrorCode,
+	UnknownStatementError:              UnknownStatementErrorCode,
+	IllegalVariableDeclarationError:    IllegalVariableDeclarationErrorCode,
+	IllegalFunctionSignatureError:      IllegalFunctionSignatureErrorCode,
+	IllegalNestedClassesError:          IllegalNestedClassesErrorCode,
+	InvalidStatementPlacementError:     InvalidStatementPlacementErrorCode,
+	DuplicatePackageImportError:        DuplicatePackageImportErrorCode,
+	OutsideConstructorCallError:        OutsideConstructorCallErrorCode,
+	InvalidClassAccessError:            InvalidClassAccessErrorCode,
+	IllegalConstructorCallError:        IllegalConstructorCallErrorCode,
+	IllegalDestructorCallError:         IllegalDestructorCallErrorCode,
+	TernaryOperatorTypeError:           TernaryOperatorTypeErrorCode,
+	UnknownClassError:                  UnknownClassErrorCode,
+	FunctionAccessViolationError:       FunctionAccessViolationErrorCode,
+	UnknownFieldError:                  UnknownFieldErrorCode,
+	InvalidNumberOfSubtypesError:       InvalidNumberOfSubtypesErrorCode,
+	UnknownPackageError:                UnknownPackageErrorCode,
+	UnknownVTableError:                 UnknownVTableErrorCode,
+	UnknownConstructorError:            UnknownConstructorErrorCode,
+	UnknownDestructorError:             UnknownDestructorErrorCode,
+	UnknownPackageModuleFileError:      UnknownPackageModuleFileErrorCode,
+	IllegalBoxedTypeError:              IllegalBoxedTypeErrorCode,
+	IllegalUnspecificArrayTypeError:    IllegalUnspecificArrayTypeErrorCode,
+	MonkeError:                         MonkeErrorCode,
+	InvalidNonPointerReferenceError:    InvalidNonPointerReferenceErrorCode,
+	UnparsableFingerprintError:         UnparsableFingerprintErrorCode,
+	UnexpectedNonArrayValueError:       UnexpectedNonArrayValueErrorCode,
+	ImpossibleFunctionProcessingError:  ImpossibleFunctionProcessingErrorCode,
+	ImpossibleFieldProcessingError:     ImpossibleFieldProcessingErrorCode,
+}
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179
 func ErrorTypeToCode(e ErrorType) ErrorCode {
-	switch e {
-	case UnexpectedCharacterError:
-		return UnexpectedCharacterErrorCode
-	case DuplicateFunctionError:
-		return DuplicateFunctionErrorCode
-	case DuplicateVariableDeclarationError:
-		return DuplicateVariableDeclarationErrorCode
-	case UndefinedVariableReferenceError:
-		return UndefinedVariableReferenceErrorCode
-	case DuplicateParameterError:
-		return DuplicateParameterErrorCode
-	case TypeFunctionDoesNotExistError:
-		return TypeFunctionDoesNotExistErrorCode
-	case ConversionError:
-		return ConversionErrorCode
-	case ExplicitConversionError:
-		return ExplicitConversionErrorCode
-	case UnexpectedExpressionStatementError:
-		return UnexpectedExpressionStatementErrorCode
-	case OutsideReturnError:
-		return OutsideReturnErrorCode
-	case VoidReturnError:
-		return VoidReturnErrorCode
-	case OutsideBreakError:
-		return OutsideBreakErrorCode
-	case UnexpectedNonIntegerValueError:
-		return UnexpectedNonIntegerValueErrorCode
-	case OutsideContinueError:
-		return OutsideContinueErrorCode
-	case BinaryOperatorTypeError:
-		return BinaryOperatorTypeErrorCode
-	case IncorrectTypeFunctionCallError:
-		return IncorrectTypeFunctionCallErrorCode
-	case BadNumberOfParametersError:
-		return BadNumberOfParametersErrorCode
-	case UndefinedFunctionCallError:
-		return UndefinedFunctionCallErrorCode
-	case UnaryOperatorTypeError:
-		return UnaryOperatorTypeErrorCode
-	case UnknownDataTypeError: // Does not exist
-		return UnknownDataTypeErrorCode
-	case NotImplementedError:
-		return NotImplementedErrorCode
-	case IDK:
-		return IDKErrorCode
-	case UnexpectedTokenError:
-		return UnexpectedTokenErrorCode
-	case FileDoesNotExistError:
-		return FileDoesNotExistErrorCode
-	case FilePermissionError:
-		return FilePermissionErrorCode
-	case FileVoidError:
-		return FileVoidErrorCode
-	case RealValueConversionError:
-		return RealValueConversionErrorCode
-	case UnknownStatementError:
-		return UnknownStatementErrorCode
-	default:
+	code, ok := ErrorTypeCodeRelations[e]
+	if !ok {
 		return NULLErrorCode
+	} else {
+		return code
 	}
 }
 
@@ -398,15 +534,15 @@ Since the feature it not fully developed, it &rwill not&r have a &wspecific erro
 		"explanation": `An &mUnexpectedCharacter&m Error occurs when the &bLexer/scanner&b of the compiler encounters a &wcharacter&w that the &wcompiler&w &rdoes not&r know how to &wprocess&w. 
 Since the compiler does not know how to process this character, it &drcannot proceed&dr and instead outputs an &mUnexpectedCharacter&m Error so the developer 
 of the program can correct the issues and &weither remove or replace&w the &wunexpected character&w.`,
-		"example": ErrorS(
-			"Lexer",
-			UnexpectedCharacterError,
-			1,
-			10,
-			5,
-			"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)",
-			string(CodeReference[0][15]),
-		),
+		//"example": ErrorS(
+		//	"Lexer",
+		//	UnexpectedCharacterError,
+		//	1,
+		//	10,
+		//	5,
+		//	"an unexpected character was found \"%s\"! Lexer is unable to process this character! (BadToken)",
+		//	string(CodeReference[0][15]),
+		//),
 		"additional": "This error can cause a &mBadToken&m error in the &bParser&b later on.",
 	},
 	FileDoesNotExistErrorCode: {

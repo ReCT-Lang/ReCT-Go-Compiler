@@ -11,9 +11,15 @@ type BoundCallExpressionNode struct {
 
 	Function  symbols.FunctionSymbol
 	Arguments []BoundExpressionNode
+	BoundSpan print.TextSpan
 }
 
 func (BoundCallExpressionNode) NodeType() BoundType { return BoundCallExpression }
+
+func (node BoundCallExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 func (node BoundCallExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundCallExpressionNode")
 	node.Function.Print(indent)
@@ -28,9 +34,10 @@ func (BoundCallExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
 
-func CreateBoundCallExpressionNode(function symbols.FunctionSymbol, args []BoundExpressionNode) BoundCallExpressionNode {
+func CreateBoundCallExpressionNode(function symbols.FunctionSymbol, args []BoundExpressionNode, span print.TextSpan) BoundCallExpressionNode {
 	return BoundCallExpressionNode{
 		Function:  function,
 		Arguments: args,
+		BoundSpan: span,
 	}
 }

@@ -11,6 +11,8 @@ type BoundMakeExpressionNode struct {
 
 	BaseType  symbols.ClassSymbol
 	Arguments []BoundExpressionNode
+
+	BoundSpan print.TextSpan
 }
 
 func (BoundMakeExpressionNode) NodeType() BoundType { return BoundMakeExpression }
@@ -25,6 +27,10 @@ func (node BoundMakeExpressionNode) Print(indent string) {
 	}
 }
 
+func (node BoundMakeExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 func (BoundMakeExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
@@ -32,9 +38,10 @@ func (node BoundMakeExpressionNode) Type() symbols.TypeSymbol {
 	return node.BaseType.Type
 }
 
-func CreateBoundMakeExpressionNode(baseType symbols.ClassSymbol, args []BoundExpressionNode) BoundMakeExpressionNode {
+func CreateBoundMakeExpressionNode(baseType symbols.ClassSymbol, args []BoundExpressionNode, span print.TextSpan) BoundMakeExpressionNode {
 	return BoundMakeExpressionNode{
 		BaseType:  baseType,
 		Arguments: args,
+		BoundSpan: span,
 	}
 }

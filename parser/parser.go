@@ -51,9 +51,7 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 		print.Error(
 			"PARSER",
 			print.UnexpectedTokenError,
-			prs.current().Line,
-			prs.current().Column,
-			5,
+			prs.current().Span,
 			"unexpected Token \"%s\"! Expected \"%s\"!"+additionalInfo,
 			prs.current().Kind,
 			expected,
@@ -147,7 +145,7 @@ func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
 
 	// Example:
 	// function functionName(functionArg1 string) string { ... }
-	prs.consume(lexer.FunctionKeyword) // We know we are getting a functional already so just consume this
+	kw := prs.consume(lexer.FunctionKeyword) // We know we are getting a functional already so just consume this
 
 	// consume the "functionName" (which is an identifier token).
 	identifier := prs.consume(lexer.IdToken)
@@ -166,11 +164,11 @@ func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
 	// the block statement will handle multiple statements inside itself
 	body := prs.parseBlockStatement()
 
-	return nodes.CreateFunctionDeclarationMember(identifier, params, typeClause, body, isPublic)
+	return nodes.CreateFunctionDeclarationMember(kw, identifier, params, typeClause, body, isPublic)
 }
 
 func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
-	prs.consume(lexer.ClassKeyword)
+	kw := prs.consume(lexer.ClassKeyword)
 	id := prs.consume(lexer.IdToken)
 
 	// beginn class body
@@ -194,20 +192,20 @@ func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
 		}
 	}
 
-	prs.consume(lexer.CloseBraceToken)
+	closing := prs.consume(lexer.CloseBraceToken)
 
-	return nodes.CreateClassDeclarationMember(id, members)
+	return nodes.CreateClassDeclarationMember(kw, id, members, closing)
 }
 
 func (prs *Parser) parsePackageReference() nodes.PackageReferenceMember {
-	prs.consume(lexer.PackageKeyword)
+	kw := prs.consume(lexer.PackageKeyword)
 	id := prs.consume(lexer.IdToken)
 
 	if prs.current().Kind == lexer.Semicolon {
 		prs.consume(lexer.Semicolon)
 	}
 
-	return nodes.CreatePackageReferenceMember(id)
+	return nodes.CreatePackageReferenceMember(kw, id)
 }
 
 // parseParameterList we parse a list of arguments (usually for a function or functionCall)
@@ -270,6 +268,7 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 
 	identifier := prs.consume(lexer.IdToken)
 	subTypes := make([]nodes.TypeClauseNode, 0)
+	var closing lexer.Token
 
 	// subtypes
 	if prs.current().Kind == lexer.OpenBracketToken {
@@ -286,10 +285,10 @@ func (prs *Parser) parseTypeClause() nodes.TypeClauseNode {
 			}
 		}
 
-		prs.consume(lexer.CloseBracketToken)
+		closing = prs.consume(lexer.CloseBracketToken)
 	}
 
-	return nodes.CreateTypeClauseNode(pack, identifier, subTypes)
+	return nodes.CreateTypeClauseNode(pack, identifier, subTypes, closing)
 }
 
 // parseUncertainTypeClause consumes the datatype and returns it in node form
@@ -305,6 +304,7 @@ func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
 
 	identifier := prs.consume(lexer.IdToken)
 	subTypes := make([]nodes.TypeClauseNode, 0)
+	var closing lexer.Token
 
 	// subtypes
 	if prs.current().Kind == lexer.OpenBracketToken {
@@ -338,10 +338,10 @@ func (prs *Parser) parseUncertainTypeClause() (nodes.TypeClauseNode, bool) {
 			return nodes.TypeClauseNode{}, false
 		}
 
-		prs.consume(lexer.CloseBracketToken)
+		closing = prs.consume(lexer.CloseBracketToken)
 	}
 
-	return nodes.CreateTypeClauseNode(pack, identifier, subTypes), true
+	return nodes.CreateTypeClauseNode(pack, identifier, subTypes, closing), true
 }
 
 // <STATEMENTS> ---------------------------------------------------------------
@@ -763,9 +763,7 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	print.Error(
 		"PARSER",
 		print.UnexpectedTokenError,
-		prs.current().Line,
-		prs.current().Column,
-		8,
+		prs.current().Span,
 		"unexpected Token \"%s\"!"+additionalInfo,
 		prs.current().Kind,
 	)
@@ -829,11 +827,11 @@ func (prs *Parser) parseCallExpression() nodes.CallExpressionNode {
 	// We need the identifier to know which function the program called
 	identifier := prs.consume(lexer.IdToken)
 
-	prs.consume(lexer.OpenParenthesisToken)  // (
-	args := prs.parseArguments()             // We get the arguments being put into the function
-	prs.consume(lexer.CloseParenthesisToken) // )
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	args := prs.parseArguments()                        // We get the arguments being put into the function
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
 
-	return nodes.CreateCallExpressionNode(identifier, args, nodes.TypeClauseNode{})
+	return nodes.CreateCallExpressionNode(identifier, args, nodes.TypeClauseNode{}, closing)
 }
 
 // parseComplexCastExpression this for casting what ive called "complex cast" here
@@ -859,12 +857,12 @@ func (prs *Parser) parseComplexCastExpression() nodes.ExpressionNode {
 		return prs.parseArrayAccessExpression()
 	}
 
-	prs.consume(lexer.OpenParenthesisToken)  // (
-	expression := prs.parseExpression()      // We get the expression we want to cast
-	prs.consume(lexer.CloseParenthesisToken) // )
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	expression := prs.parseExpression()                 // We get the expression we want to cast
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
 
 	// return a call expression as the rest is all managed through it
-	return nodes.CreateCallExpressionNode(identifier, []nodes.ExpressionNode{expression}, typeClause)
+	return nodes.CreateCallExpressionNode(identifier, []nodes.ExpressionNode{expression}, typeClause, closing)
 }
 
 // parsePackageCallExpression this for when we're calling a function from a package
@@ -878,11 +876,11 @@ func (prs *Parser) parsePackageCallExpression() nodes.PackageCallExpressionNode 
 	// We need the identifier to know which function the program called
 	identifier := prs.consume(lexer.IdToken)
 
-	prs.consume(lexer.OpenParenthesisToken)  // (
-	args := prs.parseArguments()             // We get the arguments being put into the function
-	prs.consume(lexer.CloseParenthesisToken) // )
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	args := prs.parseArguments()                        // We get the arguments being put into the function
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
 
-	return nodes.CreatePackageCallExpressionNode(pack, identifier, args)
+	return nodes.CreatePackageCallExpressionNode(pack, identifier, args, closing)
 }
 
 // parseArrayAccessExpression this for accessing arrays!
@@ -961,12 +959,12 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 		return prs.parseMakeArrayExpression()
 	}
 
-	prs.consume(lexer.OpenParenthesisToken)  // (
-	args := prs.parseArguments()             // any arguments for the object's constructor
-	prs.consume(lexer.CloseParenthesisToken) // )
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	args := prs.parseArguments()                        // any arguments for the object's constructor
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
 
 	// return an array access expression
-	return nodes.CreateMakeExpressionNode(pack, baseType, args)
+	return nodes.CreateMakeExpressionNode(pack, baseType, args, makeKeyword, closing)
 }
 
 // parseMakeArrayExpression this for creating arrays
@@ -974,7 +972,7 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 // we need to get the type and length of the new array
 func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 
-	prs.consume(lexer.MakeKeyword) // make
+	kw := prs.consume(lexer.MakeKeyword) // make
 
 	// We need the base type of the array
 	baseType := prs.parseTypeClause()
@@ -1007,18 +1005,18 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 			}
 		}
 
-		prs.consume(lexer.CloseBraceToken) // }
+		closing := prs.consume(lexer.CloseBraceToken) // }
 
 		// create our node object
-		return nodes.CreateMakeArrayExpressionNodeLiteral(baseType, literals)
+		return nodes.CreateMakeArrayExpressionNodeLiteral(baseType, literals, kw, closing)
 	}
 
-	prs.consume(lexer.OpenParenthesisToken)  // (
-	length := prs.parseExpression()          // We get the length of the new array
-	prs.consume(lexer.CloseParenthesisToken) // )
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	length := prs.parseExpression()                     // We get the length of the new array
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
 
 	// return an array access expression
-	return nodes.CreateMakeArrayExpressionNode(baseType, length)
+	return nodes.CreateMakeArrayExpressionNode(baseType, length, kw, closing)
 }
 
 // parseThreadExpression this for creating threads
@@ -1028,9 +1026,9 @@ func (prs *Parser) parseThreadExpression() nodes.ThreadExpressionNode {
 
 	prs.consume(lexer.OpenParenthesisToken)
 	expression := prs.parseNameExpression()
-	prs.consume(lexer.CloseParenthesisToken)
+	closing := prs.consume(lexer.CloseParenthesisToken)
 
-	return nodes.CreateThreadExpressionNode(keyword, expression)
+	return nodes.CreateThreadExpressionNode(keyword, expression, closing)
 }
 
 // parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)
@@ -1061,11 +1059,11 @@ func (prs *Parser) parseTypeCallExpressionFromValue(expr nodes.ExpressionNode) n
 		return prs.parseClassFieldAccessExpression(callIdentifier, expr)
 	}
 
-	prs.consume(lexer.OpenParenthesisToken)  // (
-	args := prs.parseArguments()             // any arguments in the function call itself
-	prs.consume(lexer.CloseParenthesisToken) // )
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	args := prs.parseArguments()                        // any arguments in the function call itself
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
 
-	return nodes.CreateTypeCallExpressionNode(expr, callIdentifier, args)
+	return nodes.CreateTypeCallExpressionNode(expr, callIdentifier, args, closing)
 }
 
 // parseClassFieldAccessExpression when we want to get a field from inside a class object
@@ -1126,11 +1124,11 @@ func (prs *Parser) parseNameExpression() nodes.NameExpressionNode {
 func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionNode {
 
 	// It's quite literally just consuming the parentheses and passing the expression as a new Node
-	prs.consume(lexer.OpenParenthesisToken)
+	opening := prs.consume(lexer.OpenParenthesisToken)
 	expression := prs.parseExpression()
-	prs.consume(lexer.CloseParenthesisToken)
+	closing := prs.consume(lexer.CloseParenthesisToken)
 
-	return nodes.CreateParenthesisedExpressionNode(expression)
+	return nodes.CreateParenthesisedExpressionNode(expression, opening, closing)
 }
 
 // parseStringLiteral

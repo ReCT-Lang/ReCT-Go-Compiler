@@ -19,11 +19,8 @@ func (UnaryExpressionNode) NodeType() NodeType { return UnaryExpression }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node UnaryExpressionNode) Position() (int, int, int) {
-	length := len(node.Operator.Value)
-	_, _, exprLength := node.Operand.Position()
-	length += exprLength
-	return node.Operator.Line, node.Operator.Column, length
+func (node UnaryExpressionNode) Span() print.TextSpan {
+	return node.Operator.Span.SpanBetween(node.Operand.Span())
 }
 
 // node print function

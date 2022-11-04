@@ -9,8 +9,9 @@ import (
 type BoundClassFieldAccessExpressionNode struct {
 	BoundExpressionNode
 
-	Base  BoundExpressionNode
-	Field symbols.VariableSymbol
+	Base      BoundExpressionNode
+	Field     symbols.VariableSymbol
+	BoundSpan print.TextSpan
 }
 
 // implement node type from interface
@@ -21,6 +22,10 @@ func (BoundClassFieldAccessExpressionNode) NodeType() BoundType {
 // implement the expression node interface
 func (node BoundClassFieldAccessExpressionNode) Type() symbols.TypeSymbol {
 	return node.Field.VarType()
+}
+
+func (node BoundClassFieldAccessExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
 }
 
 // node print function
@@ -35,9 +40,10 @@ func (node BoundClassFieldAccessExpressionNode) Print(indent string) {
 func (BoundClassFieldAccessExpressionNode) IsPersistent() bool { return true }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateBoundClassFieldAccessExpressionNode(base BoundExpressionNode, field symbols.VariableSymbol) BoundClassFieldAccessExpressionNode {
+func CreateBoundClassFieldAccessExpressionNode(base BoundExpressionNode, field symbols.VariableSymbol, span print.TextSpan) BoundClassFieldAccessExpressionNode {
 	return BoundClassFieldAccessExpressionNode{
-		Base:  base,
-		Field: field,
+		Base:      base,
+		Field:     field,
+		BoundSpan: span,
 	}
 }

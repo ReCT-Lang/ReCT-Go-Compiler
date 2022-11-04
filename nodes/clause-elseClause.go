@@ -21,9 +21,12 @@ func (ElseClauseNode) NodeType() NodeType { return ElseClause }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ElseClauseNode) Position() (int, int, int) {
-	_, _, stmtLength := node.ElseStatement.Position()
-	return node.ElseKeyword.Line, node.ElseKeyword.Column, len(node.ElseKeyword.Value) + stmtLength
+func (node ElseClauseNode) Span() print.TextSpan {
+	if node.ClauseIsSet {
+		return node.ElseKeyword.Span.SpanBetween(node.ElseStatement.Span())
+	} else {
+		return print.TextSpan{} // empty
+	}
 }
 
 // node print function

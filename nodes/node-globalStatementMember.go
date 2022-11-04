@@ -16,8 +16,8 @@ func (GlobalStatementMember) NodeType() NodeType { return GlobalStatement }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node GlobalStatementMember) Position() (int, int, int) {
-	return node.Statement.Position()
+func (node GlobalStatementMember) Span() print.TextSpan {
+	return node.Statement.Span()
 }
 
 // node print function

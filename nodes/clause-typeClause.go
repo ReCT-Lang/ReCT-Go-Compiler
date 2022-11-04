@@ -15,6 +15,7 @@ type TypeClauseNode struct {
 	Package        *lexer.Token
 	TypeIdentifier lexer.Token
 	SubClauses     []TypeClauseNode
+	ClosingBracket lexer.Token
 }
 
 // implement node type from interface
@@ -23,9 +24,15 @@ func (TypeClauseNode) NodeType() NodeType { return TypeClause }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node TypeClauseNode) Position() (int, int, int) {
-	//TODO: this needs updating for subtypes but i couldn't bring myself todo so yet - RedCube
-	return node.TypeIdentifier.Line, node.TypeIdentifier.Column, len(node.TypeIdentifier.Value)
+func (node TypeClauseNode) Span() print.TextSpan {
+	if node.ClauseIsSet {
+		span := node.TypeIdentifier.Span
+		span = span.SpanBetween(node.ClosingBracket.Span)
+
+		return span
+	} else {
+		return print.TextSpan{}
+	}
 }
 
 // node print function
@@ -36,11 +43,12 @@ func (node TypeClauseNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateTypeClauseNode(pack *lexer.Token, id lexer.Token, subtypes []TypeClauseNode) TypeClauseNode {
+func CreateTypeClauseNode(pack *lexer.Token, id lexer.Token, subtypes []TypeClauseNode, bracket lexer.Token) TypeClauseNode {
 	return TypeClauseNode{
 		ClauseIsSet:    true,
 		Package:        pack,
 		TypeIdentifier: id,
 		SubClauses:     subtypes,
+		ClosingBracket: bracket,
 	}
 }

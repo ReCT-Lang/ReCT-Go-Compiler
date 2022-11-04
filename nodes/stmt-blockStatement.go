@@ -23,13 +23,8 @@ func (BlockStatementNode) NodeType() NodeType { return BlockStatement }
 // convenient.
 // BlockStatementNode is a bit weird because it gets the length of all the statements...
 // Oh well, I'm sure nothing wacky can happen from this! - tokorv
-func (node BlockStatementNode) Position() (int, int, int) {
-	length := 2 // OpenBrace + CloseBrace
-	for _, s := range node.Statements {
-		_, _, stmtLength := s.Position()
-		length += stmtLength
-	}
-	return node.OpenBrace.Line, node.OpenBrace.Column, length
+func (node BlockStatementNode) Span() print.TextSpan {
+	return node.OpenBrace.Span.SpanBetween(node.CloseBrace.Span)
 }
 
 // node print function

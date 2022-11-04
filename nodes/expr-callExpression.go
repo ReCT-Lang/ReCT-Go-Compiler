@@ -13,18 +13,19 @@ type CallExpressionNode struct {
 	Arguments  []ExpressionNode
 
 	CastingType TypeClauseNode // if this call is actually a complex cast
+
+	ClosingParenthesis lexer.Token
 }
 
 // implement node type from interface
 func (CallExpressionNode) NodeType() NodeType { return CallExpression }
 
-func (node CallExpressionNode) Position() (int, int, int) {
-	length := len(node.Identifier.Value) + 2
-	for _, arg := range node.Arguments {
-		_, _, argLength := arg.Position()
-		length += argLength + 2
+func (node CallExpressionNode) Span() print.TextSpan {
+	if node.CastingType.ClauseIsSet {
+		return node.CastingType.Span().SpanBetween(node.ClosingParenthesis.Span)
+	} else {
+		return node.Identifier.Span.SpanBetween(node.ClosingParenthesis.Span)
 	}
-	return node.Identifier.Line, node.Identifier.Column, length
 }
 
 // node print function
@@ -39,10 +40,11 @@ func (node CallExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateCallExpressionNode(id lexer.Token, args []ExpressionNode, castClause TypeClauseNode) CallExpressionNode {
+func CreateCallExpressionNode(id lexer.Token, args []ExpressionNode, castClause TypeClauseNode, parenthesis lexer.Token) CallExpressionNode {
 	return CallExpressionNode{
-		Identifier:  id,
-		Arguments:   args,
-		CastingType: castClause,
+		Identifier:         id,
+		Arguments:          args,
+		CastingType:        castClause,
+		ClosingParenthesis: parenthesis,
 	}
 }

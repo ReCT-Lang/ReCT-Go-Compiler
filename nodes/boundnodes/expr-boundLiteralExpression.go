@@ -14,6 +14,7 @@ type BoundLiteralExpressionNode struct {
 
 	Value       interface{}
 	LiteralType symbols.TypeSymbol
+	BoundSpan   print.TextSpan
 }
 
 // implement node type from interface
@@ -36,13 +37,17 @@ func (node BoundLiteralExpressionNode) Print(indent string) {
 	node.LiteralType.Print(indent + "    ")
 }
 
+func (node BoundLiteralExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 func (BoundLiteralExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
 func (node BoundLiteralExpressionNode) Type() symbols.TypeSymbol { return node.LiteralType }
 
 // Doubt this is right
-func CreateBoundLiteralExpressionNode(value interface{}) BoundLiteralExpressionNode {
+func CreateBoundLiteralExpressionNode(value interface{}, span print.TextSpan) BoundLiteralExpressionNode {
 	var _type symbols.TypeSymbol
 	switch value.(type) {
 	case string:
@@ -63,5 +68,6 @@ func CreateBoundLiteralExpressionNode(value interface{}) BoundLiteralExpressionN
 	return BoundLiteralExpressionNode{
 		Value:       value,
 		LiteralType: _type,
+		BoundSpan:   span,
 	}
 }

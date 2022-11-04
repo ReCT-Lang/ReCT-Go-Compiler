@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/print"
 	"fmt"
 )
@@ -8,8 +9,9 @@ import (
 type ArrayAccessExpressionNode struct {
 	ExpressionNode
 
-	Base  ExpressionNode
-	Index ExpressionNode
+	Base           ExpressionNode
+	Index          ExpressionNode
+	ClosingBracket lexer.Token
 }
 
 // implement node type from interface
@@ -18,11 +20,8 @@ func (ArrayAccessExpressionNode) NodeType() NodeType { return ArrayAccessExpress
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ArrayAccessExpressionNode) Position() (int, int, int) {
-	//length := len(node.Identifier.Value) + 2 // +2 for spaces and stuff
-	//_, _, exprLength := node.Index.Position()
-	//length += exprLength
-	return 0, 0, 0 //node.Identifier.Line, node.Identifier.Column, length
+func (node ArrayAccessExpressionNode) Span() print.TextSpan {
+	return node.Base.Span().SpanBetween(node.ClosingBracket.Span)
 }
 
 // node print function

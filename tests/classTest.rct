@@ -1,3 +1,5 @@
+package sys;
+
 // much class
 class SomeClass {
 
@@ -9,7 +11,7 @@ class SomeClass {
 		otherClass <- make OtherClass();
 	}
 
-	function Die() {
+	set function Die() {
 		CoolString->Die();
 		otherClass->Die();
 	}
@@ -20,14 +22,14 @@ class OtherClass {
 
 	function Die() {
 		var a <- "something";
-		Print(a);
-		Print("death is upon us");
+		sys::Print(a);
+		sys::Print("death is upon us");
 	}
 }
 
 var someInstance <- make SomeClass();
 //someInstance->Die();
-Print(someInstance->CoolString);
+sus::Print(someInstance->CoolString);
 
 var any someAny;
 someAny <- any(someInstance);
@@ -35,3 +37,7 @@ someAny <- any(someInstance);
 var SomeClass instanceAgain;
 instanceAgain <- SomeClass(someAny);
 Print(someInstance->CoolString);
+
+if (true) {
+
+}

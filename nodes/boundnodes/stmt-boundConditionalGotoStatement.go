@@ -11,6 +11,8 @@ type BoundConditionalGotoStatementNode struct {
 	Condition BoundExpressionNode
 	IfLabel   BoundLabel
 	ElseLabel BoundLabel
+
+	BoundSpan print.TextSpan
 }
 
 // implement the interface
@@ -23,11 +25,16 @@ func (node BoundConditionalGotoStatementNode) Print(indent string) {
 	fmt.Printf("%s  └ ElseLabel: %s\n", indent, node.ElseLabel)
 }
 
+func (node BoundConditionalGotoStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundConditionalGotoStatementNode(condition BoundExpressionNode, ifLabel BoundLabel, elseLabel BoundLabel) BoundConditionalGotoStatementNode {
+func CreateBoundConditionalGotoStatementNode(condition BoundExpressionNode, ifLabel BoundLabel, elseLabel BoundLabel, span print.TextSpan) BoundConditionalGotoStatementNode {
 	return BoundConditionalGotoStatementNode{
 		Condition: condition,
 		IfLabel:   ifLabel,
 		ElseLabel: elseLabel,
+		BoundSpan: span,
 	}
 }

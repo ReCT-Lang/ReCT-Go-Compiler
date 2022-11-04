@@ -12,6 +12,8 @@ type BoundTypeCallExpressionNode struct {
 	Base      BoundExpressionNode
 	Function  symbols.TypeFunctionSymbol
 	Arguments []BoundExpressionNode
+
+	BoundSpan print.TextSpan
 }
 
 // implement node type from interface
@@ -19,6 +21,10 @@ func (BoundTypeCallExpressionNode) NodeType() BoundType { return BoundTypeCallEx
 
 // implement the expression node interface
 func (node BoundTypeCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
+
+func (node BoundTypeCallExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
 
 // node print function
 func (node BoundTypeCallExpressionNode) Print(indent string) {
@@ -40,10 +46,12 @@ func CreateBoundTypeCallExpressionNode(
 	base BoundExpressionNode,
 	callId symbols.TypeFunctionSymbol,
 	args []BoundExpressionNode,
+	span print.TextSpan,
 ) BoundTypeCallExpressionNode {
 	return BoundTypeCallExpressionNode{
 		Base:      base,
 		Function:  callId,
 		Arguments: args,
+		BoundSpan: span,
 	}
 }

@@ -17,6 +17,8 @@ type BoundTernaryExpressionNode struct {
 	IfLabel   BoundLabel
 	ElseLabel BoundLabel
 	EndLabel  BoundLabel
+
+	BoundSpan print.TextSpan
 }
 
 func (BoundTernaryExpressionNode) NodeType() BoundType { return BoundTernaryExpression }
@@ -31,6 +33,10 @@ func (node BoundTernaryExpressionNode) Print(indent string) {
 	node.Else.Print(indent + "    ")
 }
 
+func (node BoundTernaryExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 func (node BoundTernaryExpressionNode) IsPersistent() bool {
 	return node.If.IsPersistent() || node.Else.IsPersistent()
 }
@@ -38,11 +44,12 @@ func (node BoundTernaryExpressionNode) IsPersistent() bool {
 // implement the expression node interface
 func (node BoundTernaryExpressionNode) Type() symbols.TypeSymbol { return node.If.Type() }
 
-func CreateBoundTernaryExpressionNode(cond BoundExpressionNode, left BoundExpressionNode, right BoundExpressionNode, tmp symbols.LocalVariableSymbol) BoundTernaryExpressionNode {
+func CreateBoundTernaryExpressionNode(cond BoundExpressionNode, left BoundExpressionNode, right BoundExpressionNode, tmp symbols.LocalVariableSymbol, span print.TextSpan) BoundTernaryExpressionNode {
 	return BoundTernaryExpressionNode{
 		Condition: cond,
 		If:        left,
 		Else:      right,
 		Tmp:       tmp,
+		BoundSpan: span,
 	}
 }

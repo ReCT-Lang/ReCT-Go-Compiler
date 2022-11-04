@@ -9,6 +9,7 @@ type BoundReturnStatementNode struct {
 	BoundStatementNode
 
 	Expression BoundExpressionNode
+	BoundSpan  print.TextSpan
 }
 
 // implement the interface
@@ -23,9 +24,14 @@ func (node BoundReturnStatementNode) Print(indent string) {
 	}
 }
 
+func (node BoundReturnStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundReturnStatementNode(expr BoundExpressionNode) BoundReturnStatementNode {
+func CreateBoundReturnStatementNode(expr BoundExpressionNode, span print.TextSpan) BoundReturnStatementNode {
 	return BoundReturnStatementNode{
 		Expression: expr,
+		BoundSpan:  span,
 	}
 }

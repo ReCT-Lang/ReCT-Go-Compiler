@@ -11,9 +11,15 @@ type BoundAssignmentExpressionNode struct {
 
 	Variable   symbols.VariableSymbol
 	Expression BoundExpressionNode
+	BoundSpan  print.TextSpan
 }
 
 func (BoundAssignmentExpressionNode) NodeType() BoundType { return BoundAssignmentExpression }
+
+func (node BoundAssignmentExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 func (node BoundAssignmentExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundAssignmentExpressionNode")
 	fmt.Println(indent + "  └ Variable: ")
@@ -27,9 +33,10 @@ func (BoundAssignmentExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundAssignmentExpressionNode) Type() symbols.TypeSymbol { return node.Expression.Type() }
 
-func CreateBoundAssignmentExpressionNode(variable symbols.VariableSymbol, expression BoundExpressionNode) BoundAssignmentExpressionNode {
+func CreateBoundAssignmentExpressionNode(variable symbols.VariableSymbol, expression BoundExpressionNode, span print.TextSpan) BoundAssignmentExpressionNode {
 	return BoundAssignmentExpressionNode{
 		Variable:   variable,
 		Expression: expression,
+		BoundSpan:  span,
 	}
 }

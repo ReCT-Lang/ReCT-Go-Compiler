@@ -10,6 +10,7 @@ type BoundGarbageCollectionStatementNode struct {
 	BoundStatementNode
 
 	Variables []symbols.VariableSymbol
+	BoundSpan print.TextSpan
 }
 
 // implement the interface
@@ -25,9 +26,14 @@ func (node BoundGarbageCollectionStatementNode) Print(indent string) {
 	}
 }
 
+func (node BoundGarbageCollectionStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundGarbageCollectionStatementNode(variables []symbols.VariableSymbol) BoundGarbageCollectionStatementNode {
+func CreateBoundGarbageCollectionStatementNode(variables []symbols.VariableSymbol, span print.TextSpan) BoundGarbageCollectionStatementNode {
 	return BoundGarbageCollectionStatementNode{
 		Variables: variables,
+		BoundSpan: span,
 	}
 }

@@ -22,11 +22,8 @@ func (WhileStatementNode) NodeType() NodeType { return WhileStatement }
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 // We don't process the statement for WhileStatementNode because it do be chonky
-func (node WhileStatementNode) Position() (int, int, int) {
-	length := len(node.Keyword.Value) + 2 // +2 for parentheses
-	_, _, conditionLength := node.Condition.Position()
-
-	return node.Keyword.Line, node.Keyword.Column, length + conditionLength
+func (node WhileStatementNode) Span() print.TextSpan {
+	return node.Keyword.Span.SpanBetween(node.Statement.Span())
 }
 
 // Print Prints beautiful stuff in console

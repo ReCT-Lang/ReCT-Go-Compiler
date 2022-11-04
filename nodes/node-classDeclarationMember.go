@@ -9,16 +9,17 @@ import (
 type ClassDeclarationMember struct {
 	MemberNode
 
-	Identifier lexer.Token
-	Members    []MemberNode
+	ClassKeyword lexer.Token
+	Identifier   lexer.Token
+	Members      []MemberNode
+	ClosingToken lexer.Token
 }
 
 // implement node type from interface
 func (ClassDeclarationMember) NodeType() NodeType { return ClassDeclaration }
 
-// aaaaAAAAAA
-func (node ClassDeclarationMember) Position() (int, int, int) {
-	return 0, 9, 0
+func (node ClassDeclarationMember) Span() print.TextSpan {
+	return node.ClassKeyword.Span.SpanBetween(node.ClosingToken.Span)
 }
 
 // node print function
@@ -33,9 +34,11 @@ func (node ClassDeclarationMember) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateClassDeclarationMember(id lexer.Token, members []MemberNode) ClassDeclarationMember {
+func CreateClassDeclarationMember(kw lexer.Token, id lexer.Token, members []MemberNode, closing lexer.Token) ClassDeclarationMember {
 	return ClassDeclarationMember{
-		Identifier: id,
-		Members:    members,
+		ClassKeyword: kw,
+		Identifier:   id,
+		Members:      members,
+		ClosingToken: closing,
 	}
 }

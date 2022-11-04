@@ -8,7 +8,8 @@ import (
 type BoundGotoStatementNode struct {
 	BoundStatementNode
 
-	Label BoundLabel
+	Label     BoundLabel
+	BoundSpan print.TextSpan
 }
 
 // implement the interface
@@ -18,9 +19,14 @@ func (node BoundGotoStatementNode) Print(indent string) {
 	fmt.Printf("%s  └ Label: %s\n", indent, node.Label)
 }
 
+func (node BoundGotoStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundGotoStatementNode(label BoundLabel) BoundGotoStatementNode {
+func CreateBoundGotoStatementNode(label BoundLabel, span print.TextSpan) BoundGotoStatementNode {
 	return BoundGotoStatementNode{
-		Label: label,
+		Label:     label,
+		BoundSpan: span,
 	}
 }

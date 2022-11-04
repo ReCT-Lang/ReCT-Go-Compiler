@@ -1,11 +1,15 @@
 package boundnodes
 
-import "ReCT-Go-Compiler/symbols"
+import (
+	print2 "ReCT-Go-Compiler/print"
+	"ReCT-Go-Compiler/symbols"
+)
 
 // incredibly cool interface for creating bound nodes
 type BoundNode interface {
 	NodeType() BoundType
 	Print(indent string)
+	Span() print2.TextSpan
 }
 
 type BoundStatementNode interface {

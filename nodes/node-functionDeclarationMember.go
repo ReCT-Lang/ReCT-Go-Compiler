@@ -4,18 +4,18 @@ import (
 	"ReCT-Go-Compiler/lexer"
 	"ReCT-Go-Compiler/print"
 	"fmt"
-	"strings"
 )
 
 // basic global statement member
 type FunctionDeclarationMember struct {
 	MemberNode
 
-	Identifier lexer.Token
-	Parameters []ParameterNode
-	TypeClause TypeClauseNode
-	Body       BlockStatementNode
-	IsPublic   bool
+	FunctionKeyword lexer.Token
+	Identifier      lexer.Token
+	Parameters      []ParameterNode
+	TypeClause      TypeClauseNode
+	Body            BlockStatementNode
+	IsPublic        bool
 }
 
 // implement node type from interface
@@ -25,16 +25,8 @@ func (FunctionDeclarationMember) NodeType() NodeType { return FunctionDeclaratio
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 // For FunctionDeclarationMember we don't get the length of the body, only the keyword, name, parameters, and type
-func (node FunctionDeclarationMember) Position() (int, int, int) {
-	length := len(strings.Split(string(lexer.FunctionKeyword), " ")[0])
-	length += len(node.Identifier.Value)
-	_, _, typeLength := node.TypeClause.Position()
-	length += typeLength
-	for _, arg := range node.Parameters {
-		_, _, argLength := arg.Position()
-		length += argLength + 2 // +2 for spaces and commas
-	}
-	return node.Identifier.Line, node.Identifier.Column, length
+func (node FunctionDeclarationMember) Span() print.TextSpan {
+	return node.FunctionKeyword.Span.SpanBetween(node.Body.Span())
 }
 
 // node print function
@@ -60,12 +52,13 @@ func (node FunctionDeclarationMember) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateFunctionDeclarationMember(id lexer.Token, params []ParameterNode, typeClause TypeClauseNode, body BlockStatementNode, public bool) FunctionDeclarationMember {
+func CreateFunctionDeclarationMember(kw lexer.Token, id lexer.Token, params []ParameterNode, typeClause TypeClauseNode, body BlockStatementNode, public bool) FunctionDeclarationMember {
 	return FunctionDeclarationMember{
-		Identifier: id,
-		Parameters: params,
-		TypeClause: typeClause,
-		Body:       body,
-		IsPublic:   public,
+		FunctionKeyword: kw,
+		Identifier:      id,
+		Parameters:      params,
+		TypeClause:      typeClause,
+		Body:            body,
+		IsPublic:        public,
 	}
 }

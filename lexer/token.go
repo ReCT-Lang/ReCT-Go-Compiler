@@ -1,6 +1,9 @@
 package lexer
 
-import "fmt"
+import (
+	print2 "ReCT-Go-Compiler/print"
+	"fmt"
+)
 
 // TokenKind basically an enum containing all token types.
 // TokenKind has been changed from int to string for better debugging.
@@ -78,30 +81,27 @@ type Token struct {
 	Value      string
 	RealValue  interface{}
 	Kind       TokenKind
-	Line       int
-	Column     int
+	Span       print2.TextSpan
 	SpaceAfter bool
 }
 
 // CreateToken returns a Token created from the arguments provided
-func CreateToken(value string, kind TokenKind, line int, column int) Token {
+func CreateToken(value string, kind TokenKind, span print2.TextSpan) Token {
 	return Token{
 		Value:     value,
 		RealValue: nil,
 		Kind:      kind,
-		Line:      line,
-		Column:    column,
+		Span:      span,
 	}
 }
 
 // CreateTokenSpaced just another constructor to not have to include the spaced bool every time
-func CreateTokenSpaced(value string, kind TokenKind, line int, column int, spaced bool) Token {
+func CreateTokenSpaced(value string, kind TokenKind, span print2.TextSpan, spaced bool) Token {
 	return Token{
 		Value:      value,
 		RealValue:  nil,
 		Kind:       kind,
-		Line:       line,
-		Column:     column,
+		Span:       span,
 		SpaceAfter: spaced,
 	}
 }
@@ -110,13 +110,12 @@ func CreateTokenSpaced(value string, kind TokenKind, line int, column int, space
 // a "RealValue" which should store the true value of a Token. For example, NumberToken (TokenKind) created using
 // CreateToken will only store its string value and not its real number value. CreateTokenReal will store the
 // converted type (so NumberToken actually stores a number).
-func CreateTokenReal(buffer string, real interface{}, kind TokenKind, line, column int) Token {
+func CreateTokenReal(buffer string, real interface{}, kind TokenKind, span print2.TextSpan) Token {
 	return Token{
 		Value:     buffer,
 		RealValue: real,
 		Kind:      kind,
-		Line:      line,
-		Column:    column,
+		Span:      span,
 	}
 }
 
@@ -124,8 +123,8 @@ func CreateTokenReal(buffer string, real interface{}, kind TokenKind, line, colu
 // You can also make it *pretty* - like we ever used that lmao
 func (t Token) String(pretty bool) string {
 	if !pretty {
-		return fmt.Sprintf("Token { value: %s, kind: %s, position: (%d, %d), real: %v}", t.Value, t.Kind, t.Line, t.Column, t.RealValue)
+		return fmt.Sprintf("Token { value: %s, kind: %s, position: (%d, %d), real: %v}", t.Value, t.Kind, t.Span.StartLine, t.Span.StartColumn, t.RealValue)
 	} else {
-		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %s, \n\tposition: (%d, %d)\n}", t.Value, t.Kind, t.Line, t.Column)
+		return fmt.Sprintf("Token { \n\tvalue: %s, \n\tkind: %s, \n\tposition: (L%d, SC%d, EC%d, Len %d)\n}", t.Value, t.Kind, t.Span.StartLine, t.Span.StartColumn, t.Span.EndColumn, t.Span.EndIndex-t.Span.StartIndex)
 	}
 }

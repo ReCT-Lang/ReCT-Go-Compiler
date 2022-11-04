@@ -24,12 +24,8 @@ func (FromToStatementNode) NodeType() NodeType { return FromToStatement }
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 // FromToStatementNode we don't do the Statement because it can be super long (i.e., a block statement)
-func (node FromToStatementNode) Position() (int, int, int) {
-	length := len(node.Keyword.Value) + len(node.Identifier.Value)
-	_, _, upperLength := node.UpperBound.Position()
-	_, _, lowerLength := node.LowerBound.Position()
-
-	return node.Keyword.Line, node.Keyword.Column, length + upperLength + lowerLength
+func (node FromToStatementNode) Span() print.TextSpan {
+	return node.Keyword.Span.SpanBetween(node.Statement.Span())
 }
 
 // Print Prints beautiful stuff in console

@@ -11,6 +11,8 @@ type BoundVariableDeclarationStatementNode struct {
 
 	Variable    symbols.VariableSymbol
 	Initializer BoundExpressionNode
+
+	BoundSpan print.TextSpan
 }
 
 // implement the interface
@@ -27,10 +29,15 @@ func (node BoundVariableDeclarationStatementNode) Print(indent string) {
 	}
 }
 
+func (node BoundVariableDeclarationStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundVariableDeclarationStatementNode(variable symbols.VariableSymbol, init BoundExpressionNode) BoundVariableDeclarationStatementNode {
+func CreateBoundVariableDeclarationStatementNode(variable symbols.VariableSymbol, init BoundExpressionNode, span print.TextSpan) BoundVariableDeclarationStatementNode {
 	return BoundVariableDeclarationStatementNode{
 		Variable:    variable,
 		Initializer: init,
+		BoundSpan:   span,
 	}
 }

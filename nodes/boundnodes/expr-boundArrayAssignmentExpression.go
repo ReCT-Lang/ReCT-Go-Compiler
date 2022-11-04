@@ -12,9 +12,15 @@ type BoundArrayAssignmentExpressionNode struct {
 	Base  BoundExpressionNode
 	Index BoundExpressionNode
 	Value BoundExpressionNode
+
+	BoundSpan print.TextSpan
 }
 
 func (BoundArrayAssignmentExpressionNode) NodeType() BoundType { return BoundArrayAssignmentExpression }
+
+func (node BoundArrayAssignmentExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
 
 func (node BoundArrayAssignmentExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundArrayAssignmentExpression")
@@ -33,10 +39,11 @@ func (node BoundArrayAssignmentExpressionNode) Type() symbols.TypeSymbol {
 	return node.Base.Type().SubTypes[0]
 }
 
-func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode) BoundArrayAssignmentExpressionNode {
+func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode, span print.TextSpan) BoundArrayAssignmentExpressionNode {
 	return BoundArrayAssignmentExpressionNode{
-		Base:  base,
-		Index: index,
-		Value: value,
+		Base:      base,
+		Index:     index,
+		Value:     value,
+		BoundSpan: span,
 	}
 }

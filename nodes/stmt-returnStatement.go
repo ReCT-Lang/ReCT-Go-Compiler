@@ -20,13 +20,8 @@ func (ReturnStatementNode) NodeType() NodeType { return ReturnStatement }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ReturnStatementNode) Position() (int, int, int) {
-	exprLength := 0
-	if node.Expression != nil {
-		_, _, eL := node.Expression.Position()
-		exprLength = eL
-	}
-	return node.Keyword.Line, node.Keyword.Column, len(node.Keyword.Value) + exprLength
+func (node ReturnStatementNode) Span() print.TextSpan {
+	return node.Keyword.Span.SpanBetween(node.Expression.Span())
 }
 
 // Print Prints beautiful stuff in console

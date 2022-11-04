@@ -1,9 +1,11 @@
 package nodes
 
+import print2 "ReCT-Go-Compiler/print"
+
 // very cool interface for creating syntax nodes
 type SyntaxNode interface {
 	NodeType() NodeType
-	Position() (int, int, int) // Line, Column, Length, Line and Column are the start position of the node, length is how long the node is.
+	Span() print2.TextSpan // exact text position of this node
 	Print(indent string)
 	// only type atm, might contain more stuff like text-location later
 }

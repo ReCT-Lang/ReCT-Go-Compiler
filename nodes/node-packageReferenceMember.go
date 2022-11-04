@@ -8,7 +8,9 @@ import (
 // basic global statement member
 type PackageReferenceMember struct {
 	MemberNode
-	Package lexer.Token
+
+	PackageKeyword lexer.Token
+	Package        lexer.Token
 }
 
 // implement node type from interface
@@ -17,8 +19,8 @@ func (PackageReferenceMember) NodeType() NodeType { return PackageReference }
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node PackageReferenceMember) Position() (int, int, int) {
-	return 0, 0, 0
+func (node PackageReferenceMember) Span() print.TextSpan {
+	return node.PackageKeyword.Span.SpanBetween(node.Package.Span)
 }
 
 // node print function
@@ -27,8 +29,9 @@ func (node PackageReferenceMember) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreatePackageReferenceMember(pkg lexer.Token) PackageReferenceMember {
+func CreatePackageReferenceMember(kw lexer.Token, pkg lexer.Token) PackageReferenceMember {
 	return PackageReferenceMember{
-		Package: pkg,
+		PackageKeyword: kw,
+		Package:        pkg,
 	}
 }

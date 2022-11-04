@@ -21,13 +21,8 @@ func (VariableEditorExpressionNode) NodeType() NodeType { return VariableEditorE
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node VariableEditorExpressionNode) Position() (int, int, int) {
-	length := len(node.Operator.Value) + len(node.Operator.Value) + 2 // +2 for spaces and stuff
-	if node.Expression != nil {
-		_, _, exprLength := node.Expression.Position()
-		length += exprLength
-	}
-	return node.Identifier.Line, node.Identifier.Column, length
+func (node VariableEditorExpressionNode) Span() print.TextSpan {
+	return node.Identifier.Span.SpanBetween(node.Operator.Span).SpanBetween(node.Expression.Span())
 }
 
 // node print function

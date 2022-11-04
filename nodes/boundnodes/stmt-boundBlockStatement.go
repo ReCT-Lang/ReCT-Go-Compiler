@@ -9,6 +9,7 @@ type BoundBlockStatementNode struct {
 	BoundStatementNode
 
 	Statements []BoundStatementNode
+	BoundSpan  print.TextSpan
 }
 
 // implement the interface
@@ -22,9 +23,14 @@ func (node BoundBlockStatementNode) Print(indent string) {
 	}
 }
 
+func (node BoundBlockStatementNode) Span() print.TextSpan {
+	return node.BoundSpan
+}
+
 // constructor
-func CreateBoundBlockStatementNode(stmts []BoundStatementNode) BoundBlockStatementNode {
+func CreateBoundBlockStatementNode(stmts []BoundStatementNode, span print.TextSpan) BoundBlockStatementNode {
 	return BoundBlockStatementNode{
 		Statements: stmts,
+		BoundSpan:  span,
 	}
 }

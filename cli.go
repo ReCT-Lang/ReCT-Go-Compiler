@@ -325,6 +325,12 @@ func PrepareMultifile(files []string) binder.BoundProgram {
 	for _, file := range files {
 		tokens := lexer.Lex(file)
 		lexes = append(lexes, tokens)
+
+		if debug {
+			for _, token := range tokens {
+				fmt.Println(token.String(true))
+			}
+		}
 	}
 
 	if debug {

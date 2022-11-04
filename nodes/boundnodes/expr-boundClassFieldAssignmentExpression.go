@@ -12,6 +12,8 @@ type BoundClassFieldAssignmentExpressionNode struct {
 	Base  BoundExpressionNode
 	Field symbols.VariableSymbol
 	Value BoundExpressionNode
+
+	BoundSpan print.TextSpan
 }
 
 // implement node type from interface
@@ -22,6 +24,10 @@ func (BoundClassFieldAssignmentExpressionNode) NodeType() BoundType {
 // implement the expression node interface
 func (node BoundClassFieldAssignmentExpressionNode) Type() symbols.TypeSymbol {
 	return node.Field.VarType()
+}
+
+func (node BoundClassFieldAssignmentExpressionNode) Span() print.TextSpan {
+	return node.BoundSpan
 }
 
 // node print function
@@ -38,10 +44,11 @@ func (node BoundClassFieldAssignmentExpressionNode) Print(indent string) {
 func (BoundClassFieldAssignmentExpressionNode) IsPersistent() bool { return true }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateBoundClassFieldAssignmentExpressionNode(base BoundExpressionNode, field symbols.VariableSymbol, value BoundExpressionNode) BoundClassFieldAssignmentExpressionNode {
+func CreateBoundClassFieldAssignmentExpressionNode(base BoundExpressionNode, field symbols.VariableSymbol, value BoundExpressionNode, span print.TextSpan) BoundClassFieldAssignmentExpressionNode {
 	return BoundClassFieldAssignmentExpressionNode{
-		Base:  base,
-		Field: field,
-		Value: value,
+		Base:      base,
+		Field:     field,
+		Value:     value,
+		BoundSpan: span,
 	}
 }

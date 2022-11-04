@@ -20,14 +20,8 @@ func (ClassFieldAssignmentExpressionNode) NodeType() NodeType { return ClassFiel
 // Position returns the starting line and column, and the total length of the statement
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
-func (node ClassFieldAssignmentExpressionNode) Position() (int, int, int) {
-	// im so sorry tokorv i nuked this one
-	//length := len(node.Identifier.Value) + len(node.CallIdentifier.Value) + 2 // +2 for the ->
-	//for _, arg := range node.Arguments {
-	//	_, _, argLength := arg.Position()
-	//	length += argLength + 2 // +2 for spaces and commas
-	//}
-	return 0, 0, 0 //node.Identifier.Line, node.Identifier.Column, length
+func (node ClassFieldAssignmentExpressionNode) Span() print.TextSpan {
+	return node.Base.Span().SpanBetween(node.Value.Span())
 }
 
 // node print function
