@@ -11,5 +11,9 @@
 //sys::Print(inst->FieldOne);
 //sys::Print(string(inst->FieldTwo));
 
-//package sys;
+package sys;
 sys::Print("i wanna die");
+
+function main() {
+
+}

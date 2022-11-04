@@ -145,6 +145,16 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 			)
 			os.Exit(-1)
 		}
+	} else {
+		if functionSymbol.Name == "main" {
+			print.Error(
+				"BINDER",
+				print.IllegalFunctionSignatureError,
+				mem.Identifier.Span,
+				"reserved function name 'main' is not allowed to be used by a user defined function!",
+			)
+			os.Exit(-1)
+		}
 	}
 
 	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
