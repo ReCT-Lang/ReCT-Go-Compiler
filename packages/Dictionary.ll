@@ -2523,7 +2523,7 @@ define dso_local i32 @Dictionary_public_Set(%struct.class_Dictionary* noundef %0
 }
 
 ; Function Attrs: mustprogress noinline optnone sspstrong uwtable
-define dso_local %struct.class_String* @Dictionary_public_Get(%struct.class_Dictionary* noundef %0, %struct.class_String* noundef %1) #0 {
+define dso_local %struct.class_Any* @Dictionary_public_Get(%struct.class_Dictionary* noundef %0, %struct.class_String* noundef %1) #0 {
   %3 = alloca %struct.class_Dictionary*, align 8
   %4 = alloca %struct.class_String*, align 8
   store %struct.class_Dictionary* %0, %struct.class_Dictionary** %3, align 8
@@ -2533,8 +2533,7 @@ define dso_local %struct.class_String* @Dictionary_public_Get(%struct.class_Dict
   %7 = load %"class.rect_dictionaries::Dictionary"*, %"class.rect_dictionaries::Dictionary"** %6, align 8
   %8 = load %struct.class_String*, %struct.class_String** %4, align 8
   %9 = call noundef %struct.class_Any* @_ZN17rect_dictionaries10Dictionary3GetEP12class_String(%"class.rect_dictionaries::Dictionary"* noundef nonnull align 8 dereferenceable(48) %7, %struct.class_String* noundef %8)
-  call void @llvm.trap()
-  unreachable
+  ret %struct.class_Any* %9
 }
 
 ; Function Attrs: mustprogress noinline optnone sspstrong uwtable
