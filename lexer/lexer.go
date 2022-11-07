@@ -11,35 +11,19 @@ import (
 
 // Lexer : Lexer struct for lexing :GentlemenSphere:
 type Lexer struct {
-	Code                  []rune
-	File                  string
-	Line                  int
-	Column                int
-	Index                 int
-	Tokens                []Token
-	TreatHashtagAsComment bool
+	Code   []rune
+	File   string
+	Line   int
+	Column int
+	Index  int
+	Tokens []Token
 }
 
 // Lex takes a filename and converts it into it's respective lexical tokens
-func Lex(code []rune, filename string) []Token {
-	return LexInternal(code, filename, true)
-}
-
-func LexInternal(code []rune, filename string, treatHashtagsAsComments bool) []Token {
+func Lex(filename string) []Token {
 	// Opens the file and returns its contents as a byte array
 	// It then creates a lexer pointer using the byte array and a few default values.
-	scanner := &Lexer{
-		Code:                  code,
-		File:                  filename,
-		Line:                  1,
-		Column:                1,
-		Index:                 0,
-		Tokens:                make([]Token, 0),
-		TreatHashtagAsComment: treatHashtagsAsComments,
-	}
-
-	// remember this :o
-	RememberSourceFile(code, filename)
+	scanner := &Lexer{handleFileOpen(filename), filename, 1, 1, 0, make([]Token, 0)}
 
 	// Scanning for all the juicy tokens
 	for scanner.Index < len(scanner.Code) {
@@ -58,8 +42,7 @@ func LexInternal(code []rune, filename string, treatHashtagsAsComments bool) []T
 			scanner.getNumber()
 		} else if c == '"' {
 			scanner.getString()
-		} else if c == '/' && peek(1) == '/' ||
-			(scanner.TreatHashtagAsComment && c == '#') {
+		} else if c == '/' && peek(1) == '/' {
 			scanner.getComment()
 		} else if c != ' ' && c != '\n' && c != '\t' && c != '\v' {
 			scanner.getOperator()
@@ -188,12 +171,6 @@ func (lxr *Lexer) getString() {
 				lxr.Increment()
 				lxr.Increment()
 				buffer += "\n"
-				continue
-			}
-			if lxr.Code[lxr.Index+1] == '"' {
-				lxr.Increment()
-				lxr.Increment()
-				buffer += "\""
 				continue
 			}
 		}
@@ -358,9 +335,6 @@ func (lxr *Lexer) getOperator() {
 			_token = PipeToken
 		}
 
-	case '#':
-		_token = HashtagToken
-
 	default:
 		print.Error(
 			"LEXER",
@@ -389,9 +363,9 @@ func (lxr *Lexer) getOperator() {
 	)
 }
 
-// ReadFile reads the file and returns a byte array ([]byte) // nah fam we usin runes
+// handleFileOpen reads the file and returns a byte array ([]byte) // nah fam we usin runes
 // only handles NotExist and Permission error btw
-func ReadFile(filename string) []rune {
+func handleFileOpen(filename string) []rune {
 	contents, err := os.ReadFile(filename)
 	if errors.Is(err, os.ErrNotExist) {
 		print.Error(
@@ -423,15 +397,13 @@ func ReadFile(filename string) []rune {
 	}
 	// destroy all CR in the file
 	contents = []byte(strings.Replace(string(contents), "\r", "", -1))
-	return []rune(string(contents))
-}
 
-func RememberSourceFile(contents []rune, filename string) {
 	// Offload a copy of contents for error handling
 	// Also split at new lines because that makes referencing easier
 	print.CodeReference = make([]string, 0)
 	print.CodeReference = strings.Split(string(contents), "\n")
 	print.SourceFiles[filename] = string(contents)
+	return []rune(string(contents))
 }
 
 // CheckIfKeyword used by Lexer.getId to convert an identifier Token to a keyword Token

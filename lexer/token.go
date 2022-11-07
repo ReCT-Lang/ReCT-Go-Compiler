@@ -71,8 +71,6 @@ const (
 
 	PackageToken TokenKind = "Package '::'"
 
-	HashtagToken TokenKind = "Hashtag '#'"
-
 	BadToken TokenKind = "Token Error (BadToken)" // Naughty ;)
 
 	Semicolon TokenKind = "Semicolon ';'" // Used to separate statements (for now... )

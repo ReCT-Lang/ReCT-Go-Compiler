@@ -63,7 +63,7 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 			emt.ImportType(vTable)
 
 			// 3. finding and importing the types vtable constant
-			vConstantName := className + "_vTable_Const"
+			vConstantName := strings.Split(vTableType, ".")[1] + "_Const"
 			vTableConstant := irtools.FindGlobal(module, vConstantName)
 
 			if !GlobalExists(emt.Module, vTableConstant.GlobalName) {
@@ -154,15 +154,9 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 			emt.Module.NewGlobal(vTableConstant.GlobalName, vTable).Linkage = enum.LinkageExternal
 		}
 
-		fieldMap := make(map[string]int)
-
-		for i, field := range cls.Fields {
-			fieldMap[emt.Id(field)] = i
-		}
-
 		// create a class object
 		clsCpy := cls
-		packClasses[&clsCpy] = &Class{Type: typ, vTable: vTable, vConstant: vTableConstant, Constructor: nil, Functions: make(map[string]*ir.Func), Name: cls.Name, Fields: fieldMap}
+		packClasses[&clsCpy] = &Class{Type: typ, vTable: vTable, vConstant: vTableConstant, Constructor: nil, Functions: make(map[string]*ir.Func), Name: cls.Name}
 		emt.ImportType(typ)
 	}
 

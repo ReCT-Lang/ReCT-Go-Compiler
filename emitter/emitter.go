@@ -1616,7 +1616,7 @@ func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnod
 	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
 
 	// look up the field's index
-	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[expr.Field.Fingerprint()]
+	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[emt.Id(expr.Field)]
 
 	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(expr.Base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
 	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr)
@@ -1631,7 +1631,7 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
 
 	// look up the field's index
-	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[expr.Field.Fingerprint()]
+	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[emt.Id(expr.Field)]
 
 	// assignment value
 	// ----------------
