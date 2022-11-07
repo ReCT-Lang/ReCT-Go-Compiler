@@ -8,6 +8,7 @@ import (
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/packager"
 	"ReCT-Go-Compiler/parser"
+	"ReCT-Go-Compiler/preprocessor"
 	"ReCT-Go-Compiler/print"
 	"flag"
 	"fmt"
@@ -128,7 +129,7 @@ func CompileFiles(files []string) {
 	exPath := filepath.Dir(ex)
 
 	// lex, parse, and bind the program
-	boundProgram := PrepareMultifile(files)
+	boundProgram, args := PrepareMultifile(files)
 
 	if debug {
 		emitter.VerboseARC = true
@@ -241,8 +242,12 @@ func CompileFiles(files []string) {
 		opt = "-O3"
 	}
 
+	// clang arguments
+	clargs := []string{opt, "-lm", "-pthread", "-rdynamic", exPath + "/.tmp/completeout.bc", "-o", outPath}
+	clargs = append(clargs, args...)
+
 	// call clang
-	cmd = exec.Command("clang", opt, "-lstdc++", "-lm", "-pthread", "-rdynamic", exPath+"/.tmp/completeout.bc", "-o", outPath)
+	cmd = exec.Command("clang", clargs...)
 	o, err = cmd.CombinedOutput()
 
 	// if something goes wrong -> report that to the user
@@ -268,7 +273,8 @@ func Prepare(file string) binder.BoundProgram {
 		print.WriteC(print.Green, "-> Lexing...  ")
 	}
 
-	tokens := lexer.Lex(file)
+	code := lexer.ReadFile(file)
+	tokens := lexer.Lex(code, file)
 
 	if debug {
 		print.PrintC(print.Green, "Done!")
@@ -314,16 +320,21 @@ func Prepare(file string) binder.BoundProgram {
 
 // PrepareMultifile runs the lexer and parser for each given file and then feeds the result to the binder and lowerer.
 // This is used before evaluation or emitting.
-func PrepareMultifile(files []string) binder.BoundProgram {
+func PrepareMultifile(files []string) (binder.BoundProgram, []string) {
 	if debug {
-		print.WriteC(print.Green, "-> Lexing...  ")
+		print.WriteC(print.Green, "-> Preprocessing + Lexing...  ")
 	}
 
+	arguments := make([]string, 0)
 	lexes := make([][]lexer.Token, 0) // all tokens of all lexer runs
 
 	// lex all given files
-	for _, file := range files {
-		tokens := lexer.Lex(file)
+	for i := 0; i < len(files); i++ {
+		file := files[i]
+		code := []rune(preprocessor.Preprocess(file, &files, &arguments))
+
+		//code := lexer.ReadFile(file)
+		tokens := lexer.Lex(code, file)
 		lexes = append(lexes, tokens)
 
 		if debug {
@@ -376,7 +387,7 @@ func PrepareMultifile(files []string) binder.BoundProgram {
 	//boundProgram.Print()
 	//boundProgram.PrintStatements()
 
-	return boundProgram
+	return boundProgram, arguments
 }
 
 // RunTests runs all the test files in /tests/

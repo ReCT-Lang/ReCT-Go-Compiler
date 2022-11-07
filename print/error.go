@@ -150,6 +150,22 @@ func ErrorS(area string, _type ErrorType, span TextSpan, message string, a ...in
 	return output
 }
 
+// Warning prints custom warning message and code snippet to terminal/console
+func Warning(area string, _type ErrorType, span TextSpan, message string, fargs ...interface{}) {
+	PrintCodeSnippet(span)
+	WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
+	WriteC(DarkCyan, string(_type))
+	WriteCF(DarkYellow, " Warning(%d, %d, %s): ", span.StartLine, span.StartColumn, span.File)
+	WriteCF(Gray, message, fargs...)
+	code := ErrorTypeToCode(_type)
+	WriteC(DarkYellow, "\n[> Error look up code: ")
+	WriteCF(Cyan, "%d", code)
+	WriteC(DarkYellow, " (use: ")
+	WriteC(Yellow, "rgoc -lookup ")
+	WriteCF(Cyan, "%d", code)
+	PrintC(DarkYellow, ", for more information)]\n")
+}
+
 // PrintCodeSnippet does what it says on the label, it prints a snippet of the code in CodeReference.
 func PrintCodeSnippet(span TextSpan) {
 	// no file? tough luck, you won't get a snippet
@@ -285,6 +301,9 @@ const (
 	NotImplementedError ErrorType = "NotImplemented"
 	IDK                           = "IDK(cringe)" // Depreciated (because it's kind of dumb)
 
+	// Preprocessor Errors
+	FileAlreadyInSourcesWarning = "FileAlreadyInSources Warning"
+
 	// Lexer Errors
 	UnexpectedCharacterError = "UnexpectedCharacter"
 	FileDoesNotExistError    = "FileDoesNotExist"
@@ -361,6 +380,9 @@ const (
 	NotImplementedErrorCode ErrorCode = iota + 9000
 	IDKErrorCode                      = iota + 9000 // Depreciated
 	NULLErrorCode                     = -1 + 9000
+
+	// Preprocessor ErrorCodes
+	FileAlreadyInSourcesWarningCode = iota
 
 	// Lexer ErrorCodes (start at 1000)
 	UnexpectedCharacterErrorCode = iota + 1000 // 1003
@@ -481,6 +503,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	UnexpectedNonArrayValueError:       UnexpectedNonArrayValueErrorCode,
 	ImpossibleFunctionProcessingError:  ImpossibleFunctionProcessingErrorCode,
 	ImpossibleFieldProcessingError:     ImpossibleFieldProcessingErrorCode,
+	FileAlreadyInSourcesWarning:        FileAlreadyInSourcesWarningCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

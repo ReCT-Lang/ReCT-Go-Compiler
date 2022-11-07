@@ -1,6 +1,8 @@
 // one.rct
 package sys;
 
+#source("./tests/multifile/two.rct");
+
 deez();
 
 function deez() {
