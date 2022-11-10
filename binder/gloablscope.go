@@ -44,6 +44,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 
 	packageReferences := make([]nodes.PackageReferenceMember, 0)
 	functionDeclarations := make([]nodes.FunctionDeclarationMember, 0)
+	externalFunctionDeclarations := make([]nodes.ExternalFunctionDeclarationMember, 0)
 	classDeclarations := make([]nodes.ClassDeclarationMember, 0)
 	globalStatements := make([]nodes.GlobalStatementMember, 0)
 
@@ -51,6 +52,8 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	for _, member := range members {
 		if member.NodeType() == nodes.FunctionDeclaration {
 			functionDeclarations = append(functionDeclarations, member.(nodes.FunctionDeclarationMember))
+		} else if member.NodeType() == nodes.ExternalFunctionDeclaration {
+			externalFunctionDeclarations = append(externalFunctionDeclarations, member.(nodes.ExternalFunctionDeclarationMember))
 		} else if member.NodeType() == nodes.ClassDeclaration {
 			classDeclarations = append(classDeclarations, member.(nodes.ClassDeclarationMember))
 		} else if member.NodeType() == nodes.PackageReference {
@@ -81,6 +84,11 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	// declare all our functions
 	for _, fnc := range functionDeclarations {
 		binder.BindFunctionDeclaration(fnc, false)
+	}
+
+	// declare all our external functions
+	for _, fnc := range externalFunctionDeclarations {
+		binder.BindExternalFunctionDeclaration(fnc, false)
 	}
 
 	// bind all our statements

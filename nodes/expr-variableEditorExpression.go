@@ -22,7 +22,12 @@ func (VariableEditorExpressionNode) NodeType() NodeType { return VariableEditorE
 // The starting line and column aren't always the absolute beginning of the statement just what's most
 // convenient.
 func (node VariableEditorExpressionNode) Span() print.TextSpan {
-	return node.Identifier.Span.SpanBetween(node.Operator.Span).SpanBetween(node.Expression.Span())
+	span := node.Identifier.Span.SpanBetween(node.Operator.Span)
+	if !node.IsSingleStep {
+		span.SpanBetween(node.Expression.Span())
+	}
+
+	return span
 }
 
 // node print function

@@ -109,6 +109,11 @@ func (prs *Parser) parseMember(allowClasses bool, allowPackages bool) nodes.Memb
 	if prs.current().Kind == lexer.FunctionKeyword {
 		return prs.parseFunctionDeclaration()
 	}
+
+	if prs.current().Kind == lexer.ExternalKeyword {
+		return prs.parseExternalFunctionDeclaration()
+	}
+
 	if prs.current().Kind == lexer.SetKeyword && prs.peek(1).Kind == lexer.FunctionKeyword {
 		return prs.parseFunctionDeclaration()
 	}
@@ -165,6 +170,41 @@ func (prs *Parser) parseFunctionDeclaration() nodes.FunctionDeclarationMember {
 	body := prs.parseBlockStatement()
 
 	return nodes.CreateFunctionDeclarationMember(kw, identifier, params, typeClause, body, isPublic)
+}
+
+// parseExternalFunctionDeclaration checks for a valid order of Tokens, parses all the statements inside the function
+// and then returns it as an external function declaration member.
+func (prs *Parser) parseExternalFunctionDeclaration() nodes.ExternalFunctionDeclarationMember {
+
+	// Example:
+	// external <c_variadic> functionName(functionArg1 string) string;
+	kw := prs.consume(lexer.ExternalKeyword) // We know we are getting a functional already so just consume this
+
+	isVariadic := false
+	if prs.current().Kind == lexer.CVariadicKeyword {
+		prs.consume(lexer.CVariadicKeyword)
+		isVariadic = true
+	}
+
+	// consume the "functionName" (which is an identifier token).
+	identifier := prs.consume(lexer.IdToken)
+
+	// this is where we parse the parameters (e.g., functionArg1)
+	prs.consume(lexer.OpenParenthesisToken)
+	params := prs.parseParameterList() // We only need the arguments not the parenthesis tokens UwU
+	closing := prs.consume(lexer.CloseParenthesisToken)
+
+	// This is optional, not all functions need a return type as not all functions return a value.
+	// Our example returns a string type, so we will need the TypeClause later.
+	// if there is no return type the typeClause will be empty.
+	typeClause := prs.parseOptionalTypeClause()
+
+	// if theres a semicolor -> c o n s u m e    i t (semicolons are allowed after external functions)
+	if prs.current().Kind == lexer.Semicolon {
+		prs.consume(lexer.Semicolon)
+	}
+
+	return nodes.CreateExternalFunctionDeclarationMember(kw, identifier, params, typeClause, closing, isVariadic)
 }
 
 func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {

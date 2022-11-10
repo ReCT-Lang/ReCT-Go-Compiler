@@ -355,7 +355,7 @@ func PrepareMultifile(files []string) (binder.BoundProgram, []string) {
 		members := parser.Parse(lex)
 
 		// we mergin'
-		memberList = append(memberList, members...)
+		memberList = append(members, memberList...)
 	}
 
 	if debug {

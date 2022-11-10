@@ -171,6 +171,76 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 	}
 }
 
+func (bin *Binder) BindExternalFunctionDeclaration(mem nodes.ExternalFunctionDeclarationMember, inClass bool) {
+	boundParameters := make([]symbols.ParameterSymbol, 0)
+
+	for i, param := range mem.Parameters {
+		pName := param.Identifier.Value
+		pType, _ := bin.BindTypeClause(param.TypeClause)
+
+		// check if we've registered this param name before
+		for i, p := range boundParameters {
+			if p.Name == pName {
+				// I haven't done bound nodes yet so I just get the syntax node parameter using the same index
+				print.Error(
+					"BINDER",
+					print.DuplicateParameterError,
+					mem.Parameters[i].Span(),
+					// Kind of a hacky way of getting the values and positions needed for the error
+					"a parameter with the name \"%s\" already exists for function \"%s\"!",
+					pName,
+					mem.Identifier.Value,
+				)
+				os.Exit(-1)
+			}
+		}
+
+		boundParameters = append(boundParameters, symbols.CreateParameterSymbol(pName, i, pType))
+	}
+
+	returnType, exists := bin.BindTypeClause(mem.TypeClause)
+	if !exists {
+		returnType = builtins.Void
+	}
+
+	functionSymbol := symbols.CreateExternalFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem.IsVariadic)
+
+	// make sure reserved functions like Constructor() and Die() meet certain requirements
+	if inClass {
+		print.Error(
+			"BINDER",
+			print.InvalidExternalFunctionPlacementError,
+			mem.Identifier.Span,
+			"all external functions are required to be in the global scope!",
+			functionSymbol.Name,
+			functionSymbol.Name,
+		)
+	} else {
+		if functionSymbol.Name == "main" {
+			print.Error(
+				"BINDER",
+				print.IllegalFunctionSignatureError,
+				mem.Identifier.Span,
+				"reserved function name 'main' is not allowed to be used by a user defined function!",
+			)
+			os.Exit(-1)
+		}
+	}
+
+	if !bin.ActiveScope.TryDeclareSymbol(functionSymbol) {
+		//print.PrintC(print.Red, "Function '"+functionSymbol.Name+"' could not be defined! Seems like a function with the same name alredy exists!")
+		print.Error(
+			"BINDER",
+			print.DuplicateFunctionError,
+			mem.Identifier.Span,
+			"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
+			functionSymbol.Name,
+			functionSymbol.Name,
+		)
+		os.Exit(-1)
+	}
+}
+
 func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preInitialTypeset []symbols.TypeSymbol) {
 	rootScope := BindRootScope()
 	classScope := CreateScope(&rootScope)

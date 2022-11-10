@@ -473,6 +473,10 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return ThreadKeyword
 	case "package":
 		return PackageKeyword
+	case "external":
+		return ExternalKeyword
+	case "c_variadic":
+		return CVariadicKeyword
 	default:
 		return IdToken
 	}

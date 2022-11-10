@@ -315,42 +315,43 @@ const (
 	UnexpectedTokenError = "UnexpectedToken"
 
 	// Binder Errors
-	DuplicateParameterError            = "DuplicateParameter"
-	DuplicateFunctionError             = "DuplicateFunction"
-	DuplicateVariableDeclarationError  = "DuplicateVariableDeclaration"
-	DuplicatePackageImportError        = "DuplicatePackageImportError"
-	UndefinedVariableReferenceError    = "UndefinedVariableReference"
-	TypeFunctionDoesNotExistError      = "TypeFunctionDoesNotExist"
-	ConversionError                    = "Conversion"
-	ExplicitConversionError            = "ExplicitConversion"
-	UnexpectedExpressionStatementError = "UnexpectedExpressionStatement"
-	OutsideReturnError                 = "OutsideReturn"
-	VoidReturnError                    = "VoidReturn"
-	OutsideBreakError                  = "OutsideBreak"
-	UnexpectedNonIntegerValueError     = "UnexpectedNonIntegerValue"
-	OutsideContinueError               = "OutsideContinue"
-	BinaryOperatorTypeError            = "BinaryOperatorType"
-	IncorrectTypeFunctionCallError     = "IncorrectTypeFunctionCall"
-	BadNumberOfParametersError         = "BadNumberOfParameters"
-	UndefinedFunctionCallError         = "UndefinedFunctionCall"
-	UnaryOperatorTypeError             = "UnaryOperatorType"
-	UnknownDataTypeError               = "UnknownDataType"
-	UnknownStatementError              = "UnknownStatement"
-	IllegalVariableDeclarationError    = "IllegalVariableDeclarationError"
-	IllegalFunctionSignatureError      = "IllegalFunctionSignatureError"
-	IllegalNestedClassesError          = "IllegalNestedClassesError"
-	InvalidStatementPlacementError     = "InvalidStatementPlacementError"
-	OutsideConstructorCallError        = "OutsideConstructorCallError"
-	InvalidClassAccessError            = "InvalidClassAccessError"
-	IllegalConstructorCallError        = "IllegalConstructorCallError"
-	IllegalDestructorCallError         = "IllegalDestructorCallError"
-	TernaryOperatorTypeError           = "TernaryOperatorTypeError"
-	UnknownClassError                  = "UnknownClassError"
-	FunctionAccessViolationError       = "FunctionAccessViolationError"
-	UnknownFieldError                  = "UnknownFieldError"
-	InvalidNumberOfSubtypesError       = "InvalidNumberOfSubtypesError"
-	UnknownPackageError                = "UnknownPackageError"
-	UnexpectedNonArrayValueError       = "UnexpectedNonArrayValueError"
+	DuplicateParameterError               = "DuplicateParameter"
+	DuplicateFunctionError                = "DuplicateFunction"
+	DuplicateVariableDeclarationError     = "DuplicateVariableDeclaration"
+	DuplicatePackageImportError           = "DuplicatePackageImportError"
+	UndefinedVariableReferenceError       = "UndefinedVariableReference"
+	TypeFunctionDoesNotExistError         = "TypeFunctionDoesNotExist"
+	ConversionError                       = "Conversion"
+	ExplicitConversionError               = "ExplicitConversion"
+	UnexpectedExpressionStatementError    = "UnexpectedExpressionStatement"
+	OutsideReturnError                    = "OutsideReturn"
+	VoidReturnError                       = "VoidReturn"
+	OutsideBreakError                     = "OutsideBreak"
+	UnexpectedNonIntegerValueError        = "UnexpectedNonIntegerValue"
+	OutsideContinueError                  = "OutsideContinue"
+	BinaryOperatorTypeError               = "BinaryOperatorType"
+	IncorrectTypeFunctionCallError        = "IncorrectTypeFunctionCall"
+	BadNumberOfParametersError            = "BadNumberOfParameters"
+	UndefinedFunctionCallError            = "UndefinedFunctionCall"
+	UnaryOperatorTypeError                = "UnaryOperatorType"
+	UnknownDataTypeError                  = "UnknownDataType"
+	UnknownStatementError                 = "UnknownStatement"
+	IllegalVariableDeclarationError       = "IllegalVariableDeclarationError"
+	IllegalFunctionSignatureError         = "IllegalFunctionSignatureError"
+	IllegalNestedClassesError             = "IllegalNestedClassesError"
+	InvalidStatementPlacementError        = "InvalidStatementPlacementError"
+	OutsideConstructorCallError           = "OutsideConstructorCallError"
+	InvalidClassAccessError               = "InvalidClassAccessError"
+	IllegalConstructorCallError           = "IllegalConstructorCallError"
+	IllegalDestructorCallError            = "IllegalDestructorCallError"
+	TernaryOperatorTypeError              = "TernaryOperatorTypeError"
+	UnknownClassError                     = "UnknownClassError"
+	FunctionAccessViolationError          = "FunctionAccessViolationError"
+	UnknownFieldError                     = "UnknownFieldError"
+	InvalidNumberOfSubtypesError          = "InvalidNumberOfSubtypesError"
+	UnknownPackageError                   = "UnknownPackageError"
+	UnexpectedNonArrayValueError          = "UnexpectedNonArrayValueError"
+	InvalidExternalFunctionPlacementError = "InvalidExternalFunctionPlacementError"
 
 	// Emitter Errors
 	UnknownVTableError      = "UnknownVTableError"
@@ -395,42 +396,43 @@ const (
 	UnexpectedTokenErrorCode = iota + 2000
 
 	// Binder ErrorCodes (start at 3000) (Chonk warning)
-	DuplicateParameterErrorCode            = iota + 3000 // 3009
-	DuplicateFunctionErrorCode             = iota + 3000
-	DuplicateVariableDeclarationErrorCode  = iota + 3000
-	DuplicatePackageImportErrorCode        = iota + 3000
-	UndefinedVariableReferenceErrorCode    = iota + 3000
-	TypeFunctionDoesNotExistErrorCode      = iota + 3000
-	ConversionErrorCode                    = iota + 3000
-	ExplicitConversionErrorCode            = iota + 3000
-	UnexpectedExpressionStatementErrorCode = iota + 3000
-	OutsideReturnErrorCode                 = iota + 3000
-	VoidReturnErrorCode                    = iota + 3000
-	OutsideBreakErrorCode                  = iota + 3000
-	UnexpectedNonIntegerValueErrorCode     = iota + 3000
-	OutsideContinueErrorCode               = iota + 3000
-	BinaryOperatorTypeErrorCode            = iota + 3000
-	IncorrectTypeFunctionCallErrorCode     = iota + 3000
-	BadNumberOfParametersErrorCode         = iota + 3000
-	UndefinedFunctionCallErrorCode         = iota + 3000
-	UnaryOperatorTypeErrorCode             = iota + 3000
-	UnknownDataTypeErrorCode               = iota + 3000 // NOTE: this error does not exist, and I have no idea why!
-	UnknownStatementErrorCode              = iota + 3000
-	IllegalVariableDeclarationErrorCode    = iota + 3000
-	IllegalFunctionSignatureErrorCode      = iota + 3000
-	IllegalNestedClassesErrorCode          = iota + 3000
-	InvalidStatementPlacementErrorCode     = iota + 3000
-	OutsideConstructorCallErrorCode        = iota + 3000
-	InvalidClassAccessErrorCode            = iota + 3000
-	IllegalConstructorCallErrorCode        = iota + 3000
-	IllegalDestructorCallErrorCode         = iota + 3000
-	TernaryOperatorTypeErrorCode           = iota + 3000
-	UnknownClassErrorCode                  = iota + 3000
-	FunctionAccessViolationErrorCode       = iota + 3000
-	UnknownFieldErrorCode                  = iota + 3000
-	InvalidNumberOfSubtypesErrorCode       = iota + 3000
-	UnknownPackageErrorCode                = iota + 3000
-	UnexpectedNonArrayValueErrorCode       = iota + 3000
+	DuplicateParameterErrorCode               = iota + 3000 // 3009
+	DuplicateFunctionErrorCode                = iota + 3000
+	DuplicateVariableDeclarationErrorCode     = iota + 3000
+	DuplicatePackageImportErrorCode           = iota + 3000
+	UndefinedVariableReferenceErrorCode       = iota + 3000
+	TypeFunctionDoesNotExistErrorCode         = iota + 3000
+	ConversionErrorCode                       = iota + 3000
+	ExplicitConversionErrorCode               = iota + 3000
+	UnexpectedExpressionStatementErrorCode    = iota + 3000
+	OutsideReturnErrorCode                    = iota + 3000
+	VoidReturnErrorCode                       = iota + 3000
+	OutsideBreakErrorCode                     = iota + 3000
+	UnexpectedNonIntegerValueErrorCode        = iota + 3000
+	OutsideContinueErrorCode                  = iota + 3000
+	BinaryOperatorTypeErrorCode               = iota + 3000
+	IncorrectTypeFunctionCallErrorCode        = iota + 3000
+	BadNumberOfParametersErrorCode            = iota + 3000
+	UndefinedFunctionCallErrorCode            = iota + 3000
+	UnaryOperatorTypeErrorCode                = iota + 3000
+	UnknownDataTypeErrorCode                  = iota + 3000 // NOTE: this error does not exist, and I have no idea why!
+	UnknownStatementErrorCode                 = iota + 3000
+	IllegalVariableDeclarationErrorCode       = iota + 3000
+	IllegalFunctionSignatureErrorCode         = iota + 3000
+	IllegalNestedClassesErrorCode             = iota + 3000
+	InvalidStatementPlacementErrorCode        = iota + 3000
+	OutsideConstructorCallErrorCode           = iota + 3000
+	InvalidClassAccessErrorCode               = iota + 3000
+	IllegalConstructorCallErrorCode           = iota + 3000
+	IllegalDestructorCallErrorCode            = iota + 3000
+	TernaryOperatorTypeErrorCode              = iota + 3000
+	UnknownClassErrorCode                     = iota + 3000
+	FunctionAccessViolationErrorCode          = iota + 3000
+	UnknownFieldErrorCode                     = iota + 3000
+	InvalidNumberOfSubtypesErrorCode          = iota + 3000
+	UnknownPackageErrorCode                   = iota + 3000
+	UnexpectedNonArrayValueErrorCode          = iota + 3000
+	InvalidExternalFunctionPlacementErrorCode = iota + 3000
 
 	// Emitter ErrorCodes
 	UnknownVTableErrorCode      = iota + 4000
@@ -449,61 +451,62 @@ const (
 )
 
 var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
-	UnexpectedCharacterError:           UnexpectedCharacterErrorCode,
-	NotImplementedError:                NotImplementedErrorCode,
-	FileDoesNotExistError:              FileDoesNotExistErrorCode,
-	FilePermissionError:                FilePermissionErrorCode,
-	FileVoidError:                      FileVoidErrorCode,
-	RealValueConversionError:           RealValueConversionErrorCode,
-	UnexpectedTokenError:               UnexpectedTokenErrorCode,
-	DuplicateParameterError:            DuplicateParameterErrorCode,
-	DuplicateFunctionError:             DuplicateFunctionErrorCode,
-	DuplicateVariableDeclarationError:  DuplicateVariableDeclarationErrorCode,
-	UndefinedVariableReferenceError:    UndefinedVariableReferenceErrorCode,
-	TypeFunctionDoesNotExistError:      TypeFunctionDoesNotExistErrorCode,
-	ConversionError:                    ConversionErrorCode,
-	ExplicitConversionError:            ExplicitConversionErrorCode,
-	UnexpectedExpressionStatementError: UnexpectedExpressionStatementErrorCode,
-	OutsideReturnError:                 OutsideReturnErrorCode,
-	VoidReturnError:                    VoidReturnErrorCode,
-	OutsideBreakError:                  OutsideBreakErrorCode,
-	UnexpectedNonIntegerValueError:     UnexpectedNonIntegerValueErrorCode,
-	OutsideContinueError:               OutsideContinueErrorCode,
-	BinaryOperatorTypeError:            BinaryOperatorTypeErrorCode,
-	IncorrectTypeFunctionCallError:     IncorrectTypeFunctionCallErrorCode,
-	BadNumberOfParametersError:         BadNumberOfParametersErrorCode,
-	UndefinedFunctionCallError:         UndefinedFunctionCallErrorCode,
-	UnaryOperatorTypeError:             UnaryOperatorTypeErrorCode,
-	UnknownDataTypeError:               UnknownDataTypeErrorCode,
-	UnknownStatementError:              UnknownStatementErrorCode,
-	IllegalVariableDeclarationError:    IllegalVariableDeclarationErrorCode,
-	IllegalFunctionSignatureError:      IllegalFunctionSignatureErrorCode,
-	IllegalNestedClassesError:          IllegalNestedClassesErrorCode,
-	InvalidStatementPlacementError:     InvalidStatementPlacementErrorCode,
-	DuplicatePackageImportError:        DuplicatePackageImportErrorCode,
-	OutsideConstructorCallError:        OutsideConstructorCallErrorCode,
-	InvalidClassAccessError:            InvalidClassAccessErrorCode,
-	IllegalConstructorCallError:        IllegalConstructorCallErrorCode,
-	IllegalDestructorCallError:         IllegalDestructorCallErrorCode,
-	TernaryOperatorTypeError:           TernaryOperatorTypeErrorCode,
-	UnknownClassError:                  UnknownClassErrorCode,
-	FunctionAccessViolationError:       FunctionAccessViolationErrorCode,
-	UnknownFieldError:                  UnknownFieldErrorCode,
-	InvalidNumberOfSubtypesError:       InvalidNumberOfSubtypesErrorCode,
-	UnknownPackageError:                UnknownPackageErrorCode,
-	UnknownVTableError:                 UnknownVTableErrorCode,
-	UnknownConstructorError:            UnknownConstructorErrorCode,
-	UnknownDestructorError:             UnknownDestructorErrorCode,
-	UnknownPackageModuleFileError:      UnknownPackageModuleFileErrorCode,
-	IllegalBoxedTypeError:              IllegalBoxedTypeErrorCode,
-	IllegalUnspecificArrayTypeError:    IllegalUnspecificArrayTypeErrorCode,
-	MonkeError:                         MonkeErrorCode,
-	InvalidNonPointerReferenceError:    InvalidNonPointerReferenceErrorCode,
-	UnparsableFingerprintError:         UnparsableFingerprintErrorCode,
-	UnexpectedNonArrayValueError:       UnexpectedNonArrayValueErrorCode,
-	ImpossibleFunctionProcessingError:  ImpossibleFunctionProcessingErrorCode,
-	ImpossibleFieldProcessingError:     ImpossibleFieldProcessingErrorCode,
-	FileAlreadyInSourcesWarning:        FileAlreadyInSourcesWarningCode,
+	UnexpectedCharacterError:              UnexpectedCharacterErrorCode,
+	NotImplementedError:                   NotImplementedErrorCode,
+	FileDoesNotExistError:                 FileDoesNotExistErrorCode,
+	FilePermissionError:                   FilePermissionErrorCode,
+	FileVoidError:                         FileVoidErrorCode,
+	RealValueConversionError:              RealValueConversionErrorCode,
+	UnexpectedTokenError:                  UnexpectedTokenErrorCode,
+	DuplicateParameterError:               DuplicateParameterErrorCode,
+	DuplicateFunctionError:                DuplicateFunctionErrorCode,
+	DuplicateVariableDeclarationError:     DuplicateVariableDeclarationErrorCode,
+	UndefinedVariableReferenceError:       UndefinedVariableReferenceErrorCode,
+	TypeFunctionDoesNotExistError:         TypeFunctionDoesNotExistErrorCode,
+	ConversionError:                       ConversionErrorCode,
+	ExplicitConversionError:               ExplicitConversionErrorCode,
+	UnexpectedExpressionStatementError:    UnexpectedExpressionStatementErrorCode,
+	OutsideReturnError:                    OutsideReturnErrorCode,
+	VoidReturnError:                       VoidReturnErrorCode,
+	OutsideBreakError:                     OutsideBreakErrorCode,
+	UnexpectedNonIntegerValueError:        UnexpectedNonIntegerValueErrorCode,
+	OutsideContinueError:                  OutsideContinueErrorCode,
+	BinaryOperatorTypeError:               BinaryOperatorTypeErrorCode,
+	IncorrectTypeFunctionCallError:        IncorrectTypeFunctionCallErrorCode,
+	BadNumberOfParametersError:            BadNumberOfParametersErrorCode,
+	UndefinedFunctionCallError:            UndefinedFunctionCallErrorCode,
+	UnaryOperatorTypeError:                UnaryOperatorTypeErrorCode,
+	UnknownDataTypeError:                  UnknownDataTypeErrorCode,
+	UnknownStatementError:                 UnknownStatementErrorCode,
+	IllegalVariableDeclarationError:       IllegalVariableDeclarationErrorCode,
+	IllegalFunctionSignatureError:         IllegalFunctionSignatureErrorCode,
+	IllegalNestedClassesError:             IllegalNestedClassesErrorCode,
+	InvalidStatementPlacementError:        InvalidStatementPlacementErrorCode,
+	DuplicatePackageImportError:           DuplicatePackageImportErrorCode,
+	OutsideConstructorCallError:           OutsideConstructorCallErrorCode,
+	InvalidClassAccessError:               InvalidClassAccessErrorCode,
+	IllegalConstructorCallError:           IllegalConstructorCallErrorCode,
+	IllegalDestructorCallError:            IllegalDestructorCallErrorCode,
+	TernaryOperatorTypeError:              TernaryOperatorTypeErrorCode,
+	UnknownClassError:                     UnknownClassErrorCode,
+	FunctionAccessViolationError:          FunctionAccessViolationErrorCode,
+	UnknownFieldError:                     UnknownFieldErrorCode,
+	InvalidNumberOfSubtypesError:          InvalidNumberOfSubtypesErrorCode,
+	UnknownPackageError:                   UnknownPackageErrorCode,
+	UnknownVTableError:                    UnknownVTableErrorCode,
+	UnknownConstructorError:               UnknownConstructorErrorCode,
+	UnknownDestructorError:                UnknownDestructorErrorCode,
+	UnknownPackageModuleFileError:         UnknownPackageModuleFileErrorCode,
+	IllegalBoxedTypeError:                 IllegalBoxedTypeErrorCode,
+	IllegalUnspecificArrayTypeError:       IllegalUnspecificArrayTypeErrorCode,
+	MonkeError:                            MonkeErrorCode,
+	InvalidNonPointerReferenceError:       InvalidNonPointerReferenceErrorCode,
+	UnparsableFingerprintError:            UnparsableFingerprintErrorCode,
+	UnexpectedNonArrayValueError:          UnexpectedNonArrayValueErrorCode,
+	ImpossibleFunctionProcessingError:     ImpossibleFunctionProcessingErrorCode,
+	ImpossibleFieldProcessingError:        ImpossibleFieldProcessingErrorCode,
+	FileAlreadyInSourcesWarning:           FileAlreadyInSourcesWarningCode,
+	InvalidExternalFunctionPlacementError: InvalidExternalFunctionPlacementErrorCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

@@ -1,0 +1,11 @@
+package sys;
+
+external c_variadic SomeFunction(a int);
+
+//#arg("-lraylib");
+//external SetRandomSeed(a int);
+//external GetRandomValue(a int, b int) int;
+//external clock() long;
+//
+//SetRandomSeed(clock());
+//sys::Print(string(GetRandomValue(0, 100)));

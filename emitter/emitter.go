@@ -114,6 +114,13 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		}
 	}
 
+	// declare all external functions
+	for _, fnc := range emitter.Program.ExternalFunctions {
+		function := Function{IRFunction: emitter.EmitExternalFunction(fnc), BoundFunction: binder.BoundFunction{Symbol: fnc}}
+		functionName := emitter.Id(fnc)
+		emitter.Functions[functionName] = function
+	}
+
 	// emit main function first
 	if !CompileAsPackage {
 		mainName := emitter.Id(program.MainFunction)
@@ -123,7 +130,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 
 	// emit function bodies
 	for _, fnc := range emitter.Functions {
-		if !fnc.BoundFunction.Symbol.BuiltIn && fnc.BoundFunction.Symbol.Fingerprint() != program.MainFunction.Fingerprint() {
+		if !fnc.BoundFunction.Symbol.BuiltIn && fnc.BoundFunction.Symbol.Fingerprint() != program.MainFunction.Fingerprint() && !fnc.BoundFunction.Symbol.External {
 			emitter.FunctionSym = fnc.BoundFunction.Symbol
 			emitter.EmitBlockStatement(fnc.BoundFunction.Symbol, fnc.IRFunction, fnc.BoundFunction.Body)
 		}
@@ -478,6 +485,33 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 
 	// store this for later
 	emt.FunctionLocals[functionName] = locals
+
+	return function
+}
+
+func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
+	// figure out all parameters and their types
+	params := make([]*ir.Param, 0)
+	for _, param := range sym.Parameters {
+		// figure out how to call this parameter
+		paramName := emt.Id(param)
+
+		// create it
+		params = append(params, ir.NewParam(paramName, emt.IRTypes(param.Type)))
+	}
+
+	// figure out the return type
+	returnType := emt.IRTypes(sym.Type)
+
+	// the function name
+	irName := sym.Name
+
+	// create an IR function definition
+	function := emt.Module.NewFunc(irName, returnType, params...)
+
+	if sym.Variadic {
+		function.Sig.Variadic = true
+	}
 
 	return function
 }

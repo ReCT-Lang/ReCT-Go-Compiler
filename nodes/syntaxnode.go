@@ -37,10 +37,11 @@ const (
 
 	// Members
 	// -------
-	GlobalStatement     NodeType = "Global Statement"
-	FunctionDeclaration NodeType = "Function Declaration"
-	ClassDeclaration    NodeType = "Class Declaration"
-	PackageReference    NodeType = "Package Declaration"
+	GlobalStatement             NodeType = "Global Statement"
+	FunctionDeclaration         NodeType = "Function Declaration"
+	ExternalFunctionDeclaration NodeType = "External Function Declaration"
+	ClassDeclaration            NodeType = "Class Declaration"
+	PackageReference            NodeType = "Package Declaration"
 
 	// General
 	// -------

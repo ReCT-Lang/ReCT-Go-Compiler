@@ -10,11 +10,12 @@ import (
 )
 
 type BoundProgram struct {
-	GlobalScope  *GlobalScope
-	MainFunction symbols.FunctionSymbol
-	Functions    []BoundFunction
-	Classes      []BoundClass
-	Packages     []symbols.PackageSymbol
+	GlobalScope       *GlobalScope
+	MainFunction      symbols.FunctionSymbol
+	Functions         []BoundFunction
+	ExternalFunctions []symbols.FunctionSymbol
+	Classes           []BoundClass
+	Packages          []symbols.PackageSymbol
 }
 
 type BoundFunction struct {
@@ -31,6 +32,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	globalScope := BindGlobalScope(members)
 	parentScope := BindParentScope(globalScope)
 	functionBodies := make([]BoundFunction, 0)
+	functionReferences := make([]symbols.FunctionSymbol, 0)
 	classes := make([]BoundClass, 0)
 
 	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements, print.TextSpan{})
@@ -41,6 +43,12 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	})
 
 	for _, fnc := range globalScope.Functions {
+		// skip external functions
+		if fnc.External {
+			functionReferences = append(functionReferences, fnc)
+			continue
+		}
+
 		binder := CreateBinder(parentScope, fnc)
 		body := binder.BindBlockStatement(fnc.Declaration.Body)
 		loweredBody := lowerer.Lower(fnc, body)
@@ -113,11 +121,12 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	}
 
 	return BoundProgram{
-		GlobalScope:  &globalScope,
-		MainFunction: globalScope.MainFunction,
-		Functions:    functionBodies,
-		Classes:      classes,
-		Packages:     globalScope.Packages,
+		GlobalScope:       &globalScope,
+		MainFunction:      globalScope.MainFunction,
+		Functions:         functionBodies,
+		ExternalFunctions: functionReferences,
+		Classes:           classes,
+		Packages:          globalScope.Packages,
 	}
 }
 

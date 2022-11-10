@@ -10,9 +10,11 @@ import (
 type FunctionSymbol struct {
 	Symbol
 
-	Exists  bool
-	BuiltIn bool
-	Public  bool
+	Exists   bool
+	BuiltIn  bool
+	Public   bool
+	External bool
+	Variadic bool
 
 	IRFunction *ir.Func
 
@@ -54,6 +56,18 @@ func CreateFunctionSymbol(name string, params []ParameterSymbol, typeSymbol Type
 		Type:        typeSymbol,
 		Declaration: declaration,
 		Public:      public,
+	}
+}
+
+func CreateExternalFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, variadic bool) FunctionSymbol {
+	return FunctionSymbol{
+		Exists:     true,
+		Name:       name,
+		Parameters: params,
+		Type:       typeSymbol,
+		External:   true,
+		Variadic:   variadic,
+		Public:     true,
 	}
 }
 
