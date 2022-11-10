@@ -9,3 +9,7 @@ external c_variadic SomeFunction(a int);
 //
 //SetRandomSeed(clock());
 //sys::Print(string(GetRandomValue(0, 100)));
+
+var ulong lng <- -1;
+
+sys::Print(string(lng));

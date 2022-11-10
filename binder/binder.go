@@ -1629,6 +1629,12 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		return builtins.Long, true
 	case "float":
 		return builtins.Float, true
+	case "uint":
+		return builtins.UInt, true
+	case "ulong":
+		return builtins.ULong, true
+	case "double":
+		return builtins.Double, true
 	case "string":
 		return builtins.String, true
 	case "any":
@@ -1698,6 +1704,12 @@ func LookupPrimitiveType(name string, canFail bool, errorLocation print.TextSpan
 		return builtins.Long, true
 	case "float":
 		return builtins.Float, true
+	case "uint":
+		return builtins.UInt, true
+	case "ulong":
+		return builtins.ULong, true
+	case "double":
+		return builtins.Double, true
 	case "string":
 		return builtins.String, true
 	case "any":

@@ -103,6 +103,10 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 			}
 		}
 	}
+
+	// sneaky
+	emt.Classes[emt.Id(builtins.UInt)] = emt.Classes[emt.Id(builtins.Int)]
+	emt.Classes[emt.Id(builtins.ULong)] = emt.Classes[emt.Id(builtins.Long)]
 }
 
 func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack symbols.PackageSymbol) {

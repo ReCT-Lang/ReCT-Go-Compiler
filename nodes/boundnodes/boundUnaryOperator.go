@@ -52,6 +52,18 @@ var UnaryOperators []BoundUnaryOperator = []BoundUnaryOperator{
 	/* + */ CreateBoundUnaryOperator(lexer.PlusToken, Identity, builtins.Float, builtins.Float),
 	/* - */ CreateBoundUnaryOperator(lexer.MinusToken, Negation, builtins.Float, builtins.Float),
 
+	// uint operations
+	/* + */ CreateBoundUnaryOperator(lexer.PlusToken, Identity, builtins.UInt, builtins.UInt),
+	/* - */ CreateBoundUnaryOperator(lexer.MinusToken, Negation, builtins.UInt, builtins.UInt),
+
+	// ulong operations
+	/* + */ CreateBoundUnaryOperator(lexer.PlusToken, Identity, builtins.ULong, builtins.ULong),
+	/* - */ CreateBoundUnaryOperator(lexer.MinusToken, Negation, builtins.ULong, builtins.ULong),
+
+	// double operations
+	/* + */ CreateBoundUnaryOperator(lexer.PlusToken, Identity, builtins.Double, builtins.Double),
+	/* - */ CreateBoundUnaryOperator(lexer.MinusToken, Negation, builtins.Double, builtins.Double),
+
 	// bool operations
 	/* ! */ CreateBoundUnaryOperator(lexer.NotToken, LogicalNegation, builtins.Bool, builtins.Bool),
 }

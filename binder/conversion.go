@@ -55,21 +55,26 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 		return ExplicitConversion
 	}
 
-	// converting from bool, byte, int, long, or float to string
+	// converting from bool, byte, int, long, float, uint, ulong, double to string
 	if (from.Fingerprint() == builtins.Bool.Fingerprint() ||
 		from.Fingerprint() == builtins.Byte.Fingerprint() ||
 		from.Fingerprint() == builtins.Int.Fingerprint() ||
 		from.Fingerprint() == builtins.Long.Fingerprint() ||
-		from.Fingerprint() == builtins.Float.Fingerprint()) &&
+		from.Fingerprint() == builtins.Float.Fingerprint() ||
+		from.Fingerprint() == builtins.UInt.Fingerprint() ||
+		from.Fingerprint() == builtins.ULong.Fingerprint() ||
+		from.Fingerprint() == builtins.Double.Fingerprint()) &&
 		to.Fingerprint() == builtins.String.Fingerprint() {
 		return ExplicitConversion
 	}
 
-	// converting from a string to a bool, int, or float
+	// converting from a string to a bool, int, long, float, double
 	if from.Fingerprint() == builtins.String.Fingerprint() &&
 		(to.Fingerprint() == builtins.Bool.Fingerprint() ||
 			to.Fingerprint() == builtins.Int.Fingerprint() ||
-			to.Fingerprint() == builtins.Float.Fingerprint()) {
+			to.Fingerprint() == builtins.Long.Fingerprint() ||
+			to.Fingerprint() == builtins.Float.Fingerprint() ||
+			to.Fingerprint() == builtins.Double.Fingerprint()) {
 		return ExplicitConversion
 	}
 
@@ -107,6 +112,102 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 	if from.Fingerprint() == builtins.Float.Fingerprint() &&
 		to.Fingerprint() == builtins.Int.Fingerprint() {
 		return ExplicitConversion
+	}
+
+	// allow IMPLICIT int -> double
+	if from.Fingerprint() == builtins.Int.Fingerprint() &&
+		to.Fingerprint() == builtins.Double.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow EXPLICIT double -> int
+	if from.Fingerprint() == builtins.Double.Fingerprint() &&
+		to.Fingerprint() == builtins.Int.Fingerprint() {
+		return ExplicitConversion
+	}
+
+	// allow IMPLICIT long -> double
+	if from.Fingerprint() == builtins.Long.Fingerprint() &&
+		to.Fingerprint() == builtins.Double.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow EXPLICIT double -> long
+	if from.Fingerprint() == builtins.Double.Fingerprint() &&
+		to.Fingerprint() == builtins.Long.Fingerprint() {
+		return ExplicitConversion
+	}
+
+	// allow IMPLICIT float -> double
+	if from.Fingerprint() == builtins.Float.Fingerprint() &&
+		to.Fingerprint() == builtins.Double.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT double -> float
+	if from.Fingerprint() == builtins.Double.Fingerprint() &&
+		to.Fingerprint() == builtins.Float.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT int -> uint
+	if from.Fingerprint() == builtins.Int.Fingerprint() &&
+		to.Fingerprint() == builtins.UInt.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT uint -> int
+	if from.Fingerprint() == builtins.UInt.Fingerprint() &&
+		to.Fingerprint() == builtins.Int.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT long -> ulong
+	if from.Fingerprint() == builtins.Long.Fingerprint() &&
+		to.Fingerprint() == builtins.ULong.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT ulong -> long
+	if from.Fingerprint() == builtins.ULong.Fingerprint() &&
+		to.Fingerprint() == builtins.Long.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT uint -> ulong
+	if from.Fingerprint() == builtins.UInt.Fingerprint() &&
+		to.Fingerprint() == builtins.ULong.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT ulong -> uint
+	if from.Fingerprint() == builtins.ULong.Fingerprint() &&
+		to.Fingerprint() == builtins.UInt.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT int -> ulong
+	if from.Fingerprint() == builtins.Int.Fingerprint() &&
+		to.Fingerprint() == builtins.ULong.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT ulong -> int
+	if from.Fingerprint() == builtins.ULong.Fingerprint() &&
+		to.Fingerprint() == builtins.Int.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT uint -> long
+	if from.Fingerprint() == builtins.UInt.Fingerprint() &&
+		to.Fingerprint() == builtins.Long.Fingerprint() {
+		return ImplicitConversion
+	}
+
+	// allow IMPLICIT long -> uint
+	if from.Fingerprint() == builtins.Long.Fingerprint() &&
+		to.Fingerprint() == builtins.UInt.Fingerprint() {
+		return ImplicitConversion
 	}
 
 	return NoConversion

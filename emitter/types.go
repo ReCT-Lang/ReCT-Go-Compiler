@@ -30,8 +30,14 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		return types.I32
 	case builtins.Long.Fingerprint():
 		return types.I64
+	case builtins.UInt.Fingerprint():
+		return types.I32
+	case builtins.ULong.Fingerprint():
+		return types.I64
 	case builtins.Float.Fingerprint():
 		return types.Float
+	case builtins.Double.Fingerprint():
+		return types.Double
 	case builtins.String.Fingerprint():
 		return types.NewPointer(emt.Classes[emt.Id(builtins.String)].Type)
 	case builtins.Any.Fingerprint():

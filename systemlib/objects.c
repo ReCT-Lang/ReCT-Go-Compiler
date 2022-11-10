@@ -294,6 +294,33 @@ float Float_public_GetValue(class_Float* this) {
 }
 
 // -----------------------------------------------------------------------------
+// "double" object type
+// Note: this is an object version of a double, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// definition for the Double vTable
+const Double_vTable Double_vTable_Const = {&Any_vTable_Const, "Double", &Double_public_Die};
+
+// definition for the objects constructor
+void Double_public_Constructor(class_Double* this, double value) {
+	this->vtable = &Double_vTable_Const;
+	this->referenceCounter = 0;
+	this->value = value;
+}
+
+// definition for the objects destructor
+void Double_public_Die(void* this) {}
+
+// definition for a float.GetValue() method
+double Double_public_GetValue(class_Double* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return 0.0;
+
+	// if not -> return the stored value
+	return this->value;
+}
+
+// -----------------------------------------------------------------------------
 // "bool" object type
 // Note: this is an object version of a bool, this is to box and crunch it
 // -----------------------------------------------------------------------------

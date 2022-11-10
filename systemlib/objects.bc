@@ -9,6 +9,7 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.Byte_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Long_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Float_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
+%struct.Double_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Bool_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.Array_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
 %struct.pArray_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
@@ -19,6 +20,7 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.class_Byte = type { %struct.Byte_vTable*, i32, i8 }
 %struct.class_Long = type { %struct.Long_vTable*, i32, i64 }
 %struct.class_Float = type { %struct.Float_vTable*, i32, float }
+%struct.class_Double = type { %struct.Double_vTable*, i32, float }
 %struct.class_Bool = type { %struct.Bool_vTable*, i32, i8 }
 %struct.class_Array = type { %struct.Array_vTable*, i32, %struct.class_Any**, i32, i32, i32 }
 %struct.class_pArray = type { %struct.pArray_vTable*, i32, i8*, i32, i32, i32, i32 }
@@ -40,15 +42,17 @@ target triple = "x86_64-pc-linux-gnu"
 @Long_vTable_Const = dso_local constant %struct.Long_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.7, i32 0, i32 0), void (i8*)* @Long_public_Die }, align 8
 @.str.8 = private unnamed_addr constant [6 x i8] c"Float\00", align 1
 @Float_vTable_Const = dso_local constant %struct.Float_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.8, i32 0, i32 0), void (i8*)* @Float_public_Die }, align 8
-@.str.9 = private unnamed_addr constant [5 x i8] c"Bool\00", align 1
-@Bool_vTable_Const = dso_local constant %struct.Bool_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.9, i32 0, i32 0), void (i8*)* @Bool_public_Die }, align 8
-@.str.10 = private unnamed_addr constant [6 x i8] c"Array\00", align 1
-@Array_vTable_Const = dso_local constant %struct.Array_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.10, i32 0, i32 0), void (i8*)* @Array_public_Die }, align 8
-@.str.11 = private unnamed_addr constant [26 x i8] c"Array index out of range!\00", align 1
-@.str.12 = private unnamed_addr constant [7 x i8] c"pArray\00", align 1
-@pArray_vTable_Const = dso_local constant %struct.pArray_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.12, i32 0, i32 0), void (i8*)* @pArray_public_Die }, align 8
-@.str.13 = private unnamed_addr constant [7 x i8] c"Thread\00", align 1
-@Thread_vTable_Const = dso_local constant %struct.Thread_vTable { i8* bitcast (%struct.Any_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.13, i32 0, i32 0), void (i8*)* @Thread_public_Die }, align 8
+@.str.9 = private unnamed_addr constant [7 x i8] c"Double\00", align 1
+@Double_vTable_Const = dso_local constant %struct.Double_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.9, i32 0, i32 0), void (i8*)* @Double_public_Die }, align 8
+@.str.10 = private unnamed_addr constant [5 x i8] c"Bool\00", align 1
+@Bool_vTable_Const = dso_local constant %struct.Bool_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.10, i32 0, i32 0), void (i8*)* @Bool_public_Die }, align 8
+@.str.11 = private unnamed_addr constant [6 x i8] c"Array\00", align 1
+@Array_vTable_Const = dso_local constant %struct.Array_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.11, i32 0, i32 0), void (i8*)* @Array_public_Die }, align 8
+@.str.12 = private unnamed_addr constant [26 x i8] c"Array index out of range!\00", align 1
+@.str.13 = private unnamed_addr constant [7 x i8] c"pArray\00", align 1
+@pArray_vTable_Const = dso_local constant %struct.pArray_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.13, i32 0, i32 0), void (i8*)* @pArray_public_Die }, align 8
+@.str.14 = private unnamed_addr constant [7 x i8] c"Thread\00", align 1
+@Thread_vTable_Const = dso_local constant %struct.Thread_vTable { i8* bitcast (%struct.Any_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.14, i32 0, i32 0), void (i8*)* @Thread_public_Die }, align 8
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Any_public_Die(i8* noundef %0) #0 {
@@ -657,6 +661,59 @@ define dso_local float @Float_public_GetValue(%struct.class_Float* noundef %0) #
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @Double_public_Die(i8* noundef %0) #0 {
+  %2 = alloca i8*, align 8
+  store i8* %0, i8** %2, align 8
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local void @Double_public_Constructor(%struct.class_Double* noundef %0, double noundef %1) #0 {
+  %3 = alloca %struct.class_Double*, align 8
+  %4 = alloca double, align 8
+  store %struct.class_Double* %0, %struct.class_Double** %3, align 8
+  store double %1, double* %4, align 8
+  %5 = load %struct.class_Double*, %struct.class_Double** %3, align 8
+  %6 = getelementptr inbounds %struct.class_Double, %struct.class_Double* %5, i32 0, i32 0
+  store %struct.Double_vTable* @Double_vTable_Const, %struct.Double_vTable** %6, align 8
+  %7 = load %struct.class_Double*, %struct.class_Double** %3, align 8
+  %8 = getelementptr inbounds %struct.class_Double, %struct.class_Double* %7, i32 0, i32 1
+  store i32 0, i32* %8, align 8
+  %9 = load double, double* %4, align 8
+  %10 = fptrunc double %9 to float
+  %11 = load %struct.class_Double*, %struct.class_Double** %3, align 8
+  %12 = getelementptr inbounds %struct.class_Double, %struct.class_Double* %11, i32 0, i32 2
+  store float %10, float* %12, align 4
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
+define dso_local double @Double_public_GetValue(%struct.class_Double* noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca %struct.class_Double*, align 8
+  store %struct.class_Double* %0, %struct.class_Double** %3, align 8
+  %4 = load %struct.class_Double*, %struct.class_Double** %3, align 8
+  %5 = icmp eq %struct.class_Double* %4, null
+  br i1 %5, label %6, label %7
+
+6:                                                ; preds = %1
+  store double 0.000000e+00, double* %2, align 8
+  br label %12
+
+7:                                                ; preds = %1
+  %8 = load %struct.class_Double*, %struct.class_Double** %3, align 8
+  %9 = getelementptr inbounds %struct.class_Double, %struct.class_Double* %8, i32 0, i32 2
+  %10 = load float, float* %9, align 4
+  %11 = fpext float %10 to double
+  store double %11, double* %2, align 8
+  br label %12
+
+12:                                               ; preds = %7, %6
+  %13 = load double, double* %2, align 8
+  ret double %13
+}
+
+; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Bool_public_Die(i8* noundef %0) #0 {
   %2 = alloca i8*, align 8
   store i8* %0, i8** %2, align 8
@@ -814,7 +871,7 @@ define dso_local %struct.class_Any* @Array_public_GetElement(%struct.class_Array
   br i1 %12, label %13, label %14
 
 13:                                               ; preds = %7, %2
-  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.11, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.12, i64 0, i64 0))
   br label %14
 
 14:                                               ; preds = %13, %7
@@ -849,7 +906,7 @@ define dso_local void @Array_public_SetElement(%struct.class_Array* noundef %0, 
   br i1 %14, label %15, label %16
 
 15:                                               ; preds = %9, %3
-  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.11, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.12, i64 0, i64 0))
   br label %16
 
 16:                                               ; preds = %15, %9
@@ -1200,7 +1257,7 @@ define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* noundef 
   br i1 %12, label %13, label %14
 
 13:                                               ; preds = %7, %2
-  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.11, i64 0, i64 0))
+  call void @exc_Throw(i8* noundef getelementptr inbounds ([26 x i8], [26 x i8]* @.str.12, i64 0, i64 0))
   br label %14
 
 14:                                               ; preds = %13, %7

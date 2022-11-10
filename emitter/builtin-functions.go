@@ -62,6 +62,9 @@ func (emt *Emitter) EmitCLibReferences() {
 	atoi := emt.Module.NewFunc("atoi", types.I32, ir.NewParam("str", types.I8Ptr))
 	emt.CFuncs["atoi"] = atoi
 
+	atol := emt.Module.NewFunc("atol", types.I64, ir.NewParam("str", types.I8Ptr))
+	emt.CFuncs["atol"] = atol
+
 	atof := emt.Module.NewFunc("atof", types.Double, ir.NewParam("str", types.I8Ptr))
 	emt.CFuncs["atof"] = atof
 }

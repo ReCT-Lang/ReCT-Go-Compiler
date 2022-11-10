@@ -276,6 +276,11 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, errorLocation p
 		return builtins.Float, true
 	}
 
+	// double primitive type
+	if typ.Equal(types.Double) {
+		return builtins.Double, true
+	}
+
 	// =========================================================================
 	// OBJECTS
 	// =========================================================================
@@ -304,7 +309,7 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, errorLocation p
 
 func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLower bool, errorLocation print.TextSpan) *symbols.TypeSymbol {
 	// disallow boxed types
-	if typeName == "Int" || typeName == "Byte" || typeName == "Long" || typeName == "Float" || typeName == "Bool" {
+	if typeName == "Byte" || typeName == "Int" || typeName == "Long" || typeName == "Float" || typeName == "Double" || typeName == "Bool" {
 		print.Error(
 			"PACKAGER",
 			print.IllegalBoxedTypeError,
@@ -385,16 +390,28 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, errorL
 		return builtins.Byte
 	}
 
-	if typeName == "Long" || typeName == "long" {
-		return builtins.Long
-	}
-
 	if typeName == "Int" || typeName == "int" {
 		return builtins.Int
 	}
 
+	if typeName == "Long" || typeName == "long" {
+		return builtins.Long
+	}
+
+	if typeName == "UInt" || typeName == "uint" {
+		return builtins.UInt
+	}
+
+	if typeName == "ULong" || typeName == "ulong" {
+		return builtins.ULong
+	}
+
 	if typeName == "Float" || typeName == "float" {
 		return builtins.Float
+	}
+
+	if typeName == "Double" || typeName == "double" {
+		return builtins.Double
 	}
 
 	typeSymbol := ResolveObjectType(typeName, classes, true, errorLocation)
