@@ -463,7 +463,7 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	// create locals array
 	locals := make(map[string]Local)
 
-	// create all needed locals in the root block to GC can trash them anywhere
+	// create all needed locals in the root block so GC can trash them anywhere
 	for _, stmt := range body.Statements {
 		if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
 			declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
@@ -490,6 +490,14 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 }
 
 func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
+	// check if this function is already imported
+	_, ok := emt.CFuncs[sym.Name]
+
+	// already imported, just copy reference
+	if ok {
+		return emt.CFuncs[sym.Name]
+	}
+
 	// figure out all parameters and their types
 	params := make([]*ir.Param, 0)
 	for _, param := range sym.Parameters {
@@ -1648,6 +1656,10 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		// call the get length function on the string
 		return (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
 
+	case builtins.GetBuffer.Fingerprint():
+		// call the get length function on the string
+		return (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], base)
+
 	case builtins.Substring.Fingerprint():
 		start := emt.EmitExpression(blk, expr.Arguments[0])
 		length := emt.EmitExpression(blk, expr.Arguments[1])
@@ -2013,6 +2025,8 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// extend the byte to an int
 			result := (*blk).NewFPToSI(value, emt.IRTypes(builtins.Int))
 			return result
+		} else if expr.Expression.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewPtrToInt(value, emt.IRTypes(builtins.Int))
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Byte.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.Int.Fingerprint() {
@@ -2247,6 +2261,10 @@ func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) cons
 	}
 
 	if typ.Name == builtins.Array.Name {
+		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
+	}
+
+	if typ.Name == builtins.Pointer.Name {
 		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
 	}
 

@@ -14,6 +14,14 @@ var (
 		String,
 	)
 
+	GetBuffer = symbols.CreateBuiltInTypeFunctionSymbol(
+		"GetBuffer",
+		[]symbols.ParameterSymbol{},
+		symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{Byte}, false, false),
+		nodes.FunctionDeclarationMember{},
+		String,
+	)
+
 	GetArrayLength = symbols.CreateBuiltInTypeFunctionSymbol(
 		"GetLength",
 		[]symbols.ParameterSymbol{},

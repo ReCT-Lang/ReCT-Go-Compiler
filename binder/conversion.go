@@ -210,5 +210,17 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 		return ImplicitConversion
 	}
 
+	// allow EXPLICIT pointer -> int
+	if from.Name == "pointer" &&
+		to.Fingerprint() == builtins.Int.Fingerprint() {
+		return ExplicitConversion
+	}
+
+	// allow EXPLICIT int -> pointer
+	//if from.Fingerprint() == builtins.Pointer.Fingerprint() &&
+	//	to.Fingerprint() == builtins.Int.Fingerprint() {
+	//	return ExplicitConversion
+	//}
+
 	return NoConversion
 }

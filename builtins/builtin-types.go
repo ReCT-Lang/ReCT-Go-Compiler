@@ -25,11 +25,14 @@ var (
 	Array  = symbols.CreateTypeSymbol("array", make([]symbols.TypeSymbol, 0), true, false)
 	PArray = symbols.CreateTypeSymbol("parray", make([]symbols.TypeSymbol, 0), true, false)
 
+	// spoopy
+	Pointer = symbols.CreateTypeSymbol("pointer", make([]symbols.TypeSymbol, 0), false, false)
+
 	// the cursed ones
 	Error    = symbols.CreateTypeSymbol("?", make([]symbols.TypeSymbol, 0), false, false)
 	Identity = symbols.CreateTypeSymbol("¯\\_(ツ)_/¯", make([]symbols.TypeSymbol, 0), false, false)
 
 	Types = []symbols.TypeSymbol{
-		Void, Bool, Byte, Int, Long, UInt, ULong, Float, Double, String, Any, Action, Array, PArray, Thread,
+		Void, Bool, Byte, Int, Long, UInt, ULong, Float, Double, String, Any, Action, Array, PArray, Pointer, Thread,
 	}
 )

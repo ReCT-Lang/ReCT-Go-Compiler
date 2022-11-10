@@ -1159,7 +1159,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	functionSymbol := symbol.(symbols.FunctionSymbol)
-	if len(boundArguments) != len(functionSymbol.Parameters) {
+	if len(boundArguments) != len(functionSymbol.Parameters) && !functionSymbol.Variadic {
 		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
 		print.Error(
 			"BINDER",
@@ -1173,7 +1173,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		os.Exit(-1)
 	}
 
-	for i := 0; i < len(boundArguments); i++ {
+	for i := 0; i < len(functionSymbol.Parameters); i++ {
 		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
@@ -1427,6 +1427,8 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol, 
 			// array length
 			return builtins.GetArrayLength
 		}
+	case "GetBuffer":
+		return builtins.GetBuffer
 	case "Substring":
 		return builtins.Substring
 	case "Push":
@@ -1653,6 +1655,21 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 
 		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
 		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true, false), true
+
+	case "pointer":
+		if len(typeClause.SubClauses) != 1 {
+			print.Error(
+				"BINDER",
+				print.InvalidNumberOfSubtypesError,
+				typeClause.Span(),
+				"Datatype \"%s\" takes in exactly one subtype!",
+				typeClause.TypeIdentifier.Value,
+			)
+			os.Exit(-1)
+		}
+
+		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
+		return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{baseType}, false, false), true
 
 	default:
 		// check if this might be a class

@@ -29,25 +29,6 @@ func (emt *Emitter) EmitBuiltInFunctions() {
 }
 
 func (emt *Emitter) EmitCLibReferences() {
-	printf := emt.Module.NewFunc("printf", types.I32, ir.NewParam("format", types.I8Ptr))
-	printf.Sig.Variadic = true
-	emt.CFuncs["printf"] = printf
-
-	scanf := emt.Module.NewFunc("scanf", types.I32, ir.NewParam("format", types.I8Ptr), ir.NewParam("dest", types.I8Ptr))
-	scanf.Sig.Variadic = true
-	emt.CFuncs["scanf"] = scanf
-
-	strcpy := emt.Module.NewFunc("strcpy", types.Void, ir.NewParam("dest", types.I8Ptr), ir.NewParam("src", types.I8Ptr))
-	emt.CFuncs["strcpy"] = strcpy
-
-	strcat := emt.Module.NewFunc("strcat", types.Void, ir.NewParam("dest", types.I8Ptr), ir.NewParam("src", types.I8Ptr))
-	emt.CFuncs["strcat"] = strcat
-
-	strlen := emt.Module.NewFunc("strlen", types.I32, ir.NewParam("str", types.I8Ptr))
-	emt.CFuncs["strlen"] = strlen
-
-	strcmp := emt.Module.NewFunc("strcmp", types.I32, ir.NewParam("left", types.I8Ptr), ir.NewParam("right", types.I8Ptr))
-	emt.CFuncs["strcmp"] = strcmp
 
 	malloc := emt.Module.NewFunc("malloc", types.I8Ptr, ir.NewParam("len", types.I32))
 	emt.CFuncs["malloc"] = malloc

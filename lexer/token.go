@@ -32,6 +32,8 @@ const (
 	PackageKeyword   TokenKind = "package (keyword)"
 	ExternalKeyword  TokenKind = "external (keyword)"
 	CVariadicKeyword TokenKind = "c_variadic (keyword)"
+	RefKeyword       TokenKind = "ref (keyword)"
+	DerefKeyword     TokenKind = "deref (keyword)"
 
 	// Tokens
 	EOF         TokenKind = "EndOfFile"

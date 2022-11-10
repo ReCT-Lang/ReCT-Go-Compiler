@@ -1,15 +1,20 @@
 package sys;
 
-external c_variadic SomeFunction(a int);
+external malloc(size int) pointer[byte];
+external free(mem pointer[byte]);
 
-//#arg("-lraylib");
-//external SetRandomSeed(a int);
-//external GetRandomValue(a int, b int) int;
-//external clock() long;
-//
-//SetRandomSeed(clock());
-//sys::Print(string(GetRandomValue(0, 100)));
+while (true) {
+   var mem <- make pointer[byte] array(0);
 
-var ulong lng <- -1;
+   from (i <- 0) to 10000 {
+      sys::Print("mwhahahahahaHAHAHAHAHAHAHA");
+      mem->Push(malloc(1000));
+      sys::Sleep(1);
+   }
 
-sys::Print(string(lng));
+   from (i <- 0) to 10000 {
+      free(mem[i]);
+   }
+}
+
+sys::Input();

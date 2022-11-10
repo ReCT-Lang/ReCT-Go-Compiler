@@ -267,6 +267,33 @@ long Long_public_GetValue(class_Long* this) {
 }
 
 // -----------------------------------------------------------------------------
+// "pointer" object type
+// Note: this is an object version of a long, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// definition for the Pointer vTable
+const Pointer_vTable Pointer_vTable_Const = {&Any_vTable_Const, "Pointer", &Pointer_public_Die};
+
+// definition for the objects constructor
+void Pointer_public_Constructor(class_Pointer* this, long value) {
+	this->vtable = &Pointer_vTable_Const;
+	this->referenceCounter = 0;
+	this->value = value;
+}
+
+// definition for the objects destructor
+void Pointer_public_Die(void* this) {}
+
+// definition for an int.GetValue() method
+long Pointer_public_GetValue(class_Pointer* this) {
+	// if the object is null -> return the default value
+	if (this == NULL) return 0;
+
+	// if not -> return the stored value
+	return this->value;
+}
+
+// -----------------------------------------------------------------------------
 // "float" object type
 // Note: this is an object version of a float, this is to box and crunch it
 // -----------------------------------------------------------------------------

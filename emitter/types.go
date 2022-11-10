@@ -45,12 +45,17 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 	case builtins.Thread.Fingerprint():
 		return types.NewPointer(emt.Classes[emt.Id(builtins.Thread)].Type)
 	}
+
 	if typ.Name == builtins.Array.Name {
 		if typ.SubTypes[0].IsObject {
 			return emt.ResolveArray(typ, &arrayTypes, builtins.Array)
 		} else {
 			return emt.ResolveArray(typ, &parrayTypes, builtins.PArray)
 		}
+	}
+
+	if typ.Name == builtins.Pointer.Name {
+		return types.NewPointer(emt.IRTypes(typ.SubTypes[0]))
 	}
 
 	// try looking up a class

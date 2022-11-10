@@ -135,7 +135,7 @@ func CompileFiles(files []string) {
 		emitter.VerboseARC = true
 	}
 
-	module := emitter.Emit(boundProgram, false)
+	module := emitter.Emit(boundProgram, true)
 	//fmt.Println(module)
 	output := module.String()
 

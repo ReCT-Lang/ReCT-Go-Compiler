@@ -477,6 +477,10 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return ExternalKeyword
 	case "c_variadic":
 		return CVariadicKeyword
+	case "ref":
+		return RefKeyword
+	case "deref":
+		return DerefKeyword
 	default:
 		return IdToken
 	}

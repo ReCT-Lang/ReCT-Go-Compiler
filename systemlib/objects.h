@@ -9,28 +9,30 @@ extern "C" {
 #endif
 
 // declare all struct names
-typedef struct Any_vTable    Any_vTable;
-typedef struct class_Any     class_Any;
-typedef struct String_vTable String_vTable;
-typedef struct class_String  class_String;
-typedef struct Int_vTable    Int_vTable;
-typedef struct class_Int     class_Int;
+typedef struct Any_vTable     Any_vTable;
+typedef struct class_Any      class_Any;
+typedef struct String_vTable  String_vTable;
+typedef struct class_String   class_String;
+typedef struct Int_vTable     Int_vTable;
+typedef struct class_Int      class_Int;
 typedef struct Byte_vTable    Byte_vTable;
 typedef struct class_Byte     class_Byte;
 typedef struct Long_vTable    Long_vTable;
 typedef struct class_Long     class_Long;
-typedef struct Float_vTable  Float_vTable;
-typedef struct class_Float   class_Float;
+typedef struct Pointer_vTable Pointer_vTable;
+typedef struct class_Pointer  class_Pointer;
+typedef struct Float_vTable   Float_vTable;
+typedef struct class_Float    class_Float;
 typedef struct Double_vTable  Double_vTable;
 typedef struct class_Double   class_Double;
-typedef struct Bool_vTable   Bool_vTable;
-typedef struct class_Bool    class_Bool;
-typedef struct Array_vTable  Array_vTable;
-typedef struct class_Array   class_Array;
+typedef struct Bool_vTable    Bool_vTable;
+typedef struct class_Bool     class_Bool;
+typedef struct Array_vTable   Array_vTable;
+typedef struct class_Array    class_Array;
 typedef struct pArray_vTable  pArray_vTable;
 typedef struct class_pArray   class_pArray;
-typedef struct class_Thread class_Thread;
-typedef struct Thread_vTable Thread_vTable;
+typedef struct class_Thread   class_Thread;
+typedef struct Thread_vTable  Thread_vTable;
 
 // declare destructor function pointer
 typedef void (*DiePointer)(void*);
@@ -41,8 +43,9 @@ void String_public_Die (void*);
 void Int_public_Die    (void*);
 void Byte_public_Die   (void*);
 void Long_public_Die   (void*);
+void Pointer_public_Die(void*);
 void Float_public_Die  (void*);
-void Double_public_Die  (void*);
+void Double_public_Die (void*);
 void Bool_public_Die   (void*);
 void Array_public_Die  (void*);
 void pArray_public_Die (void*);
@@ -54,6 +57,7 @@ void String_public_Constructor(class_String*);
 void Int_public_Constructor(class_Int*, int);
 void Byte_public_Constructor(class_Byte*, char);
 void Long_public_Constructor(class_Long*, long);
+void Pointer_public_Constructor(class_Pointer*, long);
 void Float_public_Constructor(class_Float*, float);
 void Double_public_Constructor(class_Double*, double);
 void Bool_public_Constructor(class_Bool*, bool);
@@ -176,6 +180,28 @@ struct class_Long {
 
 // the objects methods
 long Long_public_GetValue(class_Long*);
+
+// -----------------------------------------------------------------------------
+// "pointer" object type
+// Note: this is an object version of a pointer, this is to box and crunch it
+// -----------------------------------------------------------------------------
+
+// the object's vtable (for method lookup and method overriding)
+struct Pointer_vTable {
+	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
+	const char* className;          // will be "Pointer"
+	DiePointer dieFunction;         // destructor function pointer
+};
+
+// the objects struct
+struct class_Pointer {
+	const Pointer_vTable* vtable;  // our vTable
+	int referenceCounter;       // implementation of the reference counter
+	long value;
+};
+
+// the objects methods
+long Pointer_public_GetValue(class_Pointer*);
 
 // -----------------------------------------------------------------------------
 // "float" object type
