@@ -352,6 +352,7 @@ const (
 	UnknownPackageError                   = "UnknownPackageError"
 	UnexpectedNonArrayValueError          = "UnexpectedNonArrayValueError"
 	InvalidExternalFunctionPlacementError = "InvalidExternalFunctionPlacementError"
+	UnexpectedNonPointerValueError        = "UnexpectedNonPointerValueError"
 
 	// Emitter Errors
 	UnknownVTableError      = "UnknownVTableError"
@@ -433,6 +434,7 @@ const (
 	UnknownPackageErrorCode                   = iota + 3000
 	UnexpectedNonArrayValueErrorCode          = iota + 3000
 	InvalidExternalFunctionPlacementErrorCode = iota + 3000
+	UnexpectedNonPointerValueErrorCode        = iota + 3000
 
 	// Emitter ErrorCodes
 	UnknownVTableErrorCode      = iota + 4000
@@ -507,6 +509,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	ImpossibleFieldProcessingError:        ImpossibleFieldProcessingErrorCode,
 	FileAlreadyInSourcesWarning:           FileAlreadyInSourcesWarningCode,
 	InvalidExternalFunctionPlacementError: InvalidExternalFunctionPlacementErrorCode,
+	UnexpectedNonPointerValueError:        UnexpectedNonPointerValueErrorCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

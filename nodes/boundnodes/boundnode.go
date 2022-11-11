@@ -73,4 +73,6 @@ const (
 	BoundFunctionExpression             BoundType = "BoundFunctionExpression"
 	BoundThreadExpression               BoundType = "BoundThreadExpression"
 	BoundTernaryExpression              BoundType = "BoundTernaryExpression"
+	BoundReferenceExpression            BoundType = "BoundReferenceExpression"
+	BoundDereferenceExpression          BoundType = "BoundDereferenceExpression"
 )

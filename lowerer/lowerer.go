@@ -357,6 +357,10 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteThreadExpression(expr.(boundnodes.BoundThreadExpressionNode))
 	case boundnodes.BoundTernaryExpression:
 		return RewriteTernaryExpression(expr.(boundnodes.BoundTernaryExpressionNode))
+	case boundnodes.BoundReferenceExpression:
+		return RewriteReferenceExpression(expr.(boundnodes.BoundReferenceExpressionNode))
+	case boundnodes.BoundDereferenceExpression:
+		return RewriteDereferenceExpression(expr.(boundnodes.BoundDereferenceExpressionNode))
 	default:
 		print.PrintC(print.Red, "Expression unaccounted for in lowerer! (stuff being in here is important lol)")
 		os.Exit(-1)
@@ -465,7 +469,7 @@ func RewriteArrayAccessExpression(expr boundnodes.BoundArrayAccessExpressionNode
 	rewrittenBase := RewriteExpression(expr.Base)
 	rewrittenIndex := RewriteExpression(expr.Index)
 
-	return boundnodes.CreateBoundArrayAccessExpressionNode(rewrittenBase, rewrittenIndex, expr.BoundSpan)
+	return boundnodes.CreateBoundArrayAccessExpressionNode(rewrittenBase, rewrittenIndex, expr.IsPointer, expr.BoundSpan)
 }
 
 func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
@@ -473,7 +477,7 @@ func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpres
 	rewrittenIndex := RewriteExpression(expr.Index)
 	rewrittenValue := RewriteExpression(expr.Value)
 
-	return boundnodes.CreateBoundArrayAssignmentExpressionNode(rewrittenBase, rewrittenIndex, rewrittenValue, expr.BoundSpan)
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(rewrittenBase, rewrittenIndex, rewrittenValue, expr.IsPointer, expr.BoundSpan)
 }
 
 func RewriteMakeExpression(expr boundnodes.BoundMakeExpressionNode) boundnodes.BoundMakeExpressionNode {
@@ -546,4 +550,14 @@ func RewriteTernaryExpression(expr boundnodes.BoundTernaryExpressionNode) boundn
 	expr.EndLabel = GenerateLabel()
 
 	return expr
+}
+
+func RewriteReferenceExpression(expr boundnodes.BoundReferenceExpressionNode) boundnodes.BoundReferenceExpressionNode {
+	val := RewriteExpression(expr.Expression)
+	return boundnodes.CreateBoundReferenceExpressionNode(val, expr.Span())
+}
+
+func RewriteDereferenceExpression(expr boundnodes.BoundDereferenceExpressionNode) boundnodes.BoundDereferenceExpressionNode {
+	val := RewriteExpression(expr.Expression)
+	return boundnodes.CreateBoundDereferenceExpressionNode(val, expr.Span())
 }

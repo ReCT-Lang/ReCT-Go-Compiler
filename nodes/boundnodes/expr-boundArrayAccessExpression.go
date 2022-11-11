@@ -11,6 +11,7 @@ type BoundArrayAccessExpressionNode struct {
 
 	Base      BoundExpressionNode
 	Index     BoundExpressionNode
+	IsPointer bool
 	BoundSpan print.TextSpan
 }
 
@@ -35,10 +36,11 @@ func (node BoundArrayAccessExpressionNode) Type() symbols.TypeSymbol {
 	return node.Base.Type().SubTypes[0]
 }
 
-func CreateBoundArrayAccessExpressionNode(base BoundExpressionNode, index BoundExpressionNode, span print.TextSpan) BoundArrayAccessExpressionNode {
+func CreateBoundArrayAccessExpressionNode(base BoundExpressionNode, index BoundExpressionNode, isPointer bool, span print.TextSpan) BoundArrayAccessExpressionNode {
 	return BoundArrayAccessExpressionNode{
 		Base:      base,
 		Index:     index,
+		IsPointer: isPointer,
 		BoundSpan: span,
 	}
 }

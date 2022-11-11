@@ -54,6 +54,7 @@ type Emitter struct {
 }
 
 var VerboseARC = false
+var EmitDebugInfo = true
 
 var CompileAsPackage bool
 var PackageName string
@@ -77,6 +78,10 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	}
 
 	emitter.EmitBuiltInFunctions()
+
+	if EmitDebugInfo {
+		emitter.InitDbg()
+	}
 
 	// import all package functions and classes
 	for _, pck := range emitter.Program.Packages {
@@ -480,6 +485,10 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 
 			// save it for referencing later
 			locals[varName] = Local{IRLocal: local, IRBlock: root, Type: declStatement.Variable.VarType()}
+
+			// debuuuuuuugging
+			//if EmitDebugInfo {
+			//}
 		}
 	}
 
@@ -842,6 +851,12 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundThreadExpression:
 		return emt.EmitThreadStatement(blk, expr.(boundnodes.BoundThreadExpressionNode))
+
+	case boundnodes.BoundReferenceExpression:
+		return emt.EmitReferenceExpression(blk, expr.(boundnodes.BoundReferenceExpressionNode))
+
+	case boundnodes.BoundDereferenceExpression:
+		return emt.EmitDereferenceExpression(blk, expr.(boundnodes.BoundDereferenceExpressionNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -908,6 +923,43 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 		}
 	} else {
 		return (*blk).NewLoad(emt.IRTypes(emt.Locals[varName].Type), emt.Locals[varName].IRLocal)
+	}
+}
+
+func (emt *Emitter) EmitVariablePtr(blk **ir.Block, variable symbols.VariableSymbol) value.Value {
+	varName := emt.Id(variable)
+
+	// parameters
+	if variable.SymbolType() == symbols.Parameter {
+		paramSymbol := variable.(symbols.ParameterSymbol)
+
+		if emt.IsInClass {
+			return emt.Function.Params[paramSymbol.Ordinal+1]
+		} else {
+			return emt.Function.Params[paramSymbol.Ordinal]
+		}
+	}
+
+	if variable.IsGlobal() {
+		// if we're in a class we need to load from the struct instead of a global
+		if emt.IsInClass {
+			mePtr := value.Value(emt.Function.Params[0])
+
+			// if we're in a Destructor, the "mePtr" will be a generic void*
+			// that means it will need to be converted
+			if emt.FunctionSym.Name == "Die" && len(emt.Function.Params) == 1 {
+				mePtr = (*blk).NewBitCast(mePtr, types.NewPointer(emt.Class.Type))
+			}
+
+			ptr := (*blk).NewGetElementPtr(emt.Class.Type, mePtr, CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
+			return ptr
+
+		} else {
+			// if we arent we can just get the global
+			return emt.Globals[varName].IRGlobal
+		}
+	} else {
+		return emt.Locals[varName].IRLocal
 	}
 }
 
@@ -1049,13 +1101,6 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
 
-	// bitcast the base into a generic array type
-	if expr.Base.Type().SubTypes[0].IsObject {
-		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
-	} else {
-		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
-	}
-
 	// index
 	// -----
 	index := emt.EmitExpression(blk, expr.Index)
@@ -1063,6 +1108,18 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 	// assignment
 	// ----------
 	value := emt.EmitExpression(blk, expr.Value)
+
+	// is this actually a sneaky pointer access?
+	if expr.IsPointer {
+		return emt.EmitPointerAssignmentExpression(blk, expr, base, index, value)
+	}
+
+	// bitcast the base into a generic array type
+	if expr.Base.Type().SubTypes[0].IsObject {
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
+	} else {
+		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
+	}
 
 	// decide if we should do object or primitive array access
 	if expr.Base.Type().SubTypes[0].IsObject {
@@ -1099,6 +1156,13 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 	// load the base value
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
+	// load the index
+	index := emt.EmitExpression(blk, expr.Index)
+
+	// is this actually a sneaky pointer access?
+	if expr.IsPointer {
+		return emt.EmitPointerAccessExpression(blk, expr, base, index)
+	}
 
 	// bitcast the base into a generic array type
 	if expr.Base.Type().SubTypes[0].IsObject {
@@ -1106,9 +1170,6 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 	} else {
 		base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
 	}
-
-	// load the index
-	index := emt.EmitExpression(blk, expr.Index)
 
 	// do the access
 	// -------------
@@ -1144,6 +1205,26 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 		val := (*blk).NewLoad(emt.IRTypes(expr.Base.Type().SubTypes[0]), castedPtr)
 		return val
 	}
+}
+
+func (emt *Emitter) EmitPointerAccessExpression(blk **ir.Block, expr boundnodes.BoundArrayAccessExpressionNode, base value.Value, index value.Value) value.Value {
+	// get the elements pointer
+	elementPtr := (*blk).NewGetElementPtr(emt.IRTypes(expr.Type()), base, index)
+
+	// load the value
+	val := (*blk).NewLoad(emt.IRTypes(expr.Type()), elementPtr)
+	return val
+}
+
+func (emt *Emitter) EmitPointerAssignmentExpression(blk **ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode, base value.Value, index value.Value, value value.Value) value.Value {
+	// get the elements pointer
+	elementPtr := (*blk).NewGetElementPtr(emt.IRTypes(expr.Type()), base, index)
+
+	// we storin
+	(*blk).NewStore(value, elementPtr)
+
+	// return a copy of the value
+	return value
 }
 
 func (emt *Emitter) EmitUnaryExpression(blk **ir.Block, expr boundnodes.BoundUnaryExpressionNode) value.Value {
@@ -2233,6 +2314,17 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 	fmt.Println("Unknown Conversion!")
 	return nil
+}
+
+func (emt *Emitter) EmitReferenceExpression(blk **ir.Block, expr boundnodes.BoundReferenceExpressionNode) value.Value {
+	value := emt.EmitVariablePtr(blk, expr.Expression.(boundnodes.BoundVariableExpressionNode).Variable)
+	return value //(*blk).NewIntToPtr((*blk).NewPtrToInt(value, types.I32), emt.IRTypes(expr.Type()))
+}
+
+func (emt *Emitter) EmitDereferenceExpression(blk **ir.Block, expr boundnodes.BoundDereferenceExpressionNode) value.Value {
+	value := emt.EmitExpression(blk, expr.Expression)
+	return (*blk).NewLoad(
+		emt.IRTypes(expr.Type()), value)
 }
 
 // </EXPRESSIONS>--------------------------------------------------------------

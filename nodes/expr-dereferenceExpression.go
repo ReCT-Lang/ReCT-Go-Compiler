@@ -9,28 +9,28 @@ import (
 type DereferenceExpressionNode struct {
 	ExpressionNode
 
-	RefKeyword lexer.Token
-	Expression ExpressionNode
+	DerefKeyword lexer.Token
+	Expression   ExpressionNode
 }
 
 // implement node type from interface
-func (DereferenceExpressionNode) NodeType() NodeType { return ReferenceExpression }
+func (DereferenceExpressionNode) NodeType() NodeType { return DereferenceExpression }
 
 func (node DereferenceExpressionNode) Span() print.TextSpan {
-	return node.RefKeyword.Span.SpanBetween(node.Expression.Span())
+	return node.DerefKeyword.Span.SpanBetween(node.Expression.Span())
 }
 
 // node print function
 func (node DereferenceExpressionNode) Print(indent string) {
-	print.PrintC(print.Yellow, indent+"└ ReferenceExpressionNode")
+	print.PrintC(print.Yellow, indent+"└ DereferenceExpressionNode")
 	fmt.Println(indent + "  └ Expression: ")
 	node.Expression.Print(indent + "    ")
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func GetDereferenceExpressionNode(kw lexer.Token, expr ExpressionNode) DereferenceExpressionNode {
+func CreateDereferenceExpressionNode(kw lexer.Token, expr ExpressionNode) DereferenceExpressionNode {
 	return DereferenceExpressionNode{
-		RefKeyword: kw,
-		Expression: expr,
+		DerefKeyword: kw,
+		Expression:   expr,
 	}
 }

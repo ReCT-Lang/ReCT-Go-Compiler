@@ -135,6 +135,9 @@ func CompileFiles(files []string) {
 		emitter.VerboseARC = true
 	}
 
+	emitter.CurrentVersion = currentVersion
+	emitter.SourceFile = files[0]
+
 	module := emitter.Emit(boundProgram, true)
 	//fmt.Println(module)
 	output := module.String()

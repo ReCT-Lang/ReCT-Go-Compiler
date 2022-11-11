@@ -10,7 +10,7 @@ type ReferenceExpressionNode struct {
 	ExpressionNode
 
 	RefKeyword lexer.Token
-	Expression ExpressionNode
+	Expression NameExpressionNode
 }
 
 // implement node type from interface
@@ -28,7 +28,7 @@ func (node ReferenceExpressionNode) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func GetReferenceExpressionNode(kw lexer.Token, expr ExpressionNode) ReferenceExpressionNode {
+func CreateReferenceExpressionNode(kw lexer.Token, expr NameExpressionNode) ReferenceExpressionNode {
 	return ReferenceExpressionNode{
 		RefKeyword: kw,
 		Expression: expr,

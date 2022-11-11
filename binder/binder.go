@@ -724,6 +724,10 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindBinaryExpression(expr.(nodes.BinaryExpressionNode))
 	case nodes.TernaryExpression:
 		return bin.BindTernaryExpression(expr.(nodes.TernaryExpressionNode))
+	case nodes.ReferenceExpression:
+		return bin.BindReferenceExpression(expr.(nodes.ReferenceExpressionNode))
+	case nodes.DereferenceExpression:
+		return bin.BindDereferenceExpression(expr.(nodes.DereferenceExpressionNode))
 
 	default:
 		//print.PrintC(print.Red, "Not implemented!")
@@ -794,7 +798,7 @@ func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNod
 	baseExpression := bin.BindExpression(expr.Base)
 
 	// check if the variable is an array
-	if baseExpression.Type().Name != "array" {
+	if baseExpression.Type().Name != "array" && baseExpression.Type().Name != "pointer" {
 		print.Error(
 			"BINDER",
 			print.UnexpectedNonArrayValueError,
@@ -807,8 +811,11 @@ func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNod
 	// bind the index expression
 	index := bin.BindExpression(expr.Index)
 
+	// we pointin'?
+	isPointer := baseExpression.Type().Name == "pointer"
+
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index, expr.Span())
+	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index, isPointer, expr.Span())
 }
 
 func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
@@ -816,7 +823,7 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 	baseExpression := bin.BindExpression(expr.Base)
 
 	// check if the variable is an array
-	if baseExpression.Type().Name != "array" {
+	if baseExpression.Type().Name != "array" && baseExpression.Type().Name != "pointer" {
 		print.Error(
 			"BINDER",
 			print.UnexpectedNonArrayValueError,
@@ -844,8 +851,11 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 		os.Exit(-1)
 	}
 
+	// we pointin'?
+	isPointer := baseExpression.Type().Name == "pointer"
+
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value, expr.Span())
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value, isPointer, expr.Span())
 }
 
 func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.BoundMakeExpressionNode {
@@ -1344,6 +1354,30 @@ func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) bound
 	tmp := symbols.CreateLocalVariableSymbol(symbols.GetTempName(), false, left.Type())
 
 	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right, tmp, expr.Span())
+}
+
+func (bin *Binder) BindReferenceExpression(expr nodes.ReferenceExpressionNode) boundnodes.BoundReferenceExpressionNode {
+	// bind the source variable
+	variable := bin.BindNameExpression(expr.Expression)
+	return boundnodes.CreateBoundReferenceExpressionNode(variable, expr.Span())
+}
+
+func (bin *Binder) BindDereferenceExpression(expr nodes.DereferenceExpressionNode) boundnodes.BoundDereferenceExpressionNode {
+	// bind the source expression
+	src := bin.BindExpression(expr.Expression)
+
+	// make sure this is a pointer type
+	if src.Type().Name != builtins.Pointer.Name {
+		print.Error(
+			"BINDER",
+			print.TernaryOperatorTypeError,
+			expr.Span(),
+			"Dereferencing requires a pointer type!",
+		)
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreateBoundDereferenceExpressionNode(src, expr.Span())
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------

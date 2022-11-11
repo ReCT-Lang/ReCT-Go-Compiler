@@ -9,9 +9,10 @@ import (
 type BoundArrayAssignmentExpressionNode struct {
 	BoundExpressionNode
 
-	Base  BoundExpressionNode
-	Index BoundExpressionNode
-	Value BoundExpressionNode
+	Base      BoundExpressionNode
+	Index     BoundExpressionNode
+	Value     BoundExpressionNode
+	IsPointer bool
 
 	BoundSpan print.TextSpan
 }
@@ -39,11 +40,12 @@ func (node BoundArrayAssignmentExpressionNode) Type() symbols.TypeSymbol {
 	return node.Base.Type().SubTypes[0]
 }
 
-func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode, span print.TextSpan) BoundArrayAssignmentExpressionNode {
+func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode, isPointer bool, span print.TextSpan) BoundArrayAssignmentExpressionNode {
 	return BoundArrayAssignmentExpressionNode{
 		Base:      base,
 		Index:     index,
 		Value:     value,
+		IsPointer: isPointer,
 		BoundSpan: span,
 	}
 }

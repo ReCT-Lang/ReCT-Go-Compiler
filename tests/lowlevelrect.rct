@@ -1,20 +1,26 @@
+
 package sys;
 
-external malloc(size int) pointer[byte];
-external free(mem pointer[byte]);
+var someInt <- 10;
+var somePtr <- ref someInt;
 
-while (true) {
-   var mem <- make pointer[byte] array(0);
+// print pointer value
+sys::Print(string(deref somePtr));
 
-   from (i <- 0) to 10000 {
-      sys::Print("mwhahahahahaHAHAHAHAHAHAHA");
-      mem->Push(malloc(1000));
-      sys::Sleep(1);
-   }
+// change source
+someInt <- 500;
 
-   from (i <- 0) to 10000 {
-      free(mem[i]);
-   }
-}
+// print pointer value again
+sys::Print(string(deref somePtr));
 
-sys::Input();
+// change source
+someInt <- 70;
+
+// dereference by using the array syntax
+sys::Print(string(somePtr[0]));
+
+// change source using the pointer
+somePtr[0] <- 12;
+
+// print int value
+sys::Print(string(someInt));

@@ -715,6 +715,16 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseThreadExpression()
 	}
 
+	// referencing
+	if prs.current().Kind == lexer.RefKeyword {
+		return prs.parseReferenceExpression()
+	}
+
+	// dereferencing
+	if prs.current().Kind == lexer.DerefKeyword {
+		return prs.parseDereferenceExpression()
+	}
+
 	// if none of the above are what we want, it must be a binary expression!
 	return prs.parseBinaryExpression(0)
 }
@@ -1069,6 +1079,24 @@ func (prs *Parser) parseThreadExpression() nodes.ThreadExpressionNode {
 	closing := prs.consume(lexer.CloseParenthesisToken)
 
 	return nodes.CreateThreadExpressionNode(keyword, expression, closing)
+}
+
+// parseReferenceExpression this for creating pointers
+// For example: ref x
+func (prs *Parser) parseReferenceExpression() nodes.ReferenceExpressionNode {
+	keyword := prs.consume(lexer.RefKeyword)
+	expression := prs.parseNameExpression()
+
+	return nodes.CreateReferenceExpressionNode(keyword, expression)
+}
+
+// parseDereferenceExpression this for creating pointers
+// For example: ref x
+func (prs *Parser) parseDereferenceExpression() nodes.DereferenceExpressionNode {
+	keyword := prs.consume(lexer.DerefKeyword)
+	expression := prs.parseExpression()
+
+	return nodes.CreateDereferenceExpressionNode(keyword, expression)
 }
 
 // parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)
