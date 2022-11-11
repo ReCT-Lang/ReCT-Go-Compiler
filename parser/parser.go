@@ -715,16 +715,6 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseThreadExpression()
 	}
 
-	// referencing
-	if prs.current().Kind == lexer.RefKeyword {
-		return prs.parseReferenceExpression()
-	}
-
-	// dereferencing
-	if prs.current().Kind == lexer.DerefKeyword {
-		return prs.parseDereferenceExpression()
-	}
-
 	// if none of the above are what we want, it must be a binary expression!
 	return prs.parseBinaryExpression(0)
 }
@@ -801,6 +791,12 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 
 	} else if cur == lexer.IdToken {
 		return prs.parseNameOrCallExpression()
+
+	} else if prs.current().Kind == lexer.RefKeyword {
+		return prs.parseReferenceExpression()
+
+	} else if prs.current().Kind == lexer.DerefKeyword {
+		return prs.parseDereferenceExpression()
 	}
 
 	// No proper keyword is found
@@ -1094,7 +1090,7 @@ func (prs *Parser) parseReferenceExpression() nodes.ReferenceExpressionNode {
 // For example: ref x
 func (prs *Parser) parseDereferenceExpression() nodes.DereferenceExpressionNode {
 	keyword := prs.consume(lexer.DerefKeyword)
-	expression := prs.parseExpression()
+	expression := prs.parsePrimaryExpression()
 
 	return nodes.CreateDereferenceExpressionNode(keyword, expression)
 }

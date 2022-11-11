@@ -1,26 +1,16 @@
+// ============================================================================
+// no sys package here
+// but a sneaky external function
+//external puts(str pointer[byte]) int;
+external putchar(chr int) int;
+// ============================================================================
 
-package sys;
+Print("we gamin");
+Print("we chillin");
 
-var someInt <- 10;
-var somePtr <- ref someInt;
-
-// print pointer value
-sys::Print(string(deref somePtr));
-
-// change source
-someInt <- 500;
-
-// print pointer value again
-sys::Print(string(deref somePtr));
-
-// change source
-someInt <- 70;
-
-// dereference by using the array syntax
-sys::Print(string(somePtr[0]));
-
-// change source using the pointer
-somePtr[0] <- 12;
-
-// print int value
-sys::Print(string(someInt));
+function Print(msg string) {
+   //puts(msg->GetBuffer());
+   for (var p <- msg->GetBuffer(); deref p != 0; p++) {
+      putchar(deref p);
+   }
+}

@@ -182,6 +182,19 @@ var BinaryOperators []BoundBinaryOperator = []BoundBinaryOperator{
 	/* >  */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterThanToken, Greater, builtins.Double, builtins.Bool),
 	/* >= */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterEqualsToken, GreaterOrEquals, builtins.Double, builtins.Bool),
 
+	// pointer operations
+	/* +  */ CreateBoundBinaryOperatorAllSame(lexer.PlusToken, Addition, builtins.Pointer),
+	/* -  */ CreateBoundBinaryOperatorAllSame(lexer.MinusToken, Subtraction, builtins.Pointer),
+	/* *  */ CreateBoundBinaryOperatorAllSame(lexer.StarToken, Multiplication, builtins.Pointer),
+	/* /  */ CreateBoundBinaryOperatorAllSame(lexer.SlashToken, Division, builtins.Pointer),
+	/* %  */ CreateBoundBinaryOperatorAllSame(lexer.ModulusToken, Modulus, builtins.Pointer),
+	/* =  */ CreateBoundBinaryOperatorSameInputs(lexer.EqualsToken, Equals, builtins.Pointer, builtins.Bool),
+	/* != */ CreateBoundBinaryOperatorSameInputs(lexer.NotEqualsToken, NotEquals, builtins.Pointer, builtins.Bool),
+	/* <  */ CreateBoundBinaryOperatorSameInputs(lexer.LessThanToken, Less, builtins.Pointer, builtins.Bool),
+	/* <= */ CreateBoundBinaryOperatorSameInputs(lexer.LessEqualsToken, LessOrEquals, builtins.Pointer, builtins.Bool),
+	/* >  */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterThanToken, Greater, builtins.Pointer, builtins.Bool),
+	/* >= */ CreateBoundBinaryOperatorSameInputs(lexer.GreaterEqualsToken, GreaterOrEquals, builtins.Pointer, builtins.Bool),
+
 	// bool operations
 	/* &  */ CreateBoundBinaryOperatorAllSame(lexer.AmpersandToken, BitwiseAnd, builtins.Bool),
 	/* && */ CreateBoundBinaryOperatorAllSame(lexer.AmpersandsToken, LogicalAnd, builtins.Bool),
@@ -202,6 +215,11 @@ func BindBinaryOperator(tokenKind lexer.TokenKind, leftType symbols.TypeSymbol, 
 		if op.TokenKind == tokenKind &&
 			op.LeftType.Fingerprint() == leftType.Fingerprint() &&
 			op.RightType.Fingerprint() == rightType.Fingerprint() {
+			return op
+		}
+		if op.TokenKind == tokenKind &&
+			op.LeftType.Name == leftType.Name && leftType.Name == "pointer" &&
+			op.RightType.Name == rightType.Name && rightType.Name == "pointer" {
 			return op
 		}
 	}

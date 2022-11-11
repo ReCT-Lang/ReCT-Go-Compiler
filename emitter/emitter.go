@@ -1291,6 +1291,9 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		} else if expr.Left.Type().Fingerprint() == builtins.ULong.Fingerprint() {
 			return (*blk).NewAdd(left, right)
 
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewAdd((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Double.Fingerprint() {
 			return (*blk).NewFAdd(left, right)
 
@@ -1329,6 +1332,9 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		} else if expr.Left.Type().Fingerprint() == builtins.ULong.Fingerprint() {
 			return (*blk).NewSub(left, right)
 
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewSub((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Double.Fingerprint() {
 			return (*blk).NewFSub(left, right)
 		}
@@ -1336,6 +1342,9 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.Multiplication:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewMul(left, right)
+
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewMul((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewMul(left, right)
@@ -1360,6 +1369,9 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewSDiv(left, right)
 
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewUDiv((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewSDiv(left, right)
 
@@ -1383,6 +1395,9 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewSRem(left, right)
 
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewURem((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewSRem(left, right)
 
@@ -1405,6 +1420,10 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.BitwiseAnd:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewAnd(left, right)
+
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewAnd((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewAnd(left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1421,6 +1440,10 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.BitwiseOr:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewOr(left, right)
+
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewOr((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewOr(left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1437,6 +1460,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.BitwiseXor:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewXor(left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewXor((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewXor(left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1450,6 +1475,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.Equals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredEQ, left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredEQ, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredEQ, left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1488,6 +1515,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.NotEquals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredNE, left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredNE, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredNE, left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1526,6 +1555,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.Greater:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSGT, left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredUGT, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSGT, left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1544,6 +1575,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.GreaterOrEquals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSGE, left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredUGE, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSGE, left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1562,6 +1595,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.Less:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSLT, left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredULT, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSLT, left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1580,6 +1615,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 	case boundnodes.LessOrEquals:
 		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSLE, left, right)
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredULE, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
 		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
 			return (*blk).NewICmp(enum.IPredSLE, left, right)
 		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
@@ -1904,7 +1941,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 	if expr.ToType.Fingerprint() == builtins.Any.Fingerprint() {
 
 		// if this is a string we only need to change the pointer type as it's already an object
-		if expr.Expression.Type().IsObject {
+		if expr.Expression.Type().IsObject || expr.Expression.Type().Name == "pointer" {
 			// change the pointer type
 			return (*blk).NewBitCast(value, emt.IRTypes(builtins.Any))
 
@@ -2301,6 +2338,19 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 				// change the pointer type
 				return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 			}
+		}
+	} else if expr.ToType.Name == builtins.Pointer.Name {
+		if expr.Expression.Type().IsObject {
+			// change the pointer type
+			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
+		} else if expr.Expression.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			// convert the int to a pointer
+			return (*blk).NewIntToPtr(value, emt.IRTypes(expr.ToType))
+		}
+	} else if expr.ToType.IsObject {
+		if expr.Expression.Type().Name == builtins.Pointer.Name {
+			// change the pointer type
+			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 		}
 	}
 
