@@ -37,10 +37,11 @@ const (
 	StructKeyword    TokenKind = "struct (keyword)"
 
 	// Tokens
-	EOF         TokenKind = "EndOfFile"
-	IdToken     TokenKind = "Identifier"
-	StringToken TokenKind = "String"
-	NumberToken TokenKind = "Number"
+	EOF               TokenKind = "EndOfFile"
+	IdToken           TokenKind = "Identifier"
+	StringToken       TokenKind = "String"
+	NativeStringToken TokenKind = "NativeString"
+	NumberToken       TokenKind = "Number"
 
 	// Symbol Tokens
 	PlusToken          TokenKind = "Plus '+'"

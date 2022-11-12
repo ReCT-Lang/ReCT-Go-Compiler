@@ -798,7 +798,7 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 }
 
 func (bin *Binder) BindLiteralExpression(expr nodes.LiteralExpressionNode) boundnodes.BoundLiteralExpressionNode {
-	return boundnodes.CreateBoundLiteralExpressionNode(expr.LiteralValue, expr.Span())
+	return boundnodes.CreateBoundLiteralExpressionNode(expr, expr.Span())
 }
 
 func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressionNode) boundnodes.BoundExpressionNode {
@@ -830,7 +830,7 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
 
 	// create a placeholder expression of value 1
-	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNode(1, expr.Span())
+	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, expr.Span())
 
 	// if we have an expression given, use it instead
 	if expr.Expression != nil {

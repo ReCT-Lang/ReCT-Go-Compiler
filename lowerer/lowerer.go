@@ -265,7 +265,7 @@ func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes
 			boundnodes.CreateBoundBinaryExpressionNode(
 				variableExpression,
 				boundnodes.BindBinaryOperator(lexer.PlusToken, builtins.Int, builtins.Int),
-				boundnodes.CreateBoundLiteralExpressionNode(1, stmt.BoundSpan), stmt.BoundSpan,
+				boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, stmt.BoundSpan), stmt.BoundSpan,
 			), stmt.BoundSpan,
 		), stmt.BoundSpan,
 	)

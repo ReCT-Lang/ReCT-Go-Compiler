@@ -34,39 +34,17 @@ declare i64 @atol(i8* %str)
 
 declare double @atof(i8* %str)
 
-declare void @Float_public_Constructor(%struct.class_Float* noundef %0, float noundef %1)
+declare void @Array_public_Constructor(%struct.class_Array* noundef %0, i32 noundef %1)
 
-declare void @Float_public_Die(i8* noundef %0)
+declare void @Array_public_Die(i8* noundef %0)
 
-declare float @Float_public_GetValue(%struct.class_Float* noundef %0)
+declare %struct.class_Any* @Array_public_GetElement(%struct.class_Array* noundef %0, i32 noundef %1)
 
-declare void @pArray_public_Constructor(%struct.class_pArray* noundef %0, i32 noundef %1, i32 noundef %2)
+declare void @Array_public_SetElement(%struct.class_Array* noundef %0, i32 noundef %1, %struct.class_Any* noundef %2)
 
-declare void @pArray_public_Die(i8* noundef %0)
+declare i32 @Array_public_GetLength(%struct.class_Array* noundef %0)
 
-declare i32 @pArray_public_GetLength(%struct.class_pArray* noundef %0)
-
-declare i8* @pArray_public_Grow(%struct.class_pArray* noundef %0)
-
-declare i8* @pArray_public_GetElementPtr(%struct.class_pArray* noundef %0, i32 noundef %1)
-
-declare void @Byte_public_Constructor(%struct.class_Byte* noundef %0, i8 noundef signext %1)
-
-declare void @Byte_public_Die(i8* noundef %0)
-
-declare i8 @Byte_public_GetValue(%struct.class_Byte* noundef %0)
-
-declare void @Int_public_Constructor(%struct.class_Int* noundef %0, i32 noundef %1)
-
-declare void @Int_public_Die(i8* noundef %0)
-
-declare i32 @Int_public_GetValue(%struct.class_Int* noundef %0)
-
-declare void @Long_public_Constructor(%struct.class_Long* noundef %0, i64 noundef %1)
-
-declare void @Long_public_Die(i8* noundef %0)
-
-declare i64 @Long_public_GetValue(%struct.class_Long* noundef %0)
+declare void @Array_public_Push(%struct.class_Array* noundef %0, %struct.class_Any* noundef %1)
 
 declare void @String_public_Constructor(%struct.class_String* noundef %0)
 
@@ -88,6 +66,34 @@ declare i32 @String_public_GetLength(%struct.class_String* noundef %0)
 
 declare %struct.class_String* @String_public_Substring(%struct.class_String* noundef %0, i32 noundef %1, i32 noundef %2)
 
+declare void @Any_public_Constructor(%struct.class_Any* noundef %0)
+
+declare void @Any_public_Die(i8* noundef %0)
+
+declare void @Byte_public_Constructor(%struct.class_Byte* noundef %0, i8 noundef signext %1)
+
+declare void @Byte_public_Die(i8* noundef %0)
+
+declare i8 @Byte_public_GetValue(%struct.class_Byte* noundef %0)
+
+declare void @Float_public_Constructor(%struct.class_Float* noundef %0, float noundef %1)
+
+declare void @Float_public_Die(i8* noundef %0)
+
+declare float @Float_public_GetValue(%struct.class_Float* noundef %0)
+
+declare void @Int_public_Constructor(%struct.class_Int* noundef %0, i32 noundef %1)
+
+declare void @Int_public_Die(i8* noundef %0)
+
+declare i32 @Int_public_GetValue(%struct.class_Int* noundef %0)
+
+declare void @Long_public_Constructor(%struct.class_Long* noundef %0, i64 noundef %1)
+
+declare void @Long_public_Die(i8* noundef %0)
+
+declare i64 @Long_public_GetValue(%struct.class_Long* noundef %0)
+
 declare void @Thread_public_Constructor(%struct.class_Thread* noundef %0, i8* (i8*)* noundef %1, i8* noundef %2)
 
 declare void @Thread_public_Die(i8* noundef %0)
@@ -98,21 +104,15 @@ declare void @Thread_public_Join(%struct.class_Thread* noundef %0)
 
 declare void @Thread_public_Kill(%struct.class_Thread* noundef %0)
 
-declare void @Any_public_Constructor(%struct.class_Any* noundef %0)
+declare void @pArray_public_Constructor(%struct.class_pArray* noundef %0, i32 noundef %1, i32 noundef %2)
 
-declare void @Any_public_Die(i8* noundef %0)
+declare void @pArray_public_Die(i8* noundef %0)
 
-declare void @Array_public_Constructor(%struct.class_Array* noundef %0, i32 noundef %1)
+declare i32 @pArray_public_GetLength(%struct.class_pArray* noundef %0)
 
-declare void @Array_public_Die(i8* noundef %0)
+declare i8* @pArray_public_Grow(%struct.class_pArray* noundef %0)
 
-declare %struct.class_Any* @Array_public_GetElement(%struct.class_Array* noundef %0, i32 noundef %1)
-
-declare void @Array_public_SetElement(%struct.class_Array* noundef %0, i32 noundef %1, %struct.class_Any* noundef %2)
-
-declare i32 @Array_public_GetLength(%struct.class_Array* noundef %0)
-
-declare void @Array_public_Push(%struct.class_Array* noundef %0, %struct.class_Any* noundef %1)
+declare i8* @pArray_public_GetElementPtr(%struct.class_pArray* noundef %0, i32 noundef %1)
 
 declare void @arc_RegisterReference(%struct.class_Any* noundef %0)
 
@@ -163,50 +163,36 @@ define void @main() {
 
 semiroot:
 	%1 = getelementptr [12 x i8], [12 x i8]* @.str.0, i32 0, i32 0
-	%2 = getelementptr %struct.class_String, %struct.class_String* null, i32 1
-	%3 = ptrtoint %struct.class_String* %2 to i32
-	%4 = call i8* @malloc(i32 %3)
-	%5 = bitcast i8* %4 to %struct.class_String*
-	%6 = getelementptr %struct.class_String, %struct.class_String* %5, i32 0
-	call void @String_public_Constructor(%struct.class_String* %6)
-	%7 = bitcast %struct.class_String* %6 to %struct.class_Any*
-	call void @arc_RegisterReference(%struct.class_Any* %7)
-	call void @String_public_Load(%struct.class_String* %6, i8* %1)
-	%8 = bitcast %struct.class_String* %6 to i8*
-	call void @exc_ThrowIfNull(i8* %8)
-	%9 = call i8* @String_public_GetBuffer(%struct.class_String* %6)
-	%10 = bitcast %struct.class_String* %6 to %struct.class_Any*
-	call void @arc_UnregisterReference(%struct.class_Any* %10)
-	call void @InitWindow(i32 1000, i32 1000, i8* %9)
-	%11 = alloca %struct.color, align 1
-	%12 = getelementptr %struct.color, %struct.color* %11, i32 0, i32 0
-	%13 = trunc i32 255 to i8
-	store i8 %13, i8* %12, align 1
-	%14 = getelementptr %struct.color, %struct.color* %11, i32 0, i32 1
-	%15 = trunc i32 255 to i8
-	store i8 %15, i8* %14, align 1
-	%16 = getelementptr %struct.color, %struct.color* %11, i32 0, i32 2
-	%17 = trunc i32 255 to i8
-	store i8 %17, i8* %16, align 1
-	%18 = getelementptr %struct.color, %struct.color* %11, i32 0, i32 3
-	%19 = trunc i32 255 to i8
-	store i8 %19, i8* %18, align 1
-	%20 = load %struct.color, %struct.color* %11
-	store %struct.color %20, %struct.color* %VL_22
+	call void @InitWindow(i32 1000, i32 1000, i8* %1)
+	%2 = alloca %struct.color, align 1
+	%3 = getelementptr %struct.color, %struct.color* %2, i32 0, i32 0
+	%4 = trunc i32 255 to i8
+	store i8 %4, i8* %3, align 1
+	%5 = getelementptr %struct.color, %struct.color* %2, i32 0, i32 1
+	%6 = trunc i32 255 to i8
+	store i8 %6, i8* %5, align 1
+	%7 = getelementptr %struct.color, %struct.color* %2, i32 0, i32 2
+	%8 = trunc i32 255 to i8
+	store i8 %8, i8* %7, align 1
+	%9 = getelementptr %struct.color, %struct.color* %2, i32 0, i32 3
+	%10 = trunc i32 255 to i8
+	store i8 %10, i8* %9, align 1
+	%11 = load %struct.color, %struct.color* %2
+	store %struct.color %11, %struct.color* %VL_22
 	br label %continue1
 
 Label1:
 	call void @BeginDrawing()
-	%21 = load %struct.color, %struct.color* %VL_22
-	call void @ClearBackground(%struct.color %21)
+	%12 = load %struct.color, %struct.color* %VL_22
+	call void @ClearBackground(%struct.color %12)
 	call void @EndDrawing()
 	br label %continue1
 
 continue1:
-	%22 = call i1 @WindowShouldClose()
-	%23 = icmp ne i1 %22, 0
-	%24 = xor i1 %23, true
-	br i1 %24, label %Label1, label %break1
+	%13 = call i1 @WindowShouldClose()
+	%14 = icmp ne i1 %13, 0
+	%15 = xor i1 %14, true
+	br i1 %15, label %Label1, label %break1
 
 break1:
 	call void @CloseWindow()
@@ -215,14 +201,14 @@ break1:
 	ret void
 }
 
-declare void @CloseWindow()
-
-declare void @BeginDrawing()
-
 declare i1 @WindowShouldClose()
-
-declare void @ClearBackground(%struct.color %VP_21)
 
 declare void @EndDrawing()
 
 declare void @InitWindow(i32 %VP_18, i32 %VP_19, i8* %VP_20)
+
+declare void @BeginDrawing()
+
+declare void @ClearBackground(%struct.color %VP_21)
+
+declare void @CloseWindow()

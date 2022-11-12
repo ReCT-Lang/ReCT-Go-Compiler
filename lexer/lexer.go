@@ -56,7 +56,7 @@ func LexInternal(code []rune, filename string, treatHashtagsAsComments bool) []T
 			scanner.getId()
 		} else if unicode.IsNumber(c) {
 			scanner.getNumber()
-		} else if c == '"' {
+		} else if c == '"' || c == '\'' {
 			scanner.getString()
 		} else if c == '/' && peek(1) == '/' ||
 			(scanner.TreatHashtagAsComment && c == '#') {
@@ -184,9 +184,10 @@ func (lxr *Lexer) getNumberHex() {
 // Basically it's a string detector, string tokens are given back to the lexer (via Tokens []Token).
 func (lxr *Lexer) getString() {
 	var buffer string
+	quote := lxr.Code[lxr.Index]
 	lxr.Increment()
 
-	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != '"' {
+	for lxr.Index < len(lxr.Code) && lxr.Code[lxr.Index] != quote {
 		if lxr.Code[lxr.Index] == '\\' {
 			if lxr.Code[lxr.Index+1] == 'n' {
 				lxr.Increment()
@@ -194,10 +195,10 @@ func (lxr *Lexer) getString() {
 				buffer += "\n"
 				continue
 			}
-			if lxr.Code[lxr.Index+1] == '"' {
+			if lxr.Code[lxr.Index+1] == quote {
 				lxr.Increment()
 				lxr.Increment()
-				buffer += "\""
+				buffer += string(quote)
 				continue
 			}
 		}
@@ -206,7 +207,12 @@ func (lxr *Lexer) getString() {
 		lxr.Increment()
 	}
 	lxr.Increment()
-	lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.GetCurrentTextSpan(len(buffer)+2)))
+
+	if quote == '"' {
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, StringToken, lxr.GetCurrentTextSpan(len(buffer)+2)))
+	} else {
+		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, buffer, NativeStringToken, lxr.GetCurrentTextSpan(len(buffer)+2)))
+	}
 }
 
 // getComment we don't want to add comments to the Tokens because they have nothing of value

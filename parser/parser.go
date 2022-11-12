@@ -804,7 +804,7 @@ func (prs *Parser) parseBinaryExpression(parentPrecedence int) nodes.ExpressionN
 // parsePrimaryExpression primary expressions being the simple things
 func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	cur := prs.current().Kind
-	if cur == lexer.StringToken {
+	if cur == lexer.StringToken || cur == lexer.NativeStringToken {
 		return prs.parseStringLiteral()
 
 	} else if cur == lexer.NumberToken {
@@ -1263,8 +1263,13 @@ func (prs *Parser) parseParenthesisedExpression() nodes.ParenthesisedExpressionN
 // parseStringLiteral
 func (prs *Parser) parseStringLiteral() nodes.LiteralExpressionNode {
 	// a string token can be found in the lexer in lexer.getString()
-	str := prs.consume(lexer.StringToken)
-	return nodes.CreateLiteralExpressionNode(str)
+	if prs.current().Kind == lexer.NativeStringToken {
+		str := prs.consume(lexer.NativeStringToken)
+		return nodes.CreateNativeLiteralExpressionNode(str)
+	} else {
+		str := prs.consume(lexer.StringToken)
+		return nodes.CreateLiteralExpressionNode(str)
+	}
 }
 
 // parseNumberLiteral

@@ -2,6 +2,7 @@ package boundnodes
 
 import (
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -47,7 +48,36 @@ func (BoundLiteralExpressionNode) IsPersistent() bool { return false }
 func (node BoundLiteralExpressionNode) Type() symbols.TypeSymbol { return node.LiteralType }
 
 // Doubt this is right
-func CreateBoundLiteralExpressionNode(value interface{}, span print.TextSpan) BoundLiteralExpressionNode {
+func CreateBoundLiteralExpressionNode(expr nodes.LiteralExpressionNode, span print.TextSpan) BoundLiteralExpressionNode {
+	var _type symbols.TypeSymbol
+	switch expr.LiteralValue.(type) {
+	case string:
+		if expr.IsNative {
+			_type = symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{builtins.Byte}, false, false)
+		} else {
+			_type = builtins.String
+		}
+	case bool:
+		_type = builtins.Bool
+	case int, int32:
+		_type = builtins.Int
+	case float32:
+		_type = builtins.Float
+	default:
+		print.PrintC(
+			print.Red,
+			fmt.Sprintf("ERROR: Uknown type symbol \"%s\" debug: (BoundLiteralExpressionNode line 40)", expr.LiteralValue.(string)),
+		)
+		os.Exit(1) // shrug
+	}
+	return BoundLiteralExpressionNode{
+		Value:       expr.LiteralValue,
+		LiteralType: _type,
+		BoundSpan:   span,
+	}
+}
+
+func CreateBoundLiteralExpressionNodeFromValue(value interface{}, span print.TextSpan) BoundLiteralExpressionNode {
 	var _type symbols.TypeSymbol
 	switch value.(type) {
 	case string:

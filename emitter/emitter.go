@@ -1012,6 +1012,11 @@ func (emt *Emitter) EmitLiteralExpression(blk **ir.Block, expr boundnodes.BoundL
 		strObj := emt.CreateObject(blk, emt.Id(builtins.String))
 		(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, charPtr)
 		return strObj
+	default:
+		// native strings (aka byte pointers)
+		if expr.Type().Name == builtins.Pointer.Name && expr.Type().SubTypes[0].Fingerprint() == builtins.Byte.Fingerprint() {
+			return emt.GetStringConstant(blk, expr.Value.(string))
+		}
 	}
 
 	fmt.Println("Unknown literal!")

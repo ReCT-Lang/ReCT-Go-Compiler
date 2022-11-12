@@ -12,6 +12,7 @@ type LiteralExpressionNode struct {
 
 	LiteralToken lexer.Token
 	LiteralValue interface{}
+	IsNative     bool
 }
 
 // implement node type from interface
@@ -35,5 +36,14 @@ func CreateLiteralExpressionNode(tok lexer.Token) LiteralExpressionNode {
 	return LiteralExpressionNode{
 		LiteralToken: tok,
 		LiteralValue: tok.RealValue,
+		IsNative:     false,
+	}
+}
+
+func CreateNativeLiteralExpressionNode(tok lexer.Token) LiteralExpressionNode {
+	return LiteralExpressionNode{
+		LiteralToken: tok,
+		LiteralValue: tok.RealValue,
+		IsNative:     true,
 	}
 }
