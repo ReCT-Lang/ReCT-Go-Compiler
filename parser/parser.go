@@ -1028,12 +1028,18 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 
 	// check if the next token is an open parenthesis
 	// if it is we can be certain that this is an object creation
+	// if it's an open brace '{' this is actually a struct literal
 	// if we get something else, this might be an array creation
 
-	// if we dont get a '(', try parsing an array creation
-	if prs.current().Kind != lexer.OpenParenthesisToken {
+	// if we dont get a '(' or '{', try parsing an array creation
+	if prs.current().Kind != lexer.OpenParenthesisToken && prs.current().Kind != lexer.OpenBraceToken {
 		prs.rewind(makeKeyword)
 		return prs.parseMakeArrayExpression()
+	}
+
+	// if we get a '{', parse a struct literal
+	if prs.current().Kind == lexer.OpenBraceToken {
+		return prs.parseMakeStructExpression(makeKeyword, baseType)
 	}
 
 	prs.consume(lexer.OpenParenthesisToken)             // (
@@ -1042,6 +1048,34 @@ func (prs *Parser) parseMakeExpression() nodes.ExpressionNode {
 
 	// return an array access expression
 	return nodes.CreateMakeExpressionNode(pack, baseType, args, makeKeyword, closing)
+}
+
+// parseMakeArrayExpression this for creating struct literals
+// For example: make SomeStruct {"this is an int", "->", 1}
+func (prs *Parser) parseMakeStructExpression(kw lexer.Token, id lexer.Token) nodes.ExpressionNode {
+	// list to store values in
+	literals := make([]nodes.ExpressionNode, 0)
+
+	prs.consume(lexer.OpenBraceToken) // {
+
+	// We keep looping to get all our literal values
+	for prs.current().Kind != lexer.CloseBraceToken &&
+		prs.current().Kind != lexer.EOF {
+
+		// get the value
+		expression := prs.parseExpression()
+		literals = append(literals, expression)
+
+		if prs.current().Kind == lexer.CommaToken {
+			prs.consume(lexer.CommaToken) // then we re-loop and get the next argument expression
+		} else {
+			break // if not a comma, we know there are no more values left
+		}
+	}
+
+	closing := prs.consume(lexer.CloseBraceToken) // }
+
+	return nodes.CreateMakeStructExpressionNode(id, literals, kw, closing)
 }
 
 // parseMakeArrayExpression this for creating arrays

@@ -85,4 +85,5 @@ const (
 	TernaryExpression              NodeType = "Ternary Expression"
 	ReferenceExpression            NodeType = "Reference Expression"
 	DereferenceExpression          NodeType = "Dereference Expression"
+	MakeStructExpression           NodeType = "MakeStruct Expression"
 )

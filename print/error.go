@@ -354,6 +354,7 @@ const (
 	UnexpectedNonArrayValueError          = "UnexpectedNonArrayValueError"
 	InvalidExternalFunctionPlacementError = "InvalidExternalFunctionPlacementError"
 	UnexpectedNonPointerValueError        = "UnexpectedNonPointerValueError"
+	TooManyStructParametersError          = "TooManyStructParametersError"
 
 	// Emitter Errors
 	UnknownVTableError      = "UnknownVTableError"
@@ -437,6 +438,7 @@ const (
 	InvalidExternalFunctionPlacementErrorCode = iota + 3000
 	UnexpectedNonPointerValueErrorCode        = iota + 3000
 	UnknownStructErrorCode                    = iota + 3000
+	TooManyStructParametersErrorCode          = iota + 3000
 
 	// Emitter ErrorCodes
 	UnknownVTableErrorCode      = iota + 4000
@@ -513,6 +515,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	InvalidExternalFunctionPlacementError: InvalidExternalFunctionPlacementErrorCode,
 	UnexpectedNonPointerValueError:        UnexpectedNonPointerValueErrorCode,
 	UnknownStructError:                    UnknownStructErrorCode,
+	TooManyStructParametersError:          TooManyStructParametersErrorCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

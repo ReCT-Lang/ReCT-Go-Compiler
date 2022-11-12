@@ -760,6 +760,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindMakeExpression(expr.(nodes.MakeExpressionNode))
 	case nodes.MakeArrayExpression:
 		return bin.BindMakeArrayExpression(expr.(nodes.MakeArrayExpressionNode))
+	case nodes.MakeStructExpression:
+		return bin.BindMakeStructExpression(expr.(nodes.MakeStructExpressionNode))
 	case nodes.CallExpression:
 		return bin.BindCallExpression(expr.(nodes.CallExpressionNode))
 	case nodes.PackageCallExpression:
@@ -1026,6 +1028,42 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 		// return the bound node
 		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(baseType, literals, expr.Span())
 	}
+}
+
+func (bin *Binder) BindMakeStructExpression(expr nodes.MakeStructExpressionNode) boundnodes.BoundMakeStructExpressionNode {
+	// resolve the type symbol
+	structType, _ := bin.LookupStruct(expr.Type.Value, false, expr.Type.Span)
+
+	// is the count of literals we got legit?
+	if len(expr.LiteralValues) > len(structType.Fields) {
+		print.Error(
+			"BINDER",
+			print.TooManyStructParametersError,
+			expr.Span(),
+			"struct type %s can only hold a maximum of %d fields! (got: %d)",
+			structType.Name,
+			len(structType.Fields),
+			len(expr.LiteralValues),
+		)
+		os.Exit(-1)
+	}
+
+	literals := make([]boundnodes.BoundExpressionNode, 0)
+
+	// bind all the literals
+	for i, literal := range expr.LiteralValues {
+		// bind the literal
+		boundLiteral := bin.BindExpression(literal)
+
+		// make sure the literal has the correct type
+		convertedLiteral := bin.BindConversion(boundLiteral, structType.Fields[i].VarType(), false, literal.Span())
+
+		// add the literal to the list
+		literals = append(literals, convertedLiteral)
+	}
+
+	// return the bound node
+	return boundnodes.CreateBoundMakeStructExpressionNode(structType.Type, literals, expr.Span())
 }
 
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundExpressionNode {

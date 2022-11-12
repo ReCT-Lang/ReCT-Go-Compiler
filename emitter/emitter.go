@@ -195,7 +195,7 @@ func (emt *Emitter) EmitStruct(stc symbols.StructSymbol) {
 	// create the class object to keep track of things
 	emt.Structs[emt.Id(stc.Type)] = &Struct{
 		Name:   stc.Name,
-		Type:   &types.StructType{},
+		Type:   &types.StructType{Packed: true},
 		Symbol: stc,
 	}
 }
@@ -525,6 +525,10 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 		local := root.NewAlloca(emt.IRTypes(param.VarType()))
 		local.SetName("L" + varName)
 
+		if param.VarType().IsUserDefined && !param.VarType().IsObject {
+			local.Align = 1
+		}
+
 		// store the parameters value
 		root.NewStore(function.Params[param.Ordinal], local)
 
@@ -547,6 +551,10 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 			// create local variable
 			local := root.NewAlloca(emt.IRTypes(declStatement.Variable.VarType()))
 			local.SetName(varName)
+
+			if declStatement.Variable.VarType().IsUserDefined && !declStatement.Variable.VarType().IsObject {
+				local.Align = 1
+			}
 
 			// save it for referencing later
 			locals[varName] = Local{IRLocal: local, IRBlock: root, Type: declStatement.Variable.VarType()}
@@ -900,6 +908,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	case boundnodes.BoundMakeArrayExpression:
 		return emt.EmitMakeArrayExpression(blk, expr.(boundnodes.BoundMakeArrayExpressionNode))
 
+	case boundnodes.BoundMakeStructExpression:
+		return emt.EmitMakeStructExpression(blk, expr.(boundnodes.BoundMakeStructExpressionNode))
+
 	case boundnodes.BoundArrayAccessExpression:
 		return emt.EmitArrayAccessExpression(blk, expr.(boundnodes.BoundArrayAccessExpressionNode))
 
@@ -953,37 +964,37 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	return nil
 }
 
-func (emt *Emitter) EmitUnloadedReference(blk **ir.Block, expr boundnodes.BoundExpressionNode) value.Value {
+func (emt *Emitter) EmitUnloadedReference(blk **ir.Block, expr boundnodes.BoundExpressionNode) (value.Value, value.Value) {
 	switch expr.NodeType() {
 	case boundnodes.BoundVariableExpression:
 		exp := expr.(boundnodes.BoundVariableExpressionNode)
-		return emt.EmitVariablePtr(blk, exp.Variable)
+		return emt.EmitVariablePtr(blk, exp.Variable), nil
 	case boundnodes.BoundClassFieldAccessExpression:
 		exp := expr.(boundnodes.BoundClassFieldAccessExpressionNode)
 		if exp.Base.Type().IsObject {
 			return emt.EmitClassFieldAccessExpressionRef(blk, exp.Base, exp.Field)
 		} else {
-			return emt.EmitStructFieldAccessExpressionRef(blk, exp.Base, exp.Field)
+			return emt.EmitStructFieldAccessExpressionRef(blk, exp.Base, exp.Field), nil
 		}
 	case boundnodes.BoundClassFieldAssignmentExpression:
 		exp := expr.(boundnodes.BoundClassFieldAssignmentExpressionNode)
 		if exp.Base.Type().IsObject {
 			return emt.EmitClassFieldAccessExpressionRef(blk, exp.Base, exp.Field)
 		} else {
-			return emt.EmitStructFieldAccessExpressionRef(blk, exp.Base, exp.Field)
+			return emt.EmitStructFieldAccessExpressionRef(blk, exp.Base, exp.Field), nil
 		}
 	case boundnodes.BoundArrayAccessExpression:
 		exp := expr.(boundnodes.BoundArrayAccessExpressionNode)
 		if exp.IsPointer {
-			return emt.EmitPointerAccessRef(blk, exp)
+			return emt.EmitPointerAccessRef(blk, exp), nil
 		} else {
-			return emt.EmitArrayAccessRef(blk, exp)
+			return emt.EmitArrayAccessRef(blk, exp), nil
 		}
 	}
 
 	fmt.Println("Unknown persistent expression! (EmitUnloadedReference)")
 
-	return nil
+	return nil, nil
 }
 
 func (emt *Emitter) EmitLiteralExpression(blk **ir.Block, expr boundnodes.BoundLiteralExpressionNode) value.Value {
@@ -1201,6 +1212,34 @@ func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.Boun
 	return arrObject
 }
 
+func (emt *Emitter) EmitMakeStructExpression(blk **ir.Block, expr boundnodes.BoundMakeStructExpressionNode) value.Value {
+
+	// create a space to store our values in
+	stc := (*blk).NewAlloca(emt.Structs[emt.Id(expr.StructType)].Type)
+	stc.Align = 1
+
+	// go through all fields in our struct
+	for i, field := range emt.Structs[emt.Id(expr.StructType)].Symbol.Fields {
+		fieldIndex := emt.Structs[emt.Id(expr.StructType)].Fields[field.Fingerprint()]
+		// pointer of this field
+		//     (*blk).NewGetElementPtr(emt.Structs[emt.Id(base.Type())].Type, basePtr, CI32(0), CI32(int32(fieldIndex)))
+		ptr := (*blk).NewGetElementPtr(emt.Structs[emt.Id(expr.StructType)].Type, stc, CI32(0), CI32(int32(fieldIndex)))
+
+		// if we're still below the index to which we assigned up to -> assign the given value
+		if i < len(expr.Literals) {
+			str := (*blk).NewStore(emt.EmitExpression(blk, expr.Literals[i]), ptr)
+			str.Align = 1
+
+			// if we're out of values -> use default ones
+		} else {
+			str := (*blk).NewStore(emt.DefaultConstant(blk, field.VarType()), ptr)
+			str.Align = 1
+		}
+	}
+
+	return (*blk).NewLoad(emt.IRTypes(expr.StructType), stc)
+}
+
 func (emt *Emitter) EmitThreadStatement(blk **ir.Block, stmt boundnodes.BoundThreadExpressionNode) value.Value {
 
 	// get this function's thread wrapper
@@ -1260,7 +1299,6 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 		// return a copy of the value (i really don't think this is necessary but oh well)
 		emt.CreateReference(blk, value, "assign value copy (array assignment)")
 
-		return value
 	} else {
 		// get the elements pointer
 		elementPtr := (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
@@ -1269,10 +1307,15 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 		castedPtr := (*blk).NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
 
 		(*blk).NewStore(value, castedPtr)
-
-		// return a copy of the value
-		return value
 	}
+
+	// if base isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !expr.Base.IsPersistent() {
+		emt.DestroyReference(blk, base, "array assignment base cleanup")
+	}
+
+	return value
 }
 
 func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
@@ -1296,6 +1339,7 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 
 	// do the access
 	// -------------
+	var value value.Value
 
 	// decide if we should do object or primitive array access
 	if expr.Base.Type().SubTypes[0].IsObject {
@@ -1314,9 +1358,7 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 		}
 
 		// bitcast our pointer to its original class
-		castedElement := (*blk).NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(originalType)].Type))
-
-		return castedElement
+		value = (*blk).NewBitCast(element, types.NewPointer(emt.Classes[emt.Id(originalType)].Type))
 	} else {
 		// get the elements pointer
 		elementPtr := (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
@@ -1325,9 +1367,16 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 		castedPtr := (*blk).NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
 
 		// load the value
-		val := (*blk).NewLoad(emt.IRTypes(expr.Base.Type().SubTypes[0]), castedPtr)
-		return val
+		value = (*blk).NewLoad(emt.IRTypes(expr.Base.Type().SubTypes[0]), castedPtr)
 	}
+
+	// if base isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !expr.Base.IsPersistent() {
+		emt.DestroyReference(blk, base, "array access base cleanup")
+	}
+
+	return value
 }
 
 func (emt *Emitter) EmitArrayAccessRef(blk **ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
@@ -1932,32 +1981,34 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
 	}
 
+	var value value.Value
+
 	switch expr.Function.Fingerprint() {
 	case builtins.GetLength.Fingerprint():
 		// call the get length function on the string
-		return (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
+		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
 
 	case builtins.GetBuffer.Fingerprint():
 		// call the get length function on the string
-		return (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], base)
+		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], base)
 
 	case builtins.Substring.Fingerprint():
 		start := emt.EmitExpression(blk, expr.Arguments[0])
 		length := emt.EmitExpression(blk, expr.Arguments[1])
 
 		// call the substring function on the string
-		return (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], base, start, length)
+		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], base, start, length)
 	case builtins.GetArrayLength.Fingerprint():
 		// call the get length function on the array
 
 		// object arrays
 		if expr.Base.Type().SubTypes[0].IsObject {
 			base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
-			return (*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], base)
+			value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], base)
 		} else {
 			// primitive arrays
 			base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
-			return (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], base)
+			value = (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], base)
 		}
 
 	case builtins.Push.Fingerprint():
@@ -1976,7 +2027,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		}
 
 		// no need for a return value, this is a void
-		return nil
+		value = nil
 
 	case builtins.PPush.Fingerprint():
 		element := emt.EmitExpression(blk, expr.Arguments[0])
@@ -1994,20 +2045,29 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		(*blk).NewStore(element, castedPtr)
 
 		// no need for a return value, this is a void
-		return nil
+		value = nil
 
 	case builtins.Kill.Fingerprint():
-		return (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Kill"], base)
+		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Kill"], base)
 
 	case builtins.Start.Fingerprint():
-		return (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Start"], base)
+		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Start"], base)
 
 	case builtins.Join.Fingerprint():
-		return (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Join"], base)
+		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Join"], base)
+	default:
+		fmt.Println("Unknown TypeCall!")
+		return nil
 	}
 
-	fmt.Println("Unknown TypeCall!")
-	return nil
+	// if base isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !expr.Base.IsPersistent() {
+		emt.DestroyReference(blk, base, "type call base cleanup")
+	}
+
+	return value
+
 }
 
 func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.BoundClassCallExpressionNode) value.Value {
@@ -2025,7 +2085,15 @@ func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.Boun
 		args = append(args, emt.EmitExpression(blk, arg))
 	}
 
-	return (*blk).NewCall(emt.Classes[emt.Id(expr.Base.Type())].Functions[emt.Id(expr.Function)], args...)
+	call := (*blk).NewCall(emt.Classes[emt.Id(expr.Base.Type())].Functions[emt.Id(expr.Function)], args...)
+
+	// if base isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !expr.Base.IsPersistent() {
+		emt.DestroyReference(blk, base, "class call base cleanup")
+	}
+
+	return call
 }
 
 func (emt *Emitter) EmitClassDestructionExpression(blk **ir.Block, expr boundnodes.BoundClassDestructionExpressionNode) value.Value {
@@ -2049,10 +2117,18 @@ func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnod
 		return emt.EmitStructFieldAccessExpression(blk, expr)
 	}
 
-	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field))
+	ptr, base := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
+
+	// if value isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !expr.Base.IsPersistent() {
+		emt.DestroyReference(blk, base, "class field access base cleanup")
+	}
+
+	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr)
 }
 
-func (emt *Emitter) EmitClassFieldAccessExpressionRef(blk **ir.Block, _base boundnodes.BoundExpressionNode, field symbols.VariableSymbol) value.Value {
+func (emt *Emitter) EmitClassFieldAccessExpressionRef(blk **ir.Block, _base boundnodes.BoundExpressionNode, field symbols.VariableSymbol) (value.Value, value.Value) {
 	// load the base value
 	// -------------------
 	base := emt.EmitExpression(blk, _base)
@@ -2064,7 +2140,7 @@ func (emt *Emitter) EmitClassFieldAccessExpressionRef(blk **ir.Block, _base boun
 	fieldIndex := emt.Classes[emt.Id(_base.Type())].Fields[field.Fingerprint()]
 
 	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(_base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
-	return ptr
+	return ptr, base
 }
 
 func (emt *Emitter) EmitStructFieldAccessExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAccessExpressionNode) value.Value {
@@ -2076,10 +2152,11 @@ func (emt *Emitter) EmitStructFieldAccessExpressionRef(blk **ir.Block, base boun
 	fieldIndex := emt.Structs[emt.Id(base.Type())].Fields[field.Fingerprint()]
 
 	var basePtr value.Value
+	var baseExp value.Value
 	var val value.Value
 
 	if base.IsPersistent() {
-		basePtr = emt.EmitUnloadedReference(blk, base)
+		basePtr, baseExp = emt.EmitUnloadedReference(blk, base)
 
 		if basePtr != nil {
 			goto FINISH
@@ -2093,7 +2170,15 @@ func (emt *Emitter) EmitStructFieldAccessExpressionRef(blk **ir.Block, base boun
 	(*blk).NewStore(val, basePtr)
 
 FINISH:
-	return (*blk).NewGetElementPtr(emt.Structs[emt.Id(base.Type())].Type, basePtr, CI32(0), CI32(int32(fieldIndex)))
+	gep := (*blk).NewGetElementPtr(emt.Structs[emt.Id(base.Type())].Type, basePtr, CI32(0), CI32(int32(fieldIndex)))
+
+	// if base isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !base.IsPersistent() {
+		emt.DestroyReference(blk, baseExp, "array assignment base cleanup")
+	}
+
+	return gep
 }
 
 func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAssignmentExpressionNode) value.Value {
@@ -2101,13 +2186,6 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 	if !expr.Base.Type().IsObject {
 		return emt.EmitStructFieldAssignmentExpression(blk, expr)
 	}
-
-	// load the base value
-	// -------------------
-	base := emt.EmitExpression(blk, expr.Base)
-
-	// run a null check on the base
-	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
 
 	// assignment value
 	// ----------------
@@ -2119,7 +2197,7 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 	}
 
 	// the location we need to store to
-	ptr := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
+	ptr, base := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
 
 	// if this variable already contained an object -> destroy the reference
 	if expr.Field.VarType().IsObject {
@@ -2133,6 +2211,13 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 	if expr.Value.Type().IsObject {
 		emt.CreateReference(blk, value, "assign value copy (field assignment)")
 	}
+
+	// if value isn't a variable (meaning its already memory managed)
+	// decrement its reference counter
+	if !expr.Base.IsPersistent() {
+		emt.DestroyReference(blk, base, "class field assignment cleanup")
+	}
+
 	return value
 }
 

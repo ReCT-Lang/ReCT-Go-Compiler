@@ -1,12 +1,17 @@
 // ============================================================================
-// no sys package here
+// no sys package here (lies)
+package sys;
 // but a sneaky external function
-//external puts(str pointer[byte]) int;
+external puts(str pointer[byte]) int;
 external putchar(chr int) int;
 // ============================================================================
 
-Print("we gamin");
-Print("we chillin");
+while (true) {
+   sys::Print(string("we gamin"->GetLength()));
+   break
+}
+//Print("we gamin");
+//Print("we chillin");
 
 function Print(msg string) {
    //puts(msg->GetBuffer());

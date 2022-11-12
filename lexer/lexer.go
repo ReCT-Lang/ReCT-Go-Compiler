@@ -125,13 +125,17 @@ func (lxr *Lexer) getNumber() {
 		// int real value
 		realValueBuffer, err := strconv.Atoi(buffer)
 		if err != nil {
-			print.Error(
-				"LEXER",
-				print.RealValueConversionError,
-				lxr.GetCurrentTextSpan(len(buffer)),
-				"value \"%s\" could not be converted to real value [int] (NumberToken)!",
-				buffer,
-			)
+			realerValueBuffer, err := strconv.ParseInt(buffer, 10, 64)
+			if err != nil {
+				print.Error(
+					"LEXER",
+					print.RealValueConversionError,
+					lxr.GetCurrentTextSpan(len(buffer)),
+					"value \"%s\" could not be converted to real value [int] (NumberToken)!",
+					buffer,
+				)
+			}
+			lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realerValueBuffer, NumberToken, lxr.GetCurrentTextSpan(len(buffer))))
 		}
 		lxr.Tokens = append(lxr.Tokens, CreateTokenReal(buffer, realValueBuffer, NumberToken, lxr.GetCurrentTextSpan(len(buffer))))
 	}

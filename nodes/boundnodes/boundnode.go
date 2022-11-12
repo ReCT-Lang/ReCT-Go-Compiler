@@ -75,4 +75,5 @@ const (
 	BoundTernaryExpression              BoundType = "BoundTernaryExpression"
 	BoundReferenceExpression            BoundType = "BoundReferenceExpression"
 	BoundDereferenceExpression          BoundType = "BoundDereferenceExpression"
+	BoundMakeStructExpression           BoundType = "BoundMakeStructExpression"
 )

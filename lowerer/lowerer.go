@@ -351,6 +351,8 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteMakeExpression(expr.(boundnodes.BoundMakeExpressionNode))
 	case boundnodes.BoundMakeArrayExpression:
 		return RewriteMakeArrayExpression(expr.(boundnodes.BoundMakeArrayExpressionNode))
+	case boundnodes.BoundMakeStructExpression:
+		return RewriteMakeStructExpression(expr.(boundnodes.BoundMakeStructExpressionNode))
 	case boundnodes.BoundFunctionExpression:
 		return RewriteFunctionExpression(expr.(boundnodes.BoundFunctionExpressionNode))
 	case boundnodes.BoundThreadExpression:
@@ -501,6 +503,14 @@ func RewriteMakeArrayExpression(expr boundnodes.BoundMakeArrayExpressionNode) bo
 
 	rewrittenLength := RewriteExpression(expr.Length)
 	return boundnodes.CreateBoundMakeArrayExpressionNode(expr.BaseType, rewrittenLength)
+}
+
+func RewriteMakeStructExpression(expr boundnodes.BoundMakeStructExpressionNode) boundnodes.BoundMakeStructExpressionNode {
+	rewrittenLiterals := make([]boundnodes.BoundExpressionNode, 0)
+	for _, literal := range expr.Literals {
+		rewrittenLiterals = append(rewrittenLiterals, RewriteExpression(literal))
+	}
+	return boundnodes.CreateBoundMakeStructExpressionNode(expr.StructType, rewrittenLiterals, expr.BoundSpan)
 }
 
 func RewriteFunctionExpression(expr boundnodes.BoundFunctionExpressionNode) boundnodes.BoundFunctionExpressionNode {
