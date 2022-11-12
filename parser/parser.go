@@ -122,6 +122,10 @@ func (prs *Parser) parseMember(allowClasses bool, allowPackages bool) nodes.Memb
 		return prs.parseClassDeclaration()
 	}
 
+	if prs.current().Kind == lexer.StructKeyword && allowClasses {
+		return prs.parseStructDeclaration()
+	}
+
 	if prs.current().Kind == lexer.PackageKeyword && allowPackages {
 		return prs.parsePackageReference()
 	}
@@ -235,6 +239,33 @@ func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {
 	closing := prs.consume(lexer.CloseBraceToken)
 
 	return nodes.CreateClassDeclarationMember(kw, id, members, closing)
+}
+
+func (prs *Parser) parseStructDeclaration() nodes.StructDeclarationMember {
+	kw := prs.consume(lexer.StructKeyword)
+	id := prs.consume(lexer.IdToken)
+
+	// beginn struct body
+	prs.consume(lexer.OpenBraceToken)
+
+	// list of the struct fields
+	fields := make([]nodes.ParameterNode, 0)
+
+	// loop while the current tokent isnt } or eof
+	for prs.current().Kind != lexer.EOF && prs.current().Kind != lexer.CloseBraceToken {
+
+		field := prs.parseParameter() // a name + a type
+		fields = append(fields, field)
+
+		// we do be comma-ing
+		if prs.current().Kind != lexer.EOF && prs.current().Kind != lexer.CloseBraceToken {
+			prs.consume(lexer.CommaToken)
+		}
+	}
+
+	closing := prs.consume(lexer.CloseBraceToken)
+
+	return nodes.CreateStructDeclarationMember(kw, id, fields, closing)
 }
 
 func (prs *Parser) parsePackageReference() nodes.PackageReferenceMember {

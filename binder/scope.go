@@ -104,6 +104,25 @@ func (s Scope) GetAllClasses() []symbols.ClassSymbol {
 	return classes
 }
 
+func (s Scope) GetAllStructs() []symbols.StructSymbol {
+	structs := make([]symbols.StructSymbol, 0)
+
+	for _, sym := range s.Symbols {
+		if sym.SymbolType() == symbols.Struct {
+			structs = append(structs, sym.(symbols.StructSymbol))
+		}
+	}
+
+	moreStructs := make([]symbols.StructSymbol, 0)
+	if s.Parent != nil {
+		moreStructs = s.Parent.GetAllStructs()
+	}
+
+	structs = append(structs, moreStructs...)
+
+	return structs
+}
+
 func (s Scope) GetAllPackages() []symbols.PackageSymbol {
 	packages := make([]symbols.PackageSymbol, 0)
 

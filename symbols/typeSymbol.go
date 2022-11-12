@@ -23,7 +23,13 @@ func (sym TypeSymbol) Print(indent string) {
 
 // a unique identifier for each type
 func (sym TypeSymbol) Fingerprint() string {
-	id := "T_" + sym.Name + "_["
+	id := "T"
+
+	if sym.IsObject {
+		id += "O"
+	}
+
+	id += "_" + sym.Name + "_["
 
 	for _, subtype := range sym.SubTypes {
 		if subtype.Name == "array" {

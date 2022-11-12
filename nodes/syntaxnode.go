@@ -41,7 +41,8 @@ const (
 	FunctionDeclaration         NodeType = "Function Declaration"
 	ExternalFunctionDeclaration NodeType = "External Function Declaration"
 	ClassDeclaration            NodeType = "Class Declaration"
-	PackageReference            NodeType = "Package Declaration"
+	StructDeclaration           NodeType = "Struct Declaration"
+	PackageReference            NodeType = "Package Reference"
 
 	// General
 	// -------

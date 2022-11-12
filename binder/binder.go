@@ -163,7 +163,7 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 			"BINDER",
 			print.DuplicateFunctionError,
 			mem.Identifier.Span,
-			"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
+			"a member with the name \"%s\" already exists! \"%s\" could not be defined!",
 			functionSymbol.Name,
 			functionSymbol.Name,
 		)
@@ -233,7 +233,7 @@ func (bin *Binder) BindExternalFunctionDeclaration(mem nodes.ExternalFunctionDec
 			"BINDER",
 			print.DuplicateFunctionError,
 			mem.Identifier.Span,
-			"a function with the name \"%s\" already exists! \"%s\" could not be defined!",
+			"a member with the name \"%s\" already exists! \"%s\" could not be defined!",
 			functionSymbol.Name,
 			functionSymbol.Name,
 		)
@@ -306,7 +306,7 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 			os.Exit(-1)
 		}
 
-		// only public vars can be creted here
+		// only public vars can be created here
 		if stmt.Statement.(nodes.VariableDeclarationStatementNode).Keyword.Kind != lexer.SetKeyword {
 			print.Error(
 				"BINDER",
@@ -335,9 +335,61 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 			"BINDER",
 			print.DuplicateFunctionError,
 			mem.Span(),
-			"A class with the name \"%s\" already exists! \"%s\" could not be defined!",
+			"A member with the name \"%s\" already exists! \"%s\" could not be defined!",
 			classSym.Name,
 			classSym.Name,
+		)
+		os.Exit(-1)
+	}
+}
+
+func (bin *Binder) BindStructDeclaration(mem nodes.StructDeclarationMember, preInitialTypeset []symbols.TypeSymbol) {
+	rootScope := BindRootScope()
+	classScope := CreateScope(&rootScope)
+
+	binder := CreateBinder(classScope, symbols.FunctionSymbol{})
+	binder.PreInitialTypeset = preInitialTypeset
+
+	fields := make([]symbols.VariableSymbol, 0)
+
+	// check all our statements, only variable declarations are allowed in here
+	for _, fld := range mem.Fields {
+
+		// type resolving error is ignored, should never happen lol
+		fldType, _ := binder.BindTypeClause(fld.TypeClause)
+
+		// check for redefinitions
+		for _, field := range fields {
+			if fld.Identifier.Value == field.SymbolName() {
+				print.Error(
+					"BINDER",
+					print.DuplicateFunctionError,
+					fld.Span(),
+					"A field with the name \"%s\" already exists! \"%s\" could not be defined!",
+					field.SymbolName(),
+					field.SymbolName(),
+				)
+				os.Exit(-1)
+			}
+		}
+
+		// store this field
+		fields = append(fields, symbols.CreateGlobalVariableSymbol(fld.Identifier.Value, false, fldType))
+	}
+
+	// Build the StructSymbol
+	// ----------------------
+
+	structSym := symbols.CreateStructSymbol(mem.Identifier.Value, mem, fields)
+
+	if !bin.ActiveScope.TryDeclareSymbol(structSym) {
+		print.Error(
+			"BINDER",
+			print.DuplicateFunctionError,
+			mem.Span(),
+			"A member with the name \"%s\" already exists! \"%s\" could not be defined!",
+			structSym.Name,
+			structSym.Name,
 		)
 		os.Exit(-1)
 	}
@@ -1083,8 +1135,16 @@ func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExp
 		os.Exit(-1)
 	}
 
+	var field symbols.VariableSymbol
+
 	// try finding the field meant to be accessed
-	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
+	// ------------------------------------------
+
+	if baseExpression.Type().IsObject { // classes
+		field = bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
+	} else { // structs
+		field = bin.LookupStructField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
+	}
 
 	return boundnodes.CreateBoundClassFieldAccessExpressionNode(baseExpression, field, expr.Span())
 }
@@ -1104,8 +1164,17 @@ func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssig
 		os.Exit(-1)
 	}
 
+	var field symbols.VariableSymbol
+
 	// try finding the field meant to be accessed
-	field := bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
+	// ------------------------------------------
+
+	if baseExpression.Type().IsObject { // classes
+		field = bin.LookupClassField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
+	} else { // structs
+		field = bin.LookupStructField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
+	}
+
 	expression := bin.BindExpression(expr.Value)
 	convertedExpression := bin.BindConversion(expression, field.VarType(), false, expr.Span())
 
@@ -1610,6 +1679,45 @@ func (bin *Binder) LookupClassField(name string, baseType symbols.TypeSymbol, er
 	return symbols.LocalVariableSymbol{}
 }
 
+func (bin *Binder) LookupStructField(name string, baseType symbols.TypeSymbol, errorLocation print.TextSpan) symbols.VariableSymbol {
+	// try locating the class
+	stcSym := bin.ActiveScope.TryLookupSymbol(baseType.Name)
+
+	// if that failed -> throw an error
+	if stcSym == nil || stcSym.SymbolType() != symbols.Struct {
+		print.Error(
+			"BINDER",
+			print.UnknownStructError,
+			errorLocation,
+			"Could not find struct \"%s\" in lookup, did something not load correctly?",
+			baseType.Name,
+		)
+		os.Exit(-1)
+	}
+
+	// get the symbol as a class symbol
+	stc := stcSym.(symbols.StructSymbol)
+
+	// search through all the class' functions to find the one we're looking for
+	for _, fld := range stc.Fields {
+		if fld.SymbolName() == name {
+			return fld
+		}
+	}
+
+	print.Error(
+		"BINDER",
+		print.UnknownFieldError,
+		errorLocation,
+		"Could not find field \"%s\" in struct \"%s\", does the field exist?",
+		name,
+		baseType.Name,
+	)
+	os.Exit(-1)
+
+	return symbols.LocalVariableSymbol{}
+}
+
 // </IDEK> --------------------------------------------------------------------
 // <TYPES> --------------------------------------------------------------------
 
@@ -1712,6 +1820,12 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 			return cls.Type, true
 		}
 
+		// check if this might be a struct
+		stc, ok := bin.LookupStruct(typeClause.TypeIdentifier.Value, true, typeClause.TypeIdentifier.Span)
+		if ok {
+			return stc.Type, true
+		}
+
 		// check if this binder has been given a pre-initial typeset
 		if bin.PreInitialTypeset != nil {
 
@@ -1795,6 +1909,20 @@ func (bin Binder) LookupClass(name string, canFail bool, errorLocaton print.Text
 	return cls.(symbols.ClassSymbol), true
 }
 
+func (bin Binder) LookupStruct(name string, canFail bool, errorLocaton print.TextSpan) (symbols.StructSymbol, bool) {
+
+	stc := bin.ActiveScope.TryLookupSymbol(name)
+	if stc == nil {
+		return FailStructLookup(name, canFail, errorLocaton)
+	}
+
+	if stc.SymbolType() != symbols.Struct {
+		return FailStructLookup(name, canFail, errorLocaton)
+	}
+
+	return stc.(symbols.StructSymbol), true
+}
+
 func (bin Binder) LookupPackage(name string, canFail bool, errorLocaton print.TextSpan) (symbols.PackageSymbol, bool) {
 	pck := bin.ActiveScope.TryLookupSymbol(name)
 	if pck == nil {
@@ -1864,6 +1992,22 @@ func FailClassLookup(name string, canFail bool, errorLocation print.TextSpan) (s
 	}
 
 	return symbols.ClassSymbol{}, false
+}
+
+func FailStructLookup(name string, canFail bool, errorLocation print.TextSpan) (symbols.StructSymbol, bool) {
+	if !canFail {
+		//print.PrintC(print.Red, "Couldnt find Datatype '"+name+"'!")
+		print.Error(
+			"BINDER",
+			print.UnknownClassError,
+			errorLocation,
+			"Couldn't find struct \"%s\"! Are you sure it exists?",
+			name,
+		)
+		os.Exit(-1)
+	}
+
+	return symbols.StructSymbol{}, false
 }
 
 func FailPackageLookup(name string, canFail bool, errorLocation print.TextSpan) (symbols.PackageSymbol, bool) {

@@ -481,6 +481,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return RefKeyword
 	case "deref":
 		return DerefKeyword
+	case "struct":
+		return StructKeyword
 	default:
 		return IdToken
 	}

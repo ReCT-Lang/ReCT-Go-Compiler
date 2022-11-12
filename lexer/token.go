@@ -34,6 +34,7 @@ const (
 	CVariadicKeyword TokenKind = "c_variadic (keyword)"
 	RefKeyword       TokenKind = "ref (keyword)"
 	DerefKeyword     TokenKind = "deref (keyword)"
+	StructKeyword    TokenKind = "struct (keyword)"
 
 	// Tokens
 	EOF         TokenKind = "EndOfFile"

@@ -27,6 +27,9 @@ type Emitter struct {
 	// referenced classes
 	Classes map[string]*Class
 
+	// referenced structs
+	Structs map[string]*Struct
+
 	// referenced packages
 	Packages map[string]*Package
 
@@ -72,6 +75,7 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		FunctionLocals:   make(map[string]map[string]Local),
 		StrConstants:     make(map[string]value.Value),
 		Classes:          make(map[string]*Class),
+		Structs:          make(map[string]*Struct),
 		FunctionWrappers: make(map[string]*ir.Func),
 		Temps:            make([]string, 0),
 		Packages:         make(map[string]*Package),
@@ -88,9 +92,19 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		emitter.ImportPackage(pck)
 	}
 
+	// declare all struct structs
+	for _, stc := range emitter.Program.Structs {
+		emitter.EmitStruct(stc)
+	}
+
 	// declare all class structs
 	for _, cls := range emitter.Program.Classes {
 		emitter.EmitClass(cls)
+	}
+
+	// populate all struct structs
+	for _, stc := range emitter.Program.Structs {
+		emitter.PopulateStruct(emitter.Structs[emitter.Id(stc.Type)], stc)
 	}
 
 	// populate all class structs
@@ -176,6 +190,40 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 	return emitter.Module
 }
 
+// <STRUCTS>-------------------------------------------------------------------
+func (emt *Emitter) EmitStruct(stc symbols.StructSymbol) {
+	// create the class object to keep track of things
+	emt.Structs[emt.Id(stc.Type)] = &Struct{
+		Name:   stc.Name,
+		Type:   &types.StructType{},
+		Symbol: stc,
+	}
+}
+
+func (emt *Emitter) PopulateStruct(stc *Struct, bstc symbols.StructSymbol) {
+	// ---------------------------------------------------------------------
+	// create the llvm type
+	// ---------------------------------------------------------------------
+
+	// list of our type's fields
+	stcFields := make([]types.Type, 0)
+	stcFieldMap := make(map[string]int)
+
+	// add our types one by one
+	for i, field := range bstc.Fields {
+		stcFieldMap[emt.Id(field)] = i
+		stcFields = append(stcFields, emt.IRTypes(field.VarType()))
+	}
+
+	// update the fields inside the struct
+	stc.Type.(*types.StructType).Fields = append(stc.Type.(*types.StructType).Fields, stcFields...)
+	emt.Structs[emt.Id(bstc.Type)].Fields = stcFieldMap
+
+	// create the struct definition
+	emt.Module.NewTypeDef("struct."+bstc.Name, stc.Type)
+}
+
+// </STRUCTS>------------------------------------------------------------------
 // <CLASSES>-------------------------------------------------------------------
 func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 	// create the class object to keep track of things
@@ -468,6 +516,23 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 	// create locals array
 	locals := make(map[string]Local)
 
+	// create a local copy of all parameters
+	// this is necessary because otherwise they would be read-only
+	for _, param := range sym.Parameters {
+		varName := emt.Id(param)
+
+		// create local variable
+		local := root.NewAlloca(emt.IRTypes(param.VarType()))
+		local.SetName("L" + varName)
+
+		// store the parameters value
+		root.NewStore(function.Params[param.Ordinal], local)
+
+		// save it for referencing later
+		locals[varName] = Local{IRLocal: local, IRBlock: root, Type: param.VarType()}
+
+	}
+
 	// create all needed locals in the root block so GC can trash them anywhere
 	for _, stmt := range body.Statements {
 		if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
@@ -500,11 +565,19 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 
 func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
 	// check if this function is already imported
-	_, ok := emt.CFuncs[sym.Name]
+	exists := false
+	var fnc *ir.Func
+	for _, f := range emt.Module.Funcs {
+		if f.Name() == sym.Name {
+			exists = true
+			fnc = f
+			break
+		}
+	}
 
 	// already imported, just copy reference
-	if ok {
-		return emt.CFuncs[sym.Name]
+	if exists {
+		return fnc
 	}
 
 	// figure out all parameters and their types
@@ -561,6 +634,23 @@ func (emt *Emitter) EmitClassFunction(cls symbols.ClassSymbol, sym symbols.Funct
 
 	// create locals array
 	locals := make(map[string]Local)
+
+	// create a local copy of all parameters
+	// this is necessary because otherwise they would be read-only
+	for _, param := range sym.Parameters {
+		varName := emt.Id(param)
+
+		// create local variable
+		local := root.NewAlloca(emt.IRTypes(param.VarType()))
+		local.SetName("L" + varName)
+
+		// store the parameters value
+		root.NewStore(function.Params[param.Ordinal+1], local)
+
+		// save it for referencing later
+		locals[varName] = Local{IRLocal: local, IRBlock: root, Type: param.VarType()}
+
+	}
 
 	// create all needed locals in the root block to GC can trash them anywhere
 	for _, stmt := range body.Statements {
@@ -863,6 +953,39 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	return nil
 }
 
+func (emt *Emitter) EmitUnloadedReference(blk **ir.Block, expr boundnodes.BoundExpressionNode) value.Value {
+	switch expr.NodeType() {
+	case boundnodes.BoundVariableExpression:
+		exp := expr.(boundnodes.BoundVariableExpressionNode)
+		return emt.EmitVariablePtr(blk, exp.Variable)
+	case boundnodes.BoundClassFieldAccessExpression:
+		exp := expr.(boundnodes.BoundClassFieldAccessExpressionNode)
+		if exp.Base.Type().IsObject {
+			return emt.EmitClassFieldAccessExpressionRef(blk, exp.Base, exp.Field)
+		} else {
+			return emt.EmitStructFieldAccessExpressionRef(blk, exp.Base, exp.Field)
+		}
+	case boundnodes.BoundClassFieldAssignmentExpression:
+		exp := expr.(boundnodes.BoundClassFieldAssignmentExpressionNode)
+		if exp.Base.Type().IsObject {
+			return emt.EmitClassFieldAccessExpressionRef(blk, exp.Base, exp.Field)
+		} else {
+			return emt.EmitStructFieldAccessExpressionRef(blk, exp.Base, exp.Field)
+		}
+	case boundnodes.BoundArrayAccessExpression:
+		exp := expr.(boundnodes.BoundArrayAccessExpressionNode)
+		if exp.IsPointer {
+			return emt.EmitPointerAccessRef(blk, exp)
+		} else {
+			return emt.EmitArrayAccessRef(blk, exp)
+		}
+	}
+
+	fmt.Println("Unknown persistent expression! (EmitUnloadedReference)")
+
+	return nil
+}
+
 func (emt *Emitter) EmitLiteralExpression(blk **ir.Block, expr boundnodes.BoundLiteralExpressionNode) value.Value {
 	switch expr.LiteralType.Fingerprint() {
 	case builtins.Bool.Fingerprint():
@@ -892,16 +1015,16 @@ func (emt *Emitter) EmitVariableExpression(blk **ir.Block, expr boundnodes.Bound
 func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol) value.Value {
 	varName := emt.Id(variable)
 
-	// parameters
-	if variable.SymbolType() == symbols.Parameter {
-		paramSymbol := variable.(symbols.ParameterSymbol)
-
-		if emt.IsInClass {
-			return emt.Function.Params[paramSymbol.Ordinal+1]
-		} else {
-			return emt.Function.Params[paramSymbol.Ordinal]
-		}
-	}
+	//// parameters
+	//if variable.SymbolType() == symbols.Parameter {
+	//	paramSymbol := variable.(symbols.ParameterSymbol)
+	//
+	//	if emt.IsInClass {
+	//		return emt.Function.Params[paramSymbol.Ordinal+1]
+	//	} else {
+	//		return emt.Function.Params[paramSymbol.Ordinal]
+	//	}
+	//}
 
 	if variable.IsGlobal() {
 		// if we're in a class we need to load from the struct instead of a global
@@ -929,16 +1052,16 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 func (emt *Emitter) EmitVariablePtr(blk **ir.Block, variable symbols.VariableSymbol) value.Value {
 	varName := emt.Id(variable)
 
-	// parameters
-	if variable.SymbolType() == symbols.Parameter {
-		paramSymbol := variable.(symbols.ParameterSymbol)
-
-		if emt.IsInClass {
-			return emt.Function.Params[paramSymbol.Ordinal+1]
-		} else {
-			return emt.Function.Params[paramSymbol.Ordinal]
-		}
-	}
+	//// parameters
+	//if variable.SymbolType() == symbols.Parameter {
+	//	paramSymbol := variable.(symbols.ParameterSymbol)
+	//
+	//	if emt.IsInClass {
+	//		return emt.Function.Params[paramSymbol.Ordinal+1]
+	//	} else {
+	//		return emt.Function.Params[paramSymbol.Ordinal]
+	//	}
+	//}
 
 	if variable.IsGlobal() {
 		// if we're in a class we need to load from the struct instead of a global
@@ -1207,6 +1330,34 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 	}
 }
 
+func (emt *Emitter) EmitArrayAccessRef(blk **ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
+	// load the index
+	index := emt.EmitExpression(blk, expr.Index)
+
+	// bitcast the base into a generic array type
+	base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
+
+	// do the access
+	// -------------
+
+	// decide if we should do object or primitive array access
+	if !expr.Base.Type().SubTypes[0].IsObject {
+		// get the elements pointer
+		elementPtr := (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
+
+		// bitcast the pointer to our type
+		castedPtr := (*blk).NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
+
+		return castedPtr
+	} else {
+		fmt.Println("how tf did this even happen?? (EmitArrayAccessRef received object type (this should be literally impossible))")
+		return nil
+	}
+}
+
 func (emt *Emitter) EmitPointerAccessExpression(blk **ir.Block, expr boundnodes.BoundArrayAccessExpressionNode, base value.Value, index value.Value) value.Value {
 	// get the elements pointer
 	elementPtr := (*blk).NewGetElementPtr(emt.IRTypes(expr.Type()), base, index)
@@ -1214,6 +1365,18 @@ func (emt *Emitter) EmitPointerAccessExpression(blk **ir.Block, expr boundnodes.
 	// load the value
 	val := (*blk).NewLoad(emt.IRTypes(expr.Type()), elementPtr)
 	return val
+}
+
+func (emt *Emitter) EmitPointerAccessRef(blk **ir.Block, expr boundnodes.BoundArrayAccessExpressionNode) value.Value {
+	// load the base value
+	// -------------------
+	base := emt.EmitExpression(blk, expr.Base)
+	// load the index
+	index := emt.EmitExpression(blk, expr.Index)
+
+	// get the elements pointer
+	elementPtr := (*blk).NewGetElementPtr(emt.IRTypes(expr.Type()), base, index)
+	return elementPtr
 }
 
 func (emt *Emitter) EmitPointerAssignmentExpression(blk **ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode, base value.Value, index value.Value, value value.Value) value.Value {
@@ -1881,30 +2044,70 @@ func (emt *Emitter) EmitClassDestructionExpression(blk **ir.Block, expr boundnod
 }
 
 func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAccessExpressionNode) value.Value {
+	// okay but like, is this a struct?
+	if !expr.Base.Type().IsObject {
+		return emt.EmitStructFieldAccessExpression(blk, expr)
+	}
+
+	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field))
+}
+
+func (emt *Emitter) EmitClassFieldAccessExpressionRef(blk **ir.Block, _base boundnodes.BoundExpressionNode, field symbols.VariableSymbol) value.Value {
 	// load the base value
 	// -------------------
-	base := emt.EmitExpression(blk, expr.Base)
+	base := emt.EmitExpression(blk, _base)
 
 	// run a null check on the base
 	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
 
 	// look up the field's index
-	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[expr.Field.Fingerprint()]
+	fieldIndex := emt.Classes[emt.Id(_base.Type())].Fields[field.Fingerprint()]
 
-	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(expr.Base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
-	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr)
+	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(_base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
+	return ptr
+}
+
+func (emt *Emitter) EmitStructFieldAccessExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAccessExpressionNode) value.Value {
+	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), emt.EmitStructFieldAccessExpressionRef(blk, expr.Base, expr.Field))
+}
+
+func (emt *Emitter) EmitStructFieldAccessExpressionRef(blk **ir.Block, base boundnodes.BoundExpressionNode, field symbols.VariableSymbol) value.Value {
+	// look up the field's index
+	fieldIndex := emt.Structs[emt.Id(base.Type())].Fields[field.Fingerprint()]
+
+	var basePtr value.Value
+	var val value.Value
+
+	if base.IsPersistent() {
+		basePtr = emt.EmitUnloadedReference(blk, base)
+
+		if basePtr != nil {
+			goto FINISH
+		}
+	}
+
+	// Fallback in case we couldnt resolve a ref
+	// create a local alloca to read out the struct info (this sucks)
+	basePtr = (*blk).NewAlloca(emt.IRTypes(base.Type()))
+	val = emt.EmitExpression(blk, base)
+	(*blk).NewStore(val, basePtr)
+
+FINISH:
+	return (*blk).NewGetElementPtr(emt.Structs[emt.Id(base.Type())].Type, basePtr, CI32(0), CI32(int32(fieldIndex)))
 }
 
 func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAssignmentExpressionNode) value.Value {
+	// okay but like, is this a struct?
+	if !expr.Base.Type().IsObject {
+		return emt.EmitStructFieldAssignmentExpression(blk, expr)
+	}
+
 	// load the base value
 	// -------------------
 	base := emt.EmitExpression(blk, expr.Base)
 
 	// run a null check on the base
 	(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
-
-	// look up the field's index
-	fieldIndex := emt.Classes[emt.Id(expr.Base.Type())].Fields[expr.Field.Fingerprint()]
 
 	// assignment value
 	// ----------------
@@ -1916,7 +2119,7 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 	}
 
 	// the location we need to store to
-	ptr := (*blk).NewGetElementPtr(emt.Classes[emt.Id(expr.Base.Type())].Type, base, CI32(0), CI32(int32(fieldIndex)))
+	ptr := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
 
 	// if this variable already contained an object -> destroy the reference
 	if expr.Field.VarType().IsObject {
@@ -1930,6 +2133,16 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 	if expr.Value.Type().IsObject {
 		emt.CreateReference(blk, value, "assign value copy (field assignment)")
 	}
+	return value
+}
+
+func (emt *Emitter) EmitStructFieldAssignmentExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAssignmentExpressionNode) value.Value {
+
+	value := emt.EmitExpression(blk, expr.Value)
+	ptr := emt.EmitStructFieldAccessExpressionRef(blk, expr.Base, expr.Field)
+
+	// assign the value to the structs field
+	(*blk).NewStore(value, ptr)
 	return value
 }
 
@@ -2346,6 +2559,9 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 		} else if expr.Expression.Type().Fingerprint() == builtins.Int.Fingerprint() {
 			// convert the int to a pointer
 			return (*blk).NewIntToPtr(value, emt.IRTypes(expr.ToType))
+		} else if expr.Expression.Type().Name == builtins.Pointer.Name {
+			// beep boop we bit casting
+			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 		}
 	} else if expr.ToType.IsObject {
 		if expr.Expression.Type().Name == builtins.Pointer.Name {
@@ -2410,8 +2626,18 @@ func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) cons
 		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
 	}
 
-	if typ.IsUserDefined {
+	if typ.IsUserDefined && typ.IsObject {
 		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
+	}
+
+	if typ.IsUserDefined && !typ.IsObject {
+		fields := make([]constant.Constant, 0)
+
+		for _, i := range emt.Structs[emt.Id(typ)].Symbol.Fields {
+			fields = append(fields, emt.DefaultConstant(blk, i.VarType()))
+		}
+
+		return constant.NewStruct(emt.IRTypes(typ).(*types.StructType), fields...)
 	}
 
 	fmt.Println("Unknown Constant!")

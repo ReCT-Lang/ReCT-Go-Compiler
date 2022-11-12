@@ -15,6 +15,7 @@ type BoundProgram struct {
 	Functions         []BoundFunction
 	ExternalFunctions []symbols.FunctionSymbol
 	Classes           []BoundClass
+	Structs           []symbols.StructSymbol
 	Packages          []symbols.PackageSymbol
 }
 
@@ -126,6 +127,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 		Functions:         functionBodies,
 		ExternalFunctions: functionReferences,
 		Classes:           classes,
+		Structs:           globalScope.Structs,
 		Packages:          globalScope.Packages,
 	}
 }

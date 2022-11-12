@@ -346,6 +346,7 @@ const (
 	IllegalDestructorCallError            = "IllegalDestructorCallError"
 	TernaryOperatorTypeError              = "TernaryOperatorTypeError"
 	UnknownClassError                     = "UnknownClassError"
+	UnknownStructError                    = "UnknownStructError"
 	FunctionAccessViolationError          = "FunctionAccessViolationError"
 	UnknownFieldError                     = "UnknownFieldError"
 	InvalidNumberOfSubtypesError          = "InvalidNumberOfSubtypesError"
@@ -435,6 +436,7 @@ const (
 	UnexpectedNonArrayValueErrorCode          = iota + 3000
 	InvalidExternalFunctionPlacementErrorCode = iota + 3000
 	UnexpectedNonPointerValueErrorCode        = iota + 3000
+	UnknownStructErrorCode                    = iota + 3000
 
 	// Emitter ErrorCodes
 	UnknownVTableErrorCode      = iota + 4000
@@ -510,6 +512,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	FileAlreadyInSourcesWarning:           FileAlreadyInSourcesWarningCode,
 	InvalidExternalFunctionPlacementError: InvalidExternalFunctionPlacementErrorCode,
 	UnexpectedNonPointerValueError:        UnexpectedNonPointerValueErrorCode,
+	UnknownStructError:                    UnknownStructErrorCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

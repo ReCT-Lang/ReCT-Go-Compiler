@@ -64,6 +64,12 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		return types.NewPointer(cls.Type)
 	}
 
+	// try looking up a struct
+	stc, ok := emt.Structs[emt.Id(typ)]
+	if ok {
+		return stc.Type
+	}
+
 	fmt.Println("Unknown Type")
 	fmt.Println(typ.Fingerprint())
 
@@ -151,6 +157,13 @@ type Class struct {
 	Functions   map[string]*ir.Func
 	Fields      map[string]int
 	Name        string
+}
+
+type Struct struct {
+	Type   types.Type
+	Fields map[string]int
+	Name   string
+	Symbol symbols.StructSymbol
 }
 
 type Package struct {

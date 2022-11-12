@@ -14,6 +14,7 @@ type GlobalScope struct {
 	Functions  []symbols.FunctionSymbol
 	Variables  []symbols.VariableSymbol
 	Classes    []symbols.ClassSymbol
+	Structs    []symbols.StructSymbol
 	Packages   []symbols.PackageSymbol
 	Statements []boundnodes.BoundStatementNode
 }
@@ -46,6 +47,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	functionDeclarations := make([]nodes.FunctionDeclarationMember, 0)
 	externalFunctionDeclarations := make([]nodes.ExternalFunctionDeclarationMember, 0)
 	classDeclarations := make([]nodes.ClassDeclarationMember, 0)
+	structDeclarations := make([]nodes.StructDeclarationMember, 0)
 	globalStatements := make([]nodes.GlobalStatementMember, 0)
 
 	// sort all our members into functions and global statements
@@ -56,6 +58,8 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 			externalFunctionDeclarations = append(externalFunctionDeclarations, member.(nodes.ExternalFunctionDeclarationMember))
 		} else if member.NodeType() == nodes.ClassDeclaration {
 			classDeclarations = append(classDeclarations, member.(nodes.ClassDeclarationMember))
+		} else if member.NodeType() == nodes.StructDeclaration {
+			structDeclarations = append(structDeclarations, member.(nodes.StructDeclarationMember))
 		} else if member.NodeType() == nodes.PackageReference {
 			packageReferences = append(packageReferences, member.(nodes.PackageReferenceMember))
 		} else {
@@ -70,10 +74,18 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 		binder.BindPackageReference(pkg)
 	}
 
-	// create a loose list of types so our class members have something to work with
+	// create a loose list of types so our class and struct members have something to work with
 	preInitialTypeset := make([]symbols.TypeSymbol, 0)
 	for _, cls := range classDeclarations {
 		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(cls.Identifier.Value, make([]symbols.TypeSymbol, 0), true, true))
+	}
+	for _, stc := range structDeclarations {
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(stc.Identifier.Value, make([]symbols.TypeSymbol, 0), false, true))
+	}
+
+	// declare all our structs and their fields
+	for _, stc := range structDeclarations {
+		binder.BindStructDeclaration(stc, preInitialTypeset)
 	}
 
 	// declare all our classes and their members
@@ -102,6 +114,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 		Functions:    binder.ActiveScope.GetAllFunctions(),
 		Variables:    binder.ActiveScope.GetAllVariables(),
 		Classes:      binder.ActiveScope.GetAllClasses(),
+		Structs:      binder.ActiveScope.GetAllStructs(),
 		Packages:     binder.ActiveScope.GetAllPackages(),
 		Statements:   boundStatements,
 	}
@@ -117,6 +130,10 @@ func BindParentScope(globalScope GlobalScope) Scope {
 
 	for _, cls := range globalScope.Classes {
 		workingScope.TryDeclareSymbol(cls)
+	}
+
+	for _, stc := range globalScope.Structs {
+		workingScope.TryDeclareSymbol(stc)
 	}
 
 	for _, fnc := range globalScope.Functions {
