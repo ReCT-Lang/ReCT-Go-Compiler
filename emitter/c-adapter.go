@@ -51,8 +51,21 @@ func (emt *Emitter) Adapt() {
 		})
 	}
 
+	maxRounds := 1_000_000 // one million loops at max
+	rounds := 0
+
 	// while tru (very good idea)
 	for {
+		// make sure we dont loop forever
+		if rounds > maxRounds {
+			print.Error(
+				"[INTERNAL C-ADAPTER]",
+				print.CAdapterCompilationError,
+				print.TextSpan{},
+				"Error while compiling C-Adapter module! Struct sorting seems to be in an infinite loop.")
+			os.Exit(-1)
+		}
+
 		madeChange := false
 
 		for i, convertedStruct := range structMap {
@@ -90,6 +103,8 @@ func (emt *Emitter) Adapt() {
 		if !madeChange {
 			break
 		}
+
+		rounds++
 	}
 
 	for _, convertedStruct := range structMap {
