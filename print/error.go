@@ -361,6 +361,7 @@ const (
 	UnknownConstructorError  = "UnknownConsructorError"
 	UnknownDestructorError   = "UnknownDestructorError"
 	CAdapterCompilationError = "CAdapterCompilationError"
+	ExternalCAdapterWarning  = "ExternalCAdapterWarning"
 
 	// Packager Errors
 	UnknownPackageModuleFileError     = "UnknownPackageModuleFileError"
@@ -446,6 +447,7 @@ const (
 	UnknownConstructorErrorCode  = iota + 4000
 	UnknownDestructorErrorCode   = iota + 4000
 	CAdapterCompilationErrorCode = iota + 4000
+	ExternalCAdapterWarningCode  = iota + 4000
 
 	// Packager ErrorCodes
 	UnknownPackageModuleFileErrorCode     = iota + 5000
@@ -519,6 +521,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	UnknownStructError:                    UnknownStructErrorCode,
 	TooManyStructParametersError:          TooManyStructParametersErrorCode,
 	CAdapterCompilationError:              CAdapterCompilationErrorCode,
+	ExternalCAdapterWarning:               ExternalCAdapterWarningCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

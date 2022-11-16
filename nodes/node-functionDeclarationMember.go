@@ -26,7 +26,15 @@ func (FunctionDeclarationMember) NodeType() NodeType { return FunctionDeclaratio
 // convenient.
 // For FunctionDeclarationMember we don't get the length of the body, only the keyword, name, parameters, and type
 func (node FunctionDeclarationMember) Span() print.TextSpan {
-	return node.FunctionKeyword.Span.SpanBetween(node.Body.Span())
+	span := node.FunctionKeyword.Span
+
+	if node.FunctionKeyword.Kind == lexer.FunctionKeyword {
+		span = span.SpanBetween(node.Body.Span())
+	} else {
+		span = span.SpanBetween(node.Identifier.Span)
+	}
+
+	return span
 }
 
 // node print function

@@ -4,6 +4,7 @@ import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/nodes/boundnodes"
+	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
 
@@ -591,6 +592,8 @@ func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
 		return fnc
 	}
 
+	hasStruct := false
+
 	// figure out all parameters and their types
 	params := make([]*ir.Param, 0)
 	for _, param := range sym.Parameters {
@@ -605,6 +608,7 @@ func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
 
 			//prm.Attrs = append(prm.Attrs, ir.Byval{Typ: emt.IRTypes(param.Type)})
 			prm.Typ = types.NewPointer(emt.IRTypes(param.Type))
+			hasStruct = true
 		}
 
 		// store it
@@ -617,6 +621,7 @@ func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
 	// if the return type is a struct -> bointer
 	if sym.Type.IsUserDefined && !sym.Type.IsObject {
 		returnType = types.NewPointer(returnType)
+		hasStruct = true
 	}
 
 	// the function name
@@ -625,6 +630,26 @@ func (emt *Emitter) EmitExternalFunction(sym symbols.FunctionSymbol) *ir.Func {
 	// if this gamer got adapted, call the adapted function instead
 	if sym.Adapted {
 		irName += "$ADAPTED"
+	}
+
+	// if this function has struct but isnt adapted -> warning (that shit may not work)
+	if hasStruct && !sym.Adapted {
+		print.Warning(
+			"EMITTER",
+			print.ExternalCAdapterWarning,
+			sym.Declaration.Span(),
+			"This external function is using structs but is not using c_adapter. This will likely cause compatibility issues!",
+		)
+	}
+
+	// if this function has no structs but is adapted -> warning (that shit is redundant)
+	if !hasStruct && sym.Adapted {
+		print.Warning(
+			"EMITTER",
+			print.ExternalCAdapterWarning,
+			sym.Declaration.Span(),
+			"This external function is not using any structs but is using c_adapter. This is unnecessary and redundant.",
+		)
 	}
 
 	// create an IR function definition

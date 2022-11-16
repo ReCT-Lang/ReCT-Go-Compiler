@@ -60,16 +60,17 @@ func CreateFunctionSymbol(name string, params []ParameterSymbol, typeSymbol Type
 	}
 }
 
-func CreateExternalFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, variadic bool, adapted bool) FunctionSymbol {
+func CreateExternalFunctionSymbol(name string, declaration nodes.FunctionDeclarationMember, params []ParameterSymbol, typeSymbol TypeSymbol, variadic bool, adapted bool) FunctionSymbol {
 	return FunctionSymbol{
-		Exists:     true,
-		Name:       name,
-		Parameters: params,
-		Type:       typeSymbol,
-		External:   true,
-		Variadic:   variadic,
-		Adapted:    adapted,
-		Public:     true,
+		Exists:      true,
+		Name:        name,
+		Declaration: declaration,
+		Parameters:  params,
+		Type:        typeSymbol,
+		External:    true,
+		Variadic:    variadic,
+		Adapted:     adapted,
+		Public:      true,
 	}
 }
 
