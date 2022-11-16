@@ -36,6 +36,10 @@ func (emt *Emitter) EmitCLibReferences() {
 	free := emt.Module.NewFunc("free", types.Void, ir.NewParam("dest", types.I8Ptr))
 	emt.CFuncs["free"] = free
 
+	printf := emt.Module.NewFunc("printf", types.I32, ir.NewParam("format", types.I8Ptr))
+	printf.Sig.Variadic = true
+	emt.CFuncs["printf"] = printf
+
 	snprintf := emt.Module.NewFunc("snprintf", types.I32, ir.NewParam("dest", types.I8Ptr), ir.NewParam("len", types.I32), ir.NewParam("format", types.I8Ptr))
 	snprintf.Sig.Variadic = true
 	emt.CFuncs["snprintf"] = snprintf

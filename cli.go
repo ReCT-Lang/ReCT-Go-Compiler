@@ -10,6 +10,7 @@ import (
 	"ReCT-Go-Compiler/parser"
 	"ReCT-Go-Compiler/preprocessor"
 	"ReCT-Go-Compiler/print"
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -208,6 +209,33 @@ func CompileFiles(files []string) {
 
 	// if everything is fine, add our module to the linking list
 	linkFiles = append(linkFiles, "./.tmp/prgout.bc")
+
+	// do we have an adapter module which needs to be included?
+	if emitter.AdapterModule != "" {
+		// opt the adapter module
+		cmd := exec.Command("opt", "-", "-o", "./.tmp/adpout.bc")
+
+		// read code from stdin
+		buffer := bytes.Buffer{}
+		buffer.Write([]byte(emitter.AdapterModule))
+		cmd.Stdin = &buffer
+
+		o, err := cmd.CombinedOutput()
+
+		// if something goes wrong -> report that to the user
+		if err != nil {
+			print.PrintC(print.Red, "Error compiling adapter module into llvm bitcode!")
+			fmt.Println(err.Error())
+			fmt.Println(string(o))
+
+			// delete the temp dir and die
+			os.RemoveAll("./.tmp")
+			os.Exit(-1)
+		}
+
+		// if everything is fine, add the adapter module to the linking list
+		linkFiles = append(linkFiles, "./.tmp/adpout.bc")
+	}
 
 	// add the systemlib to the linklist
 	linkFiles = append(linkFiles, "./systemlib/systemlib_lin.bc")

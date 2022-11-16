@@ -185,9 +185,13 @@ func (prs *Parser) parseExternalFunctionDeclaration() nodes.ExternalFunctionDecl
 	kw := prs.consume(lexer.ExternalKeyword) // We know we are getting a functional already so just consume this
 
 	isVariadic := false
+	isAdapted := false
 	if prs.current().Kind == lexer.CVariadicKeyword {
 		prs.consume(lexer.CVariadicKeyword)
 		isVariadic = true
+	} else if prs.current().Kind == lexer.CAdaptedKeyword {
+		prs.consume(lexer.CAdaptedKeyword)
+		isAdapted = true
 	}
 
 	// consume the "functionName" (which is an identifier token).
@@ -208,7 +212,7 @@ func (prs *Parser) parseExternalFunctionDeclaration() nodes.ExternalFunctionDecl
 		prs.consume(lexer.Semicolon)
 	}
 
-	return nodes.CreateExternalFunctionDeclarationMember(kw, identifier, params, typeClause, closing, isVariadic)
+	return nodes.CreateExternalFunctionDeclarationMember(kw, identifier, params, typeClause, closing, isVariadic, isAdapted)
 }
 
 func (prs *Parser) parseClassDeclaration() nodes.ClassDeclarationMember {

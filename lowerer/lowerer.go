@@ -418,8 +418,26 @@ func RewritePackageCallExpression(expr boundnodes.BoundPackageCallExpressionNode
 	return boundnodes.CreateBoundPackageCallExpressionNode(expr.Package, expr.Function, rewrittenArgs, expr.BoundSpan)
 }
 
-func RewriteConversionExpression(expr boundnodes.BoundConversionExpressionNode) boundnodes.BoundConversionExpressionNode {
+func RewriteConversionExpression(expr boundnodes.BoundConversionExpressionNode) boundnodes.BoundExpressionNode {
 	expression := RewriteExpression(expr.Expression)
+
+	// =================================================================================================================
+	// integer type literal optimisations
+	// =================================================================================================================
+	if expression.NodeType() == boundnodes.BoundLiteralExpression &&
+		expression.Type().Fingerprint() == builtins.Int.Fingerprint() {
+		value := expression.(boundnodes.BoundLiteralExpressionNode).Value.(int)
+
+		// int literal to byte literal
+		if expr.ToType.Fingerprint() == builtins.Byte.Fingerprint() {
+			return boundnodes.CreateBoundLiteralExpressionNodeFromValue(byte(value), expression.Span())
+		}
+
+		// int literal to long literal
+		if expr.ToType.Fingerprint() == builtins.Long.Fingerprint() {
+			return boundnodes.CreateBoundLiteralExpressionNodeFromValue(int64(value), expression.Span())
+		}
+	}
 
 	return boundnodes.CreateBoundConversionExpressionNode(expr.ToType, expression, expr.BoundSpan)
 }

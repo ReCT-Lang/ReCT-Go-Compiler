@@ -32,6 +32,7 @@ const (
 	PackageKeyword   TokenKind = "package (keyword)"
 	ExternalKeyword  TokenKind = "external (keyword)"
 	CVariadicKeyword TokenKind = "c_variadic (keyword)"
+	CAdaptedKeyword  TokenKind = "c_adapted (keyword)"
 	RefKeyword       TokenKind = "ref (keyword)"
 	DerefKeyword     TokenKind = "deref (keyword)"
 	StructKeyword    TokenKind = "struct (keyword)"

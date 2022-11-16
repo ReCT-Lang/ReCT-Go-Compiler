@@ -16,6 +16,7 @@ type ExternalFunctionDeclarationMember struct {
 	ClosingToken    lexer.Token
 	TypeClause      TypeClauseNode
 	IsVariadic      bool
+	IsAdapted       bool
 }
 
 // implement node type from interface
@@ -35,6 +36,7 @@ func (node ExternalFunctionDeclarationMember) Print(indent string) {
 	print.PrintC(print.Cyan, indent+"- FunctionDeclarationMember")
 	fmt.Printf("%s  └ Identifier: %s\n", indent, node.Identifier.Kind)
 	fmt.Printf("%s  └ IsVariadic: %t\n", indent, node.IsVariadic)
+	fmt.Printf("%s  └ IsAdapted: %t\n", indent, node.IsAdapted)
 
 	fmt.Println(indent + "  └ Parameters: ")
 	for _, param := range node.Parameters {
@@ -50,7 +52,7 @@ func (node ExternalFunctionDeclarationMember) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateExternalFunctionDeclarationMember(kw lexer.Token, id lexer.Token, params []ParameterNode, typeClause TypeClauseNode, closing lexer.Token, variadic bool) ExternalFunctionDeclarationMember {
+func CreateExternalFunctionDeclarationMember(kw lexer.Token, id lexer.Token, params []ParameterNode, typeClause TypeClauseNode, closing lexer.Token, variadic bool, adapted bool) ExternalFunctionDeclarationMember {
 	return ExternalFunctionDeclarationMember{
 		ExternalKeyword: kw,
 		Identifier:      id,
@@ -58,5 +60,6 @@ func CreateExternalFunctionDeclarationMember(kw lexer.Token, id lexer.Token, par
 		TypeClause:      typeClause,
 		ClosingToken:    closing,
 		IsVariadic:      variadic,
+		IsAdapted:       adapted,
 	}
 }

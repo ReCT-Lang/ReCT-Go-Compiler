@@ -203,7 +203,7 @@ func (bin *Binder) BindExternalFunctionDeclaration(mem nodes.ExternalFunctionDec
 		returnType = builtins.Void
 	}
 
-	functionSymbol := symbols.CreateExternalFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem.IsVariadic)
+	functionSymbol := symbols.CreateExternalFunctionSymbol(mem.Identifier.Value, boundParameters, returnType, mem.IsVariadic, mem.IsAdapted)
 
 	// make sure reserved functions like Constructor() and Die() meet certain requirements
 	if inClass {

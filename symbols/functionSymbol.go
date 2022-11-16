@@ -15,6 +15,7 @@ type FunctionSymbol struct {
 	Public   bool
 	External bool
 	Variadic bool
+	Adapted  bool
 
 	IRFunction *ir.Func
 
@@ -59,7 +60,7 @@ func CreateFunctionSymbol(name string, params []ParameterSymbol, typeSymbol Type
 	}
 }
 
-func CreateExternalFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, variadic bool) FunctionSymbol {
+func CreateExternalFunctionSymbol(name string, params []ParameterSymbol, typeSymbol TypeSymbol, variadic bool, adapted bool) FunctionSymbol {
 	return FunctionSymbol{
 		Exists:     true,
 		Name:       name,
@@ -67,6 +68,7 @@ func CreateExternalFunctionSymbol(name string, params []ParameterSymbol, typeSym
 		Type:       typeSymbol,
 		External:   true,
 		Variadic:   variadic,
+		Adapted:    adapted,
 		Public:     true,
 	}
 }

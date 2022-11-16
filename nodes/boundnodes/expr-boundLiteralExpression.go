@@ -86,6 +86,10 @@ func CreateBoundLiteralExpressionNodeFromValue(value interface{}, span print.Tex
 		_type = builtins.Bool
 	case int, int32:
 		_type = builtins.Int
+	case int64:
+		_type = builtins.Long
+	case byte:
+		_type = builtins.Byte
 	case float32:
 		_type = builtins.Float
 	default:
