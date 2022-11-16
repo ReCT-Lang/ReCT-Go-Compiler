@@ -863,33 +863,36 @@ func (emt *Emitter) EmitReturnStatement(blk **ir.Block, stmt boundnodes.BoundRet
 		}
 	}
 
-	// --< state-of-the-art garbage collecting >---------------------------
-	// 1. go through all locals created up to this point
-	// 2. decrement their reference counter
-	(*blk).Insts = append((*blk).Insts, NewComment("<ReturnARC>"))
-	for name, local := range emt.Locals {
+	// if this isnt a package, handle end-of-function cleanup
+	if !CompileAsPackage {
+		// --< state-of-the-art garbage collecting >---------------------------
+		// 1. go through all locals created up to this point
+		// 2. decrement their reference counter
+		(*blk).Insts = append((*blk).Insts, NewComment("<ReturnARC>"))
+		for name, local := range emt.Locals {
 
-		// if nothing has been assigned yet, there's no need to clean up
-		if !local.IsSet {
-			continue
+			// if nothing has been assigned yet, there's no need to clean up
+			if !local.IsSet {
+				continue
+			}
+
+			// only clean up things that actually need it (any and string)
+			if local.Type.IsObject {
+				(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+name+"'"))
+				emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(local.Type), local.IRLocal), "ReturnGC variable '"+local.IRLocal.Ident()+"' (leaving '"+emt.Function.Name()+"')")
+			}
 		}
 
-		// only clean up things that actually need it (any and string)
-		if local.Type.IsObject {
-			(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+name+"'"))
-			emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(local.Type), local.IRLocal), "ReturnGC variable '"+local.IRLocal.Ident()+"' (leaving '"+emt.Function.Name()+"')")
+		// clean up any parameters as well
+		// (passed variables wont be cleaned up as their reference counter has been increased before the call)
+		for _, param := range emt.FunctionSym.Parameters {
+			if param.Type.IsObject {
+				(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+param.Name+"'"))
+				emt.DestroyReference(blk, emt.Function.Params[param.Ordinal], "ReturnGC (parameter) (leaving '"+emt.Function.Name()+"')")
+			}
 		}
+		(*blk).Insts = append((*blk).Insts, NewComment("</ReturnARC>"))
 	}
-
-	// clean up any parameters as well
-	// (passed variables wont be cleaned up as their reference counter has been increased before the call)
-	for _, param := range emt.FunctionSym.Parameters {
-		if param.Type.IsObject {
-			(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+param.Name+"'"))
-			emt.DestroyReference(blk, emt.Function.Params[param.Ordinal], "ReturnGC (parameter) (leaving '"+emt.Function.Name()+"')")
-		}
-	}
-	(*blk).Insts = append((*blk).Insts, NewComment("</ReturnARC>"))
 
 	if stmt.Expression != nil {
 		(*blk).NewRet(expression)
@@ -2746,7 +2749,10 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// beep boop we bit casting
 			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 		}
-	} else if expr.ToType.IsObject {
+	}
+
+	if expr.ToType.IsObject {
+		fmt.Println(expr.ToType.Fingerprint())
 		if expr.Expression.Type().Name == builtins.Pointer.Name {
 			// change the pointer type
 			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
@@ -2762,6 +2768,10 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 	}
 
 	fmt.Println("Unknown Conversion!")
+	fmt.Println(expr.ToType.IsObject)
+	fmt.Println(expr.Expression.Type().Name)
+	fmt.Println(expr.Expression.Type().Fingerprint())
+	fmt.Println(expr.ToType.Fingerprint())
 	return nil
 }
 

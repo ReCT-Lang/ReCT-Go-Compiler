@@ -2,6 +2,7 @@ package emitter
 
 import (
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"bytes"
 	"fmt"
@@ -11,6 +12,12 @@ import (
 
 var cCode string
 var AdapterModule string
+
+type ConvertedStruct struct {
+	key    string
+	code   string
+	fields []symbols.VariableSymbol
+}
 
 func (emt *Emitter) Adapt() {
 	cCode = "" // we no cod
@@ -25,10 +32,68 @@ func (emt *Emitter) Adapt() {
 
 	cCode += "\n//structs\n"
 
-	index := 0
+	structMap := make([]ConvertedStruct, 0)
+
 	for _, stc := range emt.Structs {
-		emt.ConvertStruct(stc.Symbol.Name, stc)
-		index++
+
+		code := "typedef struct " + stc.Name + " { "
+
+		for i, fld := range stc.Symbol.Fields {
+			code += fmt.Sprintf("   %s Fld%d;", emt.ConvertType(fld.VarType(), false), i)
+		}
+
+		code += " } " + stc.Name + "; \n"
+
+		structMap = append(structMap, ConvertedStruct{
+			key:    stc.Symbol.Type.Fingerprint(),
+			code:   code,
+			fields: stc.Symbol.Fields,
+		})
+	}
+
+	// while tru (very good idea)
+	for {
+		madeChange := false
+
+		for i, convertedStruct := range structMap {
+			insertIndex := i
+
+			for _, fld := range convertedStruct.fields {
+				typ := fld.VarType()
+
+				// if the type is a pointer -> find its base
+				for typ.Name == builtins.Pointer.Name {
+					typ = typ.SubTypes[0]
+				}
+
+				// make sure this goes in the right order
+				if typ.IsUserDefined && !typ.IsObject {
+					// look up this struct in the map
+					for i2, cstc := range structMap {
+						if cstc.key == typ.Fingerprint() {
+							if i2 > insertIndex {
+								insertIndex = i2 + 1
+								break
+							}
+						}
+					}
+				}
+			}
+
+			if insertIndex > i {
+				structMap = insert(structMap, insertIndex, convertedStruct)
+				structMap[i] = ConvertedStruct{key: "", code: ""}
+				madeChange = true
+			}
+		}
+
+		if !madeChange {
+			break
+		}
+	}
+
+	for _, convertedStruct := range structMap {
+		cCode += convertedStruct.code
 	}
 
 	// we adapt
@@ -96,7 +161,13 @@ func (emt *Emitter) Adapt() {
 
 	out, err := cmd.Output()
 	if err != nil { //Use start, not run
-		fmt.Println("An error occured: ", err) //replace with logger, or anything you want
+		fmt.Println(cCode)
+		print.Error(
+			"[INTERNAL C-ADAPTER]",
+			print.CAdapterCompilationError,
+			print.TextSpan{},
+			"Error while compiling C-Adapter module! (THIS SHOULDNT HAPPEN! Please file a bug report!)")
+		os.Exit(-1)
 	}
 
 	//fmt.Println(cCode)
@@ -119,16 +190,6 @@ func (emt *Emitter) ConvertExternalCall(function symbols.FunctionSymbol) string 
 	code += ");"
 
 	return code
-}
-
-func (emt *Emitter) ConvertStruct(fp string, stc *Struct) {
-	cCode += "typedef struct " + fp + " { "
-
-	for i, fld := range stc.Symbol.Fields {
-		cCode += fmt.Sprintf("   %s Fld%d;", emt.ConvertType(fld.VarType(), false), i)
-	}
-
-	cCode += " } " + fp + "; \n"
 }
 
 func (emt *Emitter) ConvertType(fld symbols.TypeSymbol, structsAsPointers bool) string {
@@ -196,4 +257,14 @@ func (emt *Emitter) ConvertType(fld symbols.TypeSymbol, structsAsPointers bool) 
 
 	os.Exit(-1)
 	return ""
+}
+
+// theft (https://stackoverflow.com/questions/46128016/insert-a-value-in-a-slice-at-a-given-index)
+func insert(a []ConvertedStruct, index int, value ConvertedStruct) []ConvertedStruct {
+	if len(a) == index { // nil or empty slice or after last element
+		return append(a, value)
+	}
+	a = append(a[:index+1], a[index:]...) // index < len(a)
+	a[index] = value
+	return a
 }

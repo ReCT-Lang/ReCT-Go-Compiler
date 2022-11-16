@@ -357,9 +357,10 @@ const (
 	TooManyStructParametersError          = "TooManyStructParametersError"
 
 	// Emitter Errors
-	UnknownVTableError      = "UnknownVTableError"
-	UnknownConstructorError = "UnknownConsructorError"
-	UnknownDestructorError  = "UnknownDestructorError"
+	UnknownVTableError       = "UnknownVTableError"
+	UnknownConstructorError  = "UnknownConsructorError"
+	UnknownDestructorError   = "UnknownDestructorError"
+	CAdapterCompilationError = "CAdapterCompilationError"
 
 	// Packager Errors
 	UnknownPackageModuleFileError     = "UnknownPackageModuleFileError"
@@ -441,9 +442,10 @@ const (
 	TooManyStructParametersErrorCode          = iota + 3000
 
 	// Emitter ErrorCodes
-	UnknownVTableErrorCode      = iota + 4000
-	UnknownConstructorErrorCode = iota + 4000
-	UnknownDestructorErrorCode  = iota + 4000
+	UnknownVTableErrorCode       = iota + 4000
+	UnknownConstructorErrorCode  = iota + 4000
+	UnknownDestructorErrorCode   = iota + 4000
+	CAdapterCompilationErrorCode = iota + 4000
 
 	// Packager ErrorCodes
 	UnknownPackageModuleFileErrorCode     = iota + 5000
@@ -516,6 +518,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	UnexpectedNonPointerValueError:        UnexpectedNonPointerValueErrorCode,
 	UnknownStructError:                    UnknownStructErrorCode,
 	TooManyStructParametersError:          TooManyStructParametersErrorCode,
+	CAdapterCompilationError:              CAdapterCompilationErrorCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179
