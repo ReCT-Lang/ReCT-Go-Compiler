@@ -1022,6 +1022,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundLambdaExpression:
 		return emt.EmitLambdaExpression(blk, expr.(boundnodes.BoundLambdaExpressionNode))
+
+	case boundnodes.BoundFunctionExpression:
+		return emt.EmitFunctionExpression(blk, expr.(boundnodes.BoundFunctionExpressionNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -2878,6 +2881,10 @@ func (emt *Emitter) EmitLambdaExpression(blk **ir.Block, expr boundnodes.BoundLa
 
 	// don
 	return function
+}
+
+func (emt *Emitter) EmitFunctionExpression(blk **ir.Block, expr boundnodes.BoundFunctionExpressionNode) value.Value {
+	return emt.Functions[emt.Id(expr.Function)].IRFunction // return the IR function
 }
 
 // </EXPRESSIONS>--------------------------------------------------------------
