@@ -76,4 +76,5 @@ const (
 	BoundReferenceExpression            BoundType = "BoundReferenceExpression"
 	BoundDereferenceExpression          BoundType = "BoundDereferenceExpression"
 	BoundMakeStructExpression           BoundType = "BoundMakeStructExpression"
+	BoundLambdaExpression               BoundType = "BoundLambdaExpression"
 )

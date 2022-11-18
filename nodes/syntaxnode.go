@@ -86,4 +86,5 @@ const (
 	ReferenceExpression            NodeType = "Reference Expression"
 	DereferenceExpression          NodeType = "Dereference Expression"
 	MakeStructExpression           NodeType = "MakeStruct Expression"
+	LambdaExpression               NodeType = "Lambda Expression"
 )

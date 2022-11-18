@@ -28,7 +28,18 @@ func (node BoundFunctionExpressionNode) Span() print.TextSpan {
 func (BoundFunctionExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
-func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
+func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol {
+	// create cool typesymbol
+	subtypes := make([]symbols.TypeSymbol, 0)
+
+	// [prm1, prm2, returnType]
+	for _, parameter := range node.Function.Parameters {
+		subtypes = append(subtypes, parameter.Type)
+	}
+	subtypes = append(subtypes, node.Function.Type)
+
+	return symbols.CreateTypeSymbol("action", subtypes, false, false)
+}
 
 func CreateBoundFunctionExpressionNode(function symbols.FunctionSymbol, span print.TextSpan) BoundFunctionExpressionNode {
 	return BoundFunctionExpressionNode{

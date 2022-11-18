@@ -41,6 +41,7 @@ var lookup int // For looking up error details
 var outputPath string
 var llvm bool
 var optimize bool
+var packageIncludePath string
 
 var CompileAsPackage bool
 var PackageName string
@@ -65,6 +66,7 @@ func Init() {
 	flag.BoolVar(&llvm, "llvm", false, "Compile to LLVM Module")
 	flag.StringVar(&PackageName, "package", "", "Compile as a package with the given name")
 	flag.BoolVar(&optimize, "O", false, "Use compiler optimizations")
+	flag.StringVar(&packageIncludePath, "pi", "", "Custom package include path")
 	flag.Parse()
 
 	// needs to be called after flag.Parse() or it'll be empty lol
@@ -103,6 +105,13 @@ func ProcessFlags() {
 			if PackageName != "" {
 				emitter.CompileAsPackage = true
 				emitter.PackageName = PackageName
+			}
+
+			cwd, _ := os.Getwd()
+			packager.PackagePaths = append(packager.PackagePaths, cwd+"/packages") // standard package dir
+
+			if packageIncludePath != "" {
+				packager.PackagePaths = append(packager.PackagePaths, packageIncludePath)
 			}
 
 			CompileFiles(files)

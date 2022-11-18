@@ -21,9 +21,6 @@ type TypeClauseNode struct {
 // implement node type from interface
 func (TypeClauseNode) NodeType() NodeType { return TypeClause }
 
-// Position returns the starting line and column, and the total length of the statement
-// The starting line and column aren't always the absolute beginning of the statement just what's most
-// convenient.
 func (node TypeClauseNode) Span() print.TextSpan {
 	if node.ClauseIsSet {
 		span := node.TypeIdentifier.Span

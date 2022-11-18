@@ -3,6 +3,7 @@ package binder
 import (
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/lexer"
+	"ReCT-Go-Compiler/lowerer"
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/packager"
@@ -791,6 +792,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindReferenceExpression(expr.(nodes.ReferenceExpressionNode))
 	case nodes.DereferenceExpression:
 		return bin.BindDereferenceExpression(expr.(nodes.DereferenceExpressionNode))
+	case nodes.LambdaExpression:
+		return bin.BindLambdaExpression(expr.(nodes.LambdaExpressionNode))
 
 	default:
 		//print.PrintC(print.Red, "Not implemented!")
@@ -1496,6 +1499,48 @@ func (bin *Binder) BindDereferenceExpression(expr nodes.DereferenceExpressionNod
 	return boundnodes.CreateBoundDereferenceExpressionNode(src, expr.Span())
 }
 
+func (bin *Binder) BindLambdaExpression(expr nodes.LambdaExpressionNode) boundnodes.BoundLambdaExpressionNode {
+	boundParameters := make([]symbols.ParameterSymbol, 0)
+
+	for i, param := range expr.Parameters {
+		pName := param.Identifier.Value
+		pType, _ := bin.BindTypeClause(param.TypeClause)
+
+		// check if we've registered this param name before
+		for i, p := range boundParameters {
+			if p.Name == pName {
+				// I haven't done bound nodes yet so I just get the syntax node parameter using the same index
+				print.Error(
+					"BINDER",
+					print.DuplicateParameterError,
+					expr.Parameters[i].Span(),
+					// Kind of a hacky way of getting the values and positions needed for the error
+					"a parameter with the name \"%s\" already exists for this anonymous function!",
+					pName,
+				)
+				os.Exit(-1)
+			}
+		}
+
+		boundParameters = append(boundParameters, symbols.CreateParameterSymbol(pName, i, pType))
+	}
+
+	returnType, exists := bin.BindTypeClause(expr.TypeClause)
+	if !exists {
+		returnType = builtins.Void
+	}
+
+	// cool symbol
+	functionSymbol := symbols.CreateFunctionSymbol(symbols.GetLambdaName(), boundParameters, returnType, nodes.FunctionDeclarationMember{}, false)
+
+	// b o i n d   f u n c t i o n
+	binder := CreateBinder(MainScope, functionSymbol)
+	body := binder.BindBlockStatement(expr.Body)
+	loweredBody := lowerer.Lower(functionSymbol, body)
+
+	return boundnodes.CreateBoundLambdaExpressionNode(functionSymbol, loweredBody, expr.Span())
+}
+
 // </EXPRESSIONS> -------------------------------------------------------------
 // <SYMBOLS> ------------------------------------------------------------------
 
@@ -1597,6 +1642,20 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol, 
 		return builtins.Join
 	case "Kill":
 		return builtins.Kill
+	case "Run":
+		// oh boy
+		sym := builtins.Run
+
+		// return type is equal to the last subtype
+		sym.Type = baseType.SubTypes[len(baseType.SubTypes)-1]
+
+		// add some quirky params
+		for i, symbol := range baseType.SubTypes[:len(baseType.SubTypes)-1] {
+			sym.Parameters = append(sym.Parameters, symbols.CreateParameterSymbol(fmt.Sprintf("prm_%d", i), i, symbol))
+		}
+
+		// we constructed a very nice type func :)
+		return sym
 	default:
 		/*print.PrintC(
 			print.Red,
@@ -1771,6 +1830,15 @@ func (bin *Binder) LookupStructField(name string, baseType symbols.TypeSymbol, e
 func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbols.TypeSymbol, allowExplicit bool, errorLocation print.TextSpan) boundnodes.BoundExpressionNode {
 	conversionType := ClassifyConversion(expr.Type(), to)
 
+	nameFrom := expr.Type().Name
+	nameTo := to.Name
+
+	// if both names are the same -> show the fingerprint instead
+	if nameFrom == nameTo {
+		nameFrom = expr.Type().Fingerprint()
+		nameTo = to.Fingerprint()
+	}
+
 	if !conversionType.Exists {
 		//print.PrintC(print.Red, "Cannot convert type '"+expr.Type().Name+"' to '"+to.Name+"'!")
 		print.Error(
@@ -1778,8 +1846,8 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 			print.ConversionError,
 			errorLocation,
 			"Cannot convert type \"%s\" to \"%s\"!",
-			expr.Type().Name,
-			to.Name,
+			nameFrom,
+			nameTo,
 		)
 		os.Exit(-1)
 		return boundnodes.BoundErrorExpressionNode{}
@@ -1792,8 +1860,8 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 			print.ExplicitConversionError,
 			errorLocation,
 			"Cannot convert type \"%s\" to \"%s\"! (An explicit conversion exists. Are you missing a cast?)",
-			expr.Type().Name,
-			to.Name,
+			nameFrom,
+			nameTo,
 		)
 		os.Exit(-1)
 		return boundnodes.BoundErrorExpressionNode{}
@@ -1859,6 +1927,27 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 
 		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
 		return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{baseType}, false, false), true
+
+	case "action":
+		if len(typeClause.SubClauses) == 0 {
+			print.Error(
+				"BINDER",
+				print.InvalidNumberOfSubtypesError,
+				typeClause.Span(),
+				"Datatype \"%s\" takes in at least one subtype!",
+				typeClause.TypeIdentifier.Value,
+			)
+			os.Exit(-1)
+		}
+
+		subTypes := make([]symbols.TypeSymbol, 0)
+
+		for _, clause := range typeClause.SubClauses {
+			typ, _ := bin.LookupType(clause, false)
+			subTypes = append(subTypes, typ)
+		}
+
+		return symbols.CreateTypeSymbol("action", subTypes, false, false), true
 
 	default:
 		// check if this might be a class

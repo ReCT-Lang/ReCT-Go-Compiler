@@ -14,23 +14,46 @@ import (
 	"github.com/llir/llvm/ir/types"
 )
 
+var PackagePaths []string
+
 // all packages weve already loaded
 var PackagesSoFar = make([]symbols.PackageSymbol, 0)
 
 func ResolvePackage(name string, errorLocation print.TextSpan) symbols.PackageSymbol {
 	// the path where the package *should* be
-	path, _ := os.Getwd()
-	packagePath := path + "/packages/" + name + ".ll"
+	packagePath := "/" + name + ".ll"
+	exists := false
 
-	// check if the .ll file exists
-	if _, err := os.Stat(packagePath); err != nil {
-		print.Error(
-			"PACKAGER",
-			print.UnknownPackageModuleFileError,
-			errorLocation,
-			"Package module file could not be found at path '%s'!",
-			packagePath,
-		)
+	for _, pth := range PackagePaths {
+		checkPath := pth + packagePath
+
+		// check if the .ll file exists
+		if _, err := os.Stat(checkPath); err == nil {
+			// we good
+			packagePath = checkPath
+			exists = true
+			break
+		}
+	}
+
+	// if we didnt find anything
+	if !exists {
+		if len(PackagePaths) == 1 {
+			print.Error(
+				"PACKAGER",
+				print.UnknownPackageModuleFileError,
+				errorLocation,
+				"Package module file could not be found at path '%s'!",
+				packagePath,
+			)
+		} else {
+			print.Error(
+				"PACKAGER",
+				print.UnknownPackageModuleFileError,
+				errorLocation,
+				"Package module file could not be found in any of the given package directories!",
+			)
+		}
 		os.Exit(-1)
 	}
 

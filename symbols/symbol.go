@@ -26,6 +26,13 @@ func GetTempName() string {
 	return fmt.Sprintf("TMP_%d", tempCounter)
 }
 
+var lambdaCounter = 0
+
+func GetLambdaName() string {
+	lambdaCounter++
+	return fmt.Sprintf("LAMBDA_%d", lambdaCounter)
+}
+
 // types of symbols
 type SymbolType string
 

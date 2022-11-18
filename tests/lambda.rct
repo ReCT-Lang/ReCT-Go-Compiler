@@ -1,0 +1,16 @@
+package sys;
+
+var action[int,int,int] avg;
+//          |   |   |
+//          |   |   +-> last = return type
+//          |   +-> parameter b
+//          +-> parameter a
+
+avg <- lambda(a int, b int) int {
+    sys::Print("big brain calculation going on here");
+    return (a + b) / 2;
+};
+
+sys::Print(string(
+   avg->Run(0, 50) // runnin the gamer
+));

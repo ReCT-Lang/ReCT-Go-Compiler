@@ -495,6 +495,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return DerefKeyword
 	case "struct":
 		return StructKeyword
+	case "lambda":
+		return LambdaKeyword
 	default:
 		return IdToken
 	}

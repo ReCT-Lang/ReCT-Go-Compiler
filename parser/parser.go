@@ -750,6 +750,11 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 		return prs.parseThreadExpression()
 	}
 
+	// lambda functions
+	if prs.current().Kind == lexer.LambdaKeyword {
+		return prs.parseLambdaExpression()
+	}
+
 	// if none of the above are what we want, it must be a binary expression!
 	return prs.parseBinaryExpression(0)
 }
@@ -1136,7 +1141,7 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 
 // parseThreadExpression this for creating threads
 // For example: Thread(someFunction)
-func (prs *Parser) parseThreadExpression() nodes.ThreadExpressionNode {
+func (prs *Parser) parseThreadExpression() nodes.ExpressionNode {
 	keyword := prs.consume(lexer.ThreadKeyword)
 
 	prs.consume(lexer.OpenParenthesisToken)
@@ -1144,6 +1149,31 @@ func (prs *Parser) parseThreadExpression() nodes.ThreadExpressionNode {
 	closing := prs.consume(lexer.CloseParenthesisToken)
 
 	return nodes.CreateThreadExpressionNode(keyword, expression, closing)
+}
+
+// parseLambdaExpression checks for a valid order of Tokens, parses all the statements inside the function
+// and then returns it as a function declaration member.
+func (prs *Parser) parseLambdaExpression() nodes.LambdaExpressionNode {
+
+	// Example:
+	// lambda (functionArg1 string) string { ... }
+	kw := prs.consume(lexer.LambdaKeyword) // We know we are getting a functional already so just consume this
+
+	// this is where we parse the parameters (e.g., functionArg1)
+	prs.consume(lexer.OpenParenthesisToken)
+	params := prs.parseParameterList() // We only need the arguments not the parenthesis tokens UwU
+	prs.consume(lexer.CloseParenthesisToken)
+
+	// This is optional, not all functions need a return type as not all functions return a value.
+	// Our example returns a string type, so we will need the TypeClause later.
+	// if there is no return type the typeClause will be empty.
+	typeClause := prs.parseOptionalTypeClause()
+
+	// This is where we parse all our statements in the function
+	// the block statement will handle multiple statements inside itself
+	body := prs.parseBlockStatement()
+
+	return nodes.CreateLambdaExpressionNode(kw, params, typeClause, body)
 }
 
 // parseReferenceExpression this for creating pointers

@@ -103,11 +103,17 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 		binder.BindExternalFunctionDeclaration(fnc, false)
 	}
 
+	// this is now the global parent scope node
+	MainScope = *binder.ActiveScope
+
 	// bind all our statements
 	boundStatements := make([]boundnodes.BoundStatementNode, 0)
 	for _, stmt := range globalStatements {
 		boundStatements = append(boundStatements, binder.BindStatement(stmt.Statement))
 	}
+
+	// this is now the even globaler parent scope node (updated)
+	MainScope = *binder.ActiveScope
 
 	return GlobalScope{
 		MainFunction: symbols.CreateFunctionSymbol("main", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}, true),

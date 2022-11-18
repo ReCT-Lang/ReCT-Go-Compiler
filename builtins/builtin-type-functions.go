@@ -84,4 +84,12 @@ var (
 		nodes.FunctionDeclarationMember{},
 		Thread,
 	)
+
+	Run = symbols.CreateBuiltInTypeFunctionSymbol(
+		"Run",
+		[]symbols.ParameterSymbol{}, // ---> these two get filled in on a case by case basis in the binder
+		Void,                        // -/
+		nodes.FunctionDeclarationMember{},
+		Action,
+	)
 )

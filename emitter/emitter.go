@@ -840,7 +840,12 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk **ir.Block, stmt boundn
 		// emit its assignment
 		(*blk).NewStore(expression, global)
 	} else {
-		local := emt.Locals[varName]
+		local, ok := emt.Locals[varName]
+
+		if !ok {
+			fmt.Println("Broken local! Failed lookup for " + varName)
+		}
+
 		local.IsSet = true
 		emt.Locals[varName] = local
 
@@ -1014,6 +1019,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundDereferenceExpression:
 		return emt.EmitDereferenceExpression(blk, expr.(boundnodes.BoundDereferenceExpressionNode))
+
+	case boundnodes.BoundLambdaExpression:
+		return emt.EmitLambdaExpression(blk, expr.(boundnodes.BoundLambdaExpressionNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -1333,9 +1341,9 @@ func (emt *Emitter) EmitMakeStructExpression(blk **ir.Block, expr boundnodes.Bou
 		}
 	}
 
-	//ld := (*blk).NewLoad(emt.IRTypes(expr.StructType), stc)
+	ld := (*blk).NewLoad(emt.IRTypes(expr.StructType), stc)
 	//ld.Align = 1
-	return stc
+	return ld
 }
 
 func (emt *Emitter) EmitThreadStatement(blk **ir.Block, stmt boundnodes.BoundThreadExpressionNode) value.Value {
@@ -2089,34 +2097,34 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
 	}
 
-	var value value.Value
+	var val value.Value
 
 	switch expr.Function.Fingerprint() {
 	case builtins.GetLength.Fingerprint():
 		// call the get length function on the string
-		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
+		val = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetLength"], base)
 
 	case builtins.GetBuffer.Fingerprint():
 		// call the get length function on the string
-		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], base)
+		val = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], base)
 
 	case builtins.Substring.Fingerprint():
 		start := emt.EmitExpression(blk, expr.Arguments[0])
 		length := emt.EmitExpression(blk, expr.Arguments[1])
 
 		// call the substring function on the string
-		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], base, start, length)
+		val = (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Substring"], base, start, length)
 	case builtins.GetArrayLength.Fingerprint():
 		// call the get length function on the array
 
 		// object arrays
 		if expr.Base.Type().SubTypes[0].IsObject {
 			base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
-			value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], base)
+			val = (*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetLength"], base)
 		} else {
 			// primitive arrays
 			base = (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.PArray)].Type))
-			value = (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], base)
+			val = (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetLength"], base)
 		}
 
 	case builtins.Push.Fingerprint():
@@ -2135,7 +2143,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		}
 
 		// no need for a return value, this is a void
-		value = nil
+		val = nil
 
 	case builtins.PPush.Fingerprint():
 		element := emt.EmitExpression(blk, expr.Arguments[0])
@@ -2153,17 +2161,51 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		(*blk).NewStore(element, castedPtr)
 
 		// no need for a return value, this is a void
-		value = nil
+		val = nil
 
 	case builtins.Kill.Fingerprint():
-		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Kill"], base)
+		val = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Kill"], base)
 
 	case builtins.Start.Fingerprint():
-		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Start"], base)
+		val = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Start"], base)
 
 	case builtins.Join.Fingerprint():
-		value = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Join"], base)
+		val = (*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Join"], base)
 	default:
+		// the funky ones:
+		// (these cant be identified by their fingerprint because its generated procedurally)
+		if expr.Function.Name == builtins.Run.Name {
+			arguments := make([]value.Value, 0)
+
+			// emit some quirky params
+			for i := range expr.Function.Parameters {
+				arg := emt.EmitExpression(blk, expr.Arguments[i])
+
+				// if this is an object -> increase its reference counter
+				// (only do this for variables)
+				if expr.Arguments[i].IsPersistent() {
+					if expr.Arguments[i].Type().IsObject {
+						emt.CreateReference(blk, arg, "copy to be passed into a parameter")
+					}
+				}
+
+				arguments = append(arguments, arg)
+			}
+
+			// call the function
+			//fnc := (*blk).NewLoad(emt.IRTypes(expr.Base.Type()), base)
+			val = (*blk).NewCall(base, arguments...)
+
+			// memory cleanup
+			for i, arg := range arguments {
+				if expr.Arguments[i].Type().IsObject {
+					emt.DestroyReference(blk, arg, "ReturnARC of lambda call ->Run()")
+				}
+			}
+
+			break
+		}
+
 		fmt.Println("Unknown TypeCall!")
 		return nil
 	}
@@ -2174,7 +2216,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		emt.DestroyReference(blk, base, "type call base cleanup")
 	}
 
-	return value
+	return val
 
 }
 
@@ -2811,6 +2853,33 @@ func (emt *Emitter) EmitDereferenceExpression(blk **ir.Block, expr boundnodes.Bo
 		emt.IRTypes(expr.Type()), value)
 }
 
+func (emt *Emitter) EmitLambdaExpression(blk **ir.Block, expr boundnodes.BoundLambdaExpressionNode) value.Value {
+	// take a snapshot of the function we're in
+	// TODO(RedCube): Replace this with a stack
+	fnc := emt.Function
+	fncsym := emt.FunctionSym
+	fnclcs := emt.Locals
+	fnctmp := emt.Temps
+	fnclbs := emt.Labels
+
+	// lambdas are a lie
+	function := emt.EmitFunction(expr.Function, expr.Body)
+
+	// emit the body
+	emt.FunctionSym = expr.Function
+	emt.EmitBlockStatement(expr.Function, function, expr.Body)
+
+	// remember where tf we were
+	emt.Function = fnc
+	emt.FunctionSym = fncsym
+	emt.Locals = fnclcs
+	emt.Temps = fnctmp
+	emt.Labels = fnclbs
+
+	// don
+	return function
+}
+
 // </EXPRESSIONS>--------------------------------------------------------------
 // <UTILS>---------------------------------------------------------------------
 
@@ -2841,6 +2910,10 @@ func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) cons
 	}
 
 	if typ.Name == builtins.Pointer.Name {
+		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
+	}
+
+	if typ.Name == builtins.Action.Name {
 		return constant.NewNull(emt.IRTypes(typ).(*types.PointerType))
 	}
 

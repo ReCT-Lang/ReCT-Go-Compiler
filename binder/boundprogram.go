@@ -9,6 +9,8 @@ import (
 	"fmt"
 )
 
+var MainScope Scope
+
 type BoundProgram struct {
 	GlobalScope       *GlobalScope
 	MainFunction      symbols.FunctionSymbol

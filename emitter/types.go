@@ -58,6 +58,10 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		return types.NewPointer(emt.IRTypes(typ.SubTypes[0]))
 	}
 
+	if typ.Name == builtins.Action.Name {
+		return types.NewPointer(emt.ResolveFunctionPointer(typ.SubTypes))
+	}
+
 	// try looking up a class
 	cls, ok := emt.Classes[emt.Id(typ)]
 	if ok {
@@ -129,6 +133,26 @@ func (emt *Emitter) ResolveArray(typ symbols.TypeSymbol, cache *map[string]types
 	(*cache)[typ.Fingerprint()] = newType
 
 	return newType
+}
+
+func (emt *Emitter) ResolveFunctionPointer(subTypes []symbols.TypeSymbol) types.Type {
+	fnc := types.NewFunc(emt.IRTypes(subTypes[0])) // ALWAYS needs to be defined
+
+	// no params? ok
+	if len(subTypes) == 1 {
+		return fnc
+	}
+
+	// add some quirky params
+	for _, symbol := range subTypes[:len(subTypes)-1] {
+		fnc.Params = append(fnc.Params, emt.IRTypes(symbol))
+	}
+
+	// set the return value to the last entry
+	fnc.RetType = emt.IRTypes(subTypes[len(subTypes)-1])
+
+	// cool beans
+	return fnc
 }
 
 type Global struct {
