@@ -37,6 +37,7 @@ const (
 	DerefKeyword     TokenKind = "deref (keyword)"
 	StructKeyword    TokenKind = "struct (keyword)"
 	LambdaKeyword    TokenKind = "lambda (keyword)"
+	ThisKeyword      TokenKind = "this (keyword)"
 
 	// Tokens
 	EOF               TokenKind = "EndOfFile"

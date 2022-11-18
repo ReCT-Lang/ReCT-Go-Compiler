@@ -1,0 +1,19 @@
+package sys;
+
+class SomeClass {
+   set string Fld <- "cool string";
+
+    function Constructor() {
+        // lmd is automatically defined as action[SomeClass, void]
+        var lmd <- someOtherFunction;
+        lmd->Run(this); // ref to this obj
+    }
+
+    // nothing special going on with this func
+    function someOtherFunction() {
+        Fld <- "cooler string";
+    }
+}
+
+var obj <- make SomeClass();
+sys::Print(obj->Fld);

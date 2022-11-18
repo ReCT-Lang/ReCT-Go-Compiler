@@ -355,6 +355,7 @@ const (
 	InvalidExternalFunctionPlacementError = "InvalidExternalFunctionPlacementError"
 	UnexpectedNonPointerValueError        = "UnexpectedNonPointerValueError"
 	TooManyStructParametersError          = "TooManyStructParametersError"
+	OutsideThisError                      = "OutsideThisError"
 
 	// Emitter Errors
 	UnknownVTableError       = "UnknownVTableError"
@@ -441,6 +442,7 @@ const (
 	UnexpectedNonPointerValueErrorCode        = iota + 3000
 	UnknownStructErrorCode                    = iota + 3000
 	TooManyStructParametersErrorCode          = iota + 3000
+	OutsideThisErrorCode                      = iota + 3000
 
 	// Emitter ErrorCodes
 	UnknownVTableErrorCode       = iota + 4000
@@ -522,6 +524,7 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	TooManyStructParametersError:          TooManyStructParametersErrorCode,
 	CAdapterCompilationError:              CAdapterCompilationErrorCode,
 	ExternalCAdapterWarning:               ExternalCAdapterWarningCode,
+	OutsideThisError:                      OutsideThisErrorCode,
 }
 
 // ErrorTypeToCode https://discord.com/channels/751171532398788720/937451421702455306/943557950260269179

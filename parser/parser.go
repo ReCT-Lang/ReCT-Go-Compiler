@@ -832,6 +832,9 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 	} else if cur == lexer.IdToken {
 		return prs.parseNameOrCallExpression()
 
+	} else if cur == lexer.ThisKeyword {
+		return prs.parseThisExpression()
+
 	} else if prs.current().Kind == lexer.RefKeyword {
 		return prs.parseReferenceExpression()
 
@@ -903,6 +906,12 @@ func (prs *Parser) parseNameOrCallExpression() nodes.ExpressionNode {
 
 	// if not, it's a name expression
 	return prs.parseNameExpression()
+}
+
+// parseThisExpression literally just 'this'
+func (prs *Parser) parseThisExpression() nodes.ExpressionNode {
+	kw := prs.consume(lexer.ThisKeyword)
+	return nodes.CreateThisExpressionNode(kw)
 }
 
 // parseCallExpression this for when we're calling a function

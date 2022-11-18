@@ -9,6 +9,7 @@ import (
 type BoundFunctionExpressionNode struct {
 	BoundExpressionNode
 
+	InClass   symbols.ClassSymbol
 	Function  symbols.FunctionSymbol
 	BoundSpan print.TextSpan
 }
@@ -32,6 +33,11 @@ func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol {
 	// create cool typesymbol
 	subtypes := make([]symbols.TypeSymbol, 0)
 
+	// if this function is inside a class -> add the obj as the first parameter (bc thats how it be)
+	if node.InClass.Exists {
+		subtypes = append(subtypes, node.InClass.Type)
+	}
+
 	// [prm1, prm2, returnType]
 	for _, parameter := range node.Function.Parameters {
 		subtypes = append(subtypes, parameter.Type)
@@ -44,6 +50,14 @@ func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol {
 func CreateBoundFunctionExpressionNode(function symbols.FunctionSymbol, span print.TextSpan) BoundFunctionExpressionNode {
 	return BoundFunctionExpressionNode{
 		Function:  function,
+		BoundSpan: span,
+	}
+}
+
+func CreateBoundFunctionInClassExpressionNode(function symbols.FunctionSymbol, class symbols.ClassSymbol, span print.TextSpan) BoundFunctionExpressionNode {
+	return BoundFunctionExpressionNode{
+		Function:  function,
+		InClass:   class,
 		BoundSpan: span,
 	}
 }

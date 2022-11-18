@@ -360,8 +360,8 @@ func (emt *Emitter) EmitClassConstructor(cls *Class, bcls binder.BoundClass, cls
 	croot.NewStore(clsvConstant, clsMyVTable)
 
 	// set the reference count to 0
-	clsMyRefCount := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(1))
-	croot.NewStore(CI32(0), clsMyRefCount)
+	//clsMyRefCount := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(1))
+	//croot.NewStore(CI32(0), clsMyRefCount)
 
 	// store a NULL in any object fields, to tell the ARC that they are empty
 	for _, field := range bcls.Symbol.Fields {
@@ -1025,6 +1025,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundFunctionExpression:
 		return emt.EmitFunctionExpression(blk, expr.(boundnodes.BoundFunctionExpressionNode))
+
+	case boundnodes.BoundThisExpression:
+		return emt.EmitThisExpression(blk, expr.(boundnodes.BoundThisExpressionNode))
 	}
 
 	fmt.Println("Unimplemented node: " + expr.NodeType())
@@ -2884,7 +2887,16 @@ func (emt *Emitter) EmitLambdaExpression(blk **ir.Block, expr boundnodes.BoundLa
 }
 
 func (emt *Emitter) EmitFunctionExpression(blk **ir.Block, expr boundnodes.BoundFunctionExpressionNode) value.Value {
-	return emt.Functions[emt.Id(expr.Function)].IRFunction // return the IR function
+
+	if emt.IsInClass && !expr.Function.BuiltIn {
+		return emt.Classes[emt.Id(emt.ClassSym.Type)].Functions[emt.Id(expr.Function)] // return the lame IR function
+	} else {
+		return emt.Functions[emt.Id(expr.Function)].IRFunction // return the IR function
+	}
+}
+
+func (emt *Emitter) EmitThisExpression(blk **ir.Block, expr boundnodes.BoundThisExpressionNode) value.Value {
+	return emt.Function.Params[0] // return the reserved parameter
 }
 
 // </EXPRESSIONS>--------------------------------------------------------------
@@ -3023,14 +3035,23 @@ func (emt *Emitter) CreateObject(blk **ir.Block, typ string, args ...value.Value
 	instance := (*blk).NewBitCast((*blk).NewCall(emt.CFuncs["malloc"], sizeInt), types.NewPointer(emt.Classes[typ].Type))
 
 	// get pointer to instance
-	instancePointer := (*blk).NewGetElementPtr(emt.Classes[typ].Type, instance, CI32(0))
+	//instancePointer := (*blk).NewGetElementPtr(emt.Classes[typ].Type, instance, CI32(0))
+	instancePointer := instance
 
-	// contructor arguments
+	// temporarily increase ref count without alerting ARC (shh)
+	// (this is literally a bodged bug fix which is trying to be sneaky to not break compatibility)
+	arcCounterPointer := (*blk).NewGetElementPtr(emt.Classes[typ].Type, instance, CI32(0), CI32(1))
+	(*blk).NewStore(CI32(1), arcCounterPointer)
+
+	// constructor arguments
 	arguments := []value.Value{instancePointer}
 	arguments = append(arguments, args...)
 
 	// call the constructor
 	(*blk).NewCall(emt.Classes[typ].Constructor, arguments...)
+
+	// remove temporary arc counter increase
+	(*blk).NewStore(CI32(0), arcCounterPointer)
 
 	// create reference
 	emt.CreateReference(blk, instancePointer, "initial instance")

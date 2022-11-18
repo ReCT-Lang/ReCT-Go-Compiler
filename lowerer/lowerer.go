@@ -365,6 +365,8 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteDereferenceExpression(expr.(boundnodes.BoundDereferenceExpressionNode))
 	case boundnodes.BoundLambdaExpression:
 		return RewriteLambdaExpression(expr.(boundnodes.BoundLambdaExpressionNode))
+	case boundnodes.BoundThisExpression:
+		return RewriteThisExpression(expr.(boundnodes.BoundThisExpressionNode))
 	default:
 		print.PrintC(print.Red, "Expression unaccounted for in lowerer! (stuff being in here is important lol)")
 		os.Exit(-1)
@@ -593,6 +595,11 @@ func RewriteDereferenceExpression(expr boundnodes.BoundDereferenceExpressionNode
 }
 
 func RewriteLambdaExpression(expr boundnodes.BoundLambdaExpressionNode) boundnodes.BoundLambdaExpressionNode {
+	// nothing to do here
+	return expr
+}
+
+func RewriteThisExpression(expr boundnodes.BoundThisExpressionNode) boundnodes.BoundThisExpressionNode {
 	// nothing to do here
 	return expr
 }

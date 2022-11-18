@@ -18,6 +18,7 @@ type Binder struct {
 	Scopes         []Scope
 	ActiveScope    *Scope
 	FunctionSymbol symbols.FunctionSymbol
+	ClassSymbol    symbols.ClassSymbol
 
 	LabelCounter   int
 	BreakLabels    []boundnodes.BoundLabel
@@ -794,6 +795,8 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindDereferenceExpression(expr.(nodes.DereferenceExpressionNode))
 	case nodes.LambdaExpression:
 		return bin.BindLambdaExpression(expr.(nodes.LambdaExpressionNode))
+	case nodes.ThisExpression:
+		return bin.BindThisExpression(expr.(nodes.ThisExpressionNode))
 
 	default:
 		//print.PrintC(print.Red, "Not implemented!")
@@ -819,14 +822,49 @@ func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressio
 
 func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.BoundExpressionNode {
 	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
+	// normal variable lookup
 	if symbol == nil || symbol.SymbolType() != symbols.Function {
 		variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
 		return boundnodes.CreateBoundVariableExpressionNode(variable, expr.Span())
-	} else {
-		functionSymbol := symbol.(symbols.FunctionSymbol)
-		return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
-	}
 
+		// funky function lookup
+	} else if symbol.SymbolType() == symbols.Function {
+		functionSymbol := symbol.(symbols.FunctionSymbol)
+
+		if bin.InClass {
+			// we protecc
+			// ----------
+
+			// if we are inside a class, dont allow calls to Constructor() and Die()
+			if bin.InClass && functionSymbol.Name == "Constructor" {
+				print.Error(
+					"BINDER",
+					print.IllegalConstructorCallError,
+					expr.Span(),
+					"Lambda reference to Constructor in own class is not allowed!",
+				)
+				os.Exit(-1)
+			}
+
+			if bin.InClass && functionSymbol.Name == "Die" {
+				print.Error(
+					"BINDER",
+					print.IllegalDestructorCallError,
+					expr.Span(),
+					"Lambda reference to Destructor in own class is not allowed!",
+				)
+				os.Exit(-1)
+			}
+
+			return boundnodes.CreateBoundFunctionInClassExpressionNode(functionSymbol, bin.ClassSymbol, expr.Span())
+		} else {
+			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
+		}
+
+		// ah yes, safety
+	} else {
+		return nil
+	}
 }
 
 func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
@@ -1489,7 +1527,7 @@ func (bin *Binder) BindDereferenceExpression(expr nodes.DereferenceExpressionNod
 	if src.Type().Name != builtins.Pointer.Name {
 		print.Error(
 			"BINDER",
-			print.TernaryOperatorTypeError,
+			print.UnexpectedNonPointerValueError,
 			expr.Span(),
 			"Dereferencing requires a pointer type!",
 		)
@@ -1539,6 +1577,21 @@ func (bin *Binder) BindLambdaExpression(expr nodes.LambdaExpressionNode) boundno
 	loweredBody := lowerer.Lower(functionSymbol, body)
 
 	return boundnodes.CreateBoundLambdaExpressionNode(functionSymbol, loweredBody, expr.Span())
+}
+
+func (bin *Binder) BindThisExpression(expr nodes.ThisExpressionNode) boundnodes.BoundThisExpressionNode {
+	if !bin.InClass {
+		// Illegal!
+		print.Error(
+			"BINDER",
+			print.OutsideThisError,
+			expr.Span(),
+			"'this' expression cannot be used outside of a class!",
+		)
+		os.Exit(-1)
+	}
+
+	return boundnodes.CreateBoundThisExpressionNode(bin.ClassSymbol, expr.Span())
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------

@@ -108,6 +108,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 
 			binder := CreateBinder(classScope, fnc)
 			binder.InClass = true
+			binder.ClassSymbol = cls
 			body := binder.BindBlockStatement(fnc.Declaration.Body)
 			loweredBody := lowerer.Lower(fnc, body)
 
