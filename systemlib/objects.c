@@ -3,6 +3,8 @@
 #include<stdbool.h>
 #include<stdio.h>
 #include<pthread.h>  // For thread object UwU
+
+#define GC_THREADS GC_THREADS
 #include<gc.h>       // For garbage (collection)
 
 
@@ -470,7 +472,7 @@ void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 const Standard_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread"};
 
 // definition for the objects constructor
-void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
+void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), class_Array_Any *args) {
 	this->__routine = __routine;
 	this->args = args;
 }
@@ -480,7 +482,7 @@ void Thread_public_Start(class_Thread *this) {
 
     // Args: thread id, attributes, function, arguments
     // if attributes are NULL, they are set to default.
-    pthread_create(&this->id, NULL, this->__routine, this->args);
+    pthread_create(&this->id, NULL, this->__routine, (void*)this->args);
 }
 
 // join thread
@@ -490,5 +492,5 @@ void Thread_public_Join(class_Thread *this) {
 
 // end thread
 void Thread_public_Kill(class_Thread *this) {
-    pthread_exit(NULL);
+    pthread_cancel(this->id);
 }

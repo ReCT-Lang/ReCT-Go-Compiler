@@ -1,23 +1,27 @@
 package sys;
 
+external clock() long;
+
 class SomeClass {
-   set string Fld <- "cool string";
+    set string Fld <- "cool string";
+    set thread Thrd;
 
     function Constructor() {
         // lmd is automatically defined as action[SomeClass, void]
         var lmd <- someOtherFunction;
-        //lmd->Run(this); // ref to this obj
-        var obj <- any(lmd);
-        action[SomeClass, void](obj)->Run(this);
+        Thrd <- lmd->RunThread(this);
     }
 
     // nothing special going on with this func
     function someOtherFunction() {
         Fld <- "cooler string";
+        sys::Print("dude imagine being in a different thread");
     }
 }
 
-while (true) {
+while (clock() < 10000000) {
    var obj <- make SomeClass();
-   sys::Print(obj->Fld);
+   sys::Print(obj->Fld + " : " + string(clock()));
+   obj->Thrd->Join();
+   sys::Print(obj->Fld + " : " + string(clock()));
 }

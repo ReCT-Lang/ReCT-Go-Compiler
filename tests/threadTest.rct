@@ -1,13 +1,21 @@
+package sys;
 
-function epicFunction() int {
-	Print("aaaaaaa");
-    return 100;
-}
+var thrd <- (
+   lambda (someString string) {
+      //sys::Print("Got the string: " + someString);
+      //sys::Print("very cool");
+      while (true) {
+         sys::Write(someString);
+      }
+   }
+)->RunThread("among us");
 
-Print("hello");
-var t <- Thread(epicFunction);
-t->Start();
 
-Print("we threadin");
+sys::Print("we threadin :)");
+//thrd->Join(); // wait for the thread to conclude
+//sys::Print("no more thread :(");
 
-t->Join();
+sys::Sleep(4000);
+
+thrd->Kill();
+sys::Print("no more thread >:)");

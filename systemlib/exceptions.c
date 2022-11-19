@@ -75,7 +75,7 @@ void exc_ThrowIfNull(void* pointer) {
 	 exc_Throw("Null-Pointer exception! The given reference was null.");
 }
 
-// shortcut for invalid casting errors
+// shortcut for invalThreadid casting errors
 void exc_ThrowIfInvalidCast(class_Any* fromObj, Standard_vTable *to, const char *toFingerprint) {
 	// source object hasnt been initialized yet
 	// in that case we allow conversion because NULL is the same, no matter what type

@@ -33,7 +33,6 @@ void Double_public_Constructor(class_Double*, double);
 void Bool_public_Constructor(class_Bool*, bool);
 void Array_public_Constructor(class_Array*, int);
 void pArray_public_Constructor(class_pArray*, int, int);
-void Thread_public_Constructor(class_Thread*, void *(*)(void *), void *);
 
 // -----------------------------------------------------------------------------
 // standard vTable, this is the base requirement for all vtables
@@ -247,11 +246,14 @@ DEFINE_PARRAY(Float);
 // Developer Note: This requires -lpthread flag because we're using pthread.h
 // -----------------------------------------------------------------------------
 
+// sneaky constructor
+void Thread_public_Constructor(class_Thread*, void *(*)(void *), class_Array_Any *);
+
 // the objects struct
 struct class_Thread {
 	Standard_vTable vtable;         // the epic vTable
 	void *(*__routine)(void*);      // thread routine (this is the function the thread runs)
-	void *args;                     // (the arguments to the function the thread runs)
+	class_Array_Any *args;          // (the arguments to the function the thread runs)
 	pthread_t id;                   // thread id
 };
 

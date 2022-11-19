@@ -1607,8 +1607,8 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol, 
 				return builtins.PPush
 			}
 		}
-	case "Start":
-		return builtins.Start
+	//case "Start":
+	//	return builtins.Start // handled by RunThread()
 	case "Join":
 		return builtins.Join
 	case "Kill":
@@ -1880,6 +1880,8 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		return builtins.Double, true
 	case "string":
 		return builtins.String, true
+	case "thread":
+		return builtins.Thread, true
 	case "any":
 		return builtins.Any, true
 	case "array":
@@ -1997,6 +1999,8 @@ func LookupPrimitiveType(name string, canFail bool, errorLocation print.TextSpan
 		return builtins.Double, true
 	case "string":
 		return builtins.String, true
+	case "thread":
+		return builtins.Thread, true
 	case "any":
 		return builtins.Any, true
 	default:

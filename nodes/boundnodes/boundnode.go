@@ -75,4 +75,5 @@ const (
 	BoundMakeStructExpression           BoundType = "BoundMakeStructExpression"
 	BoundLambdaExpression               BoundType = "BoundLambdaExpression"
 	BoundThisExpression                 BoundType = "BoundThisExpression"
+	BoundInternalValueExpression        BoundType = "BoundInternalValueExpression"
 )

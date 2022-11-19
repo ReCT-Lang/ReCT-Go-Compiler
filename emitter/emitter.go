@@ -23,7 +23,6 @@ type Emitter struct {
 
 	// referenced functions
 	CFuncs   map[string]*ir.Func
-	ArcFuncs map[string]*ir.Func
 	ExcFuncs map[string]*ir.Func
 
 	// referenced classes
@@ -39,6 +38,7 @@ type Emitter struct {
 	Globals          map[string]Global
 	Functions        map[string]Function
 	FunctionWrappers map[string]*ir.Func
+	Lambdas          map[string]*ir.Func
 	FunctionLocals   map[string]map[string]Local
 	StrConstants     map[string]value.Value
 	StrNameCounter   int
@@ -72,13 +72,13 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 		Globals:          make(map[string]Global),
 		Functions:        make(map[string]Function),
 		CFuncs:           make(map[string]*ir.Func),
-		ArcFuncs:         make(map[string]*ir.Func),
 		ExcFuncs:         make(map[string]*ir.Func),
 		FunctionLocals:   make(map[string]map[string]Local),
 		StrConstants:     make(map[string]value.Value),
 		Classes:          make(map[string]*Class),
 		Structs:          make(map[string]*Struct),
 		FunctionWrappers: make(map[string]*ir.Func),
+		Lambdas:          make(map[string]*ir.Func),
 		Temps:            make([]string, 0),
 		Packages:         make(map[string]*Package),
 	}
@@ -803,6 +803,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	var val value.Value
 
 	switch expr.NodeType() {
+	case boundnodes.BoundInternalValueExpression:
+		val = expr.(boundnodes.BoundInternalValueExpressionNode).Value
+
 	case boundnodes.BoundLiteralExpression:
 		val = emt.EmitLiteralExpression(blk, expr.(boundnodes.BoundLiteralExpressionNode))
 
@@ -926,7 +929,7 @@ func (emt *Emitter) EmitLiteralExpression(blk **ir.Block, expr boundnodes.BoundL
 	case builtins.Byte.Fingerprint():
 		return constant.NewInt(types.I8, int64(expr.Value.(byte)))
 	case builtins.Long.Fingerprint():
-		return constant.NewInt(types.I64, int64(expr.Value.(int)))
+		return constant.NewInt(types.I64, int64(expr.Value.(int64)))
 	case builtins.Float.Fingerprint():
 		return constant.NewFloat(types.Float, float64(expr.Value.(float32)))
 	case builtins.String.Fingerprint():
@@ -1896,22 +1899,43 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 
 			break
 		} else if expr.Function.Name == builtins.RunThread.Name {
-			arguments := make([]value.Value, 0)
+			// create a new array with the size equal to our number of parameters
+			argsArr := emt.CreateObject(blk, builtins.AnyArr, CI32(int32(len(expr.Function.Parameters)+1)))
 
 			// emit some quirky params
 			for i := range expr.Function.Parameters {
-				arg := emt.EmitExpression(blk, expr.Arguments[i])
+				// convert the expression to 'Any' as that is the type we need for the array
+				arg := emt.EmitConversionExpression(blk, boundnodes.CreateBoundConversionExpressionNode(
+					builtins.Any, expr.Arguments[i], expr.Arguments[i].Span(),
+				))
 
-				arguments = append(arguments, arg)
+				// store the arg in the array
+				(*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], argsArr, CI32(int32(i)), arg)
 			}
 
-			// wrap the parameters in an array
-			//argsArr := emt.CreateObject(blk, builtins.AnyArr, CI32(int32(len(arguments))))
+			// add the lambda itself onto the end of the list
+			// ----------------------------------------------
 
-			// call the function
-			//fnc := (*blk).NewLoad(emt.IRTypes(expr.Base.Type()), base)
-			val = (*blk).NewCall(base, arguments...)
+			// convert the action to 'Any'
+			lbd := emt.EmitConversionExpression(blk, boundnodes.CreateBoundConversionExpressionNode(
+				builtins.Any, expr.Base, expr.Base.Span(),
+			))
 
+			// store the arg in the array
+			(*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], argsArr, CI32(int32(len(expr.Function.Parameters))), lbd)
+
+			// generate a wrapper function for this thread
+			// -------------------------------------------
+			wrapper := emt.GetThreadWrapper(expr.Base.Type())
+
+			// create the thread object!
+			// -------------------------
+			thread := emt.CreateObject(blk, builtins.Thread, wrapper, argsArr)
+
+			// start the thread
+			(*blk).NewCall(emt.Classes[emt.Id(builtins.Thread)].Functions["Start"], thread)
+
+			val = thread
 			break
 		}
 
@@ -2425,7 +2449,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 	}
 
 	if expr.ToType.IsObject {
-		fmt.Println(expr.ToType.Fingerprint())
 		if expr.Expression.Type().Name == builtins.Pointer.Name {
 			// change the pointer type
 			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
@@ -2460,6 +2483,12 @@ func (emt *Emitter) EmitDereferenceExpression(blk **ir.Block, expr boundnodes.Bo
 }
 
 func (emt *Emitter) EmitLambdaExpression(blk **ir.Block, expr boundnodes.BoundLambdaExpressionNode) value.Value {
+	// is this lambda already defined?
+	lbd, ok := emt.Lambdas[expr.Function.Fingerprint()]
+	if ok {
+		return lbd
+	}
+
 	// take a snapshot of the function we're in
 	// TODO(RedCube): Replace this with a stack
 	fnc := emt.Function
@@ -2481,6 +2510,9 @@ func (emt *Emitter) EmitLambdaExpression(blk **ir.Block, expr boundnodes.BoundLa
 	emt.Locals = fnclcs
 	emt.Temps = fnctmp
 	emt.Labels = fnclbs
+
+	// store this lambda for later
+	emt.Lambdas[expr.Function.Fingerprint()] = function
 
 	// don
 	return function
@@ -2619,10 +2651,42 @@ func (emt *Emitter) GetThreadWrapper(source symbols.TypeSymbol) *ir.Func {
 	root := newWrapper.NewBlock("")
 
 	// convert the void* into an array
-	//arr := root.NewBitCast(newWrapper.Params[0], emt.IRTypes(builtins.AnyArr))
+	arr := root.NewBitCast(newWrapper.Params[0], types.NewPointer(emt.Classes[emt.Id(builtins.Array)].Type))
 
-	// add its instructions
-	root.NewCall(emt.Functions[emt.Id(source)].IRFunction)
+	// load the thread arguments into variables
+	arguments := make([]value.Value, 0)
+	for i, symbol := range source.SubTypes[:len(source.SubTypes)-1] {
+		element := root.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], arr, CI32(int32(i)))
+
+		// convert from 'Any' back to the orignial type
+		arg := emt.EmitConversionExpression(
+			&root,
+			boundnodes.CreateBoundConversionExpressionNode(
+				symbol,
+				boundnodes.CreateBoundInternalValueExpressionNode(element, builtins.Any),
+				print.TextSpan{},
+			))
+
+		arguments = append(arguments, arg)
+	}
+
+	// load the function pointer of our lambda
+	// ---------------------------------------
+
+	// last arr element
+	element := root.NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["GetElement"], arr, CI32(int32(len(source.SubTypes)-1)))
+
+	// get the function pointer
+	fnc := emt.EmitConversionExpression(
+		&root,
+		boundnodes.CreateBoundConversionExpressionNode(
+			source,
+			boundnodes.CreateBoundInternalValueExpressionNode(element, builtins.Any),
+			print.TextSpan{},
+		))
+
+	// call!
+	root.NewCall(fnc, arguments...)
 	root.NewRet(constant.NewNull(types.I8Ptr))
 
 	// register the wrapper if we need to use it again later

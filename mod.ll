@@ -12,7 +12,7 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.class_Float = type { %struct.Standard_vTable, float }
 %struct.class_Array = type { %struct.Standard_vTable, %struct.class_Any**, i32, i32, i32 }
 %struct.class_pArray = type { %struct.Standard_vTable, i8*, i32, i32, i32, i32 }
-%struct.class_Thread = type { %struct.Standard_vTable, i8* (i8*)*, i8*, i64 }
+%struct.class_Thread = type { %struct.Standard_vTable, i8* (i8*)*, %struct.class_Array*, i64 }
 %union.pthread_attr_t = type { i64, [48 x i8] }
 
 @.str = private unnamed_addr constant [4 x i8] c"Any\00", align 1
@@ -240,7 +240,7 @@ define dso_local i8* @pArray_public_GetElementPtr(%struct.class_pArray* noundef 
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @Thread_public_Constructor(%struct.class_Thread* noundef %0, i8* (i8*)* noundef %1, i8* noundef %2) #0  {
+define dso_local void @Thread_public_Constructor(%struct.class_Thread* noundef %0, i8* (i8*)* noundef %1, %struct.class_Array* noundef %2) #0  {
   ret void
 }
 
@@ -249,23 +249,21 @@ define dso_local void @Thread_public_Start(%struct.class_Thread* noundef %0) #0 
   ret void
 }
 
-; Function Attrs: nounwind
-declare i32 @pthread_create(i64* noundef, %union.pthread_attr_t* noundef, i8* (i8*)* noundef, i8* noundef) #5
+declare i32 @GC_pthread_create(i64* noundef, %union.pthread_attr_t* noundef, i8* (i8*)* noundef, i8* noundef) #4
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Thread_public_Join(%struct.class_Thread* noundef %0) #0  {
   ret void
 }
 
-declare i32 @pthread_join(i64 noundef, i8** noundef) #4
+declare i32 @GC_pthread_join(i64 noundef, i8** noundef) #4
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @Thread_public_Kill(%struct.class_Thread* noundef %0) #0  {
   ret void
 }
 
-; Function Attrs: noreturn
-declare void @pthread_exit(i8* noundef) #7
+declare i32 @GC_pthread_cancel(i64 noundef) #4
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @exc_Throw(i8* noundef %0) #0  {
@@ -283,7 +281,7 @@ declare i8** @backtrace_symbols(i8** noundef, i32 noundef) #5
 declare i8* @strstr(i8* noundef, i8* noundef) #1
 
 ; Function Attrs: noreturn nounwind
-declare void @exit(i32 noundef) #8
+declare void @exit(i32 noundef) #7
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local void @exc_ThrowIfNull(i8* noundef %0) #0  {
@@ -308,14 +306,12 @@ attributes #3 = { argmemonly nofree nounwind willreturn }
 attributes #4 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #5 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #6 = { allocsize(1) "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #7 = { noreturn "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #8 = { noreturn nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #9 = { nounwind readonly willreturn }
-attributes #10 = { allocsize(0) }
-attributes #11 = { nounwind }
-attributes #12 = { allocsize(1) }
-attributes #13 = { noreturn }
-attributes #14 = { noreturn nounwind }
+attributes #7 = { noreturn nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #8 = { nounwind readonly willreturn }
+attributes #9 = { allocsize(0) }
+attributes #10 = { nounwind }
+attributes #11 = { allocsize(1) }
+attributes #12 = { noreturn nounwind }
 
 !llvm.ident = !{!0, !0}
 !llvm.module.flags = !{!1, !2, !3, !4, !5}
