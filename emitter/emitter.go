@@ -2212,6 +2212,39 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 			}
 
 			break
+		} else if expr.Function.Name == builtins.RunThread.Name {
+			arguments := make([]value.Value, 0)
+
+			// emit some quirky params
+			for i := range expr.Function.Parameters {
+				arg := emt.EmitExpression(blk, expr.Arguments[i])
+
+				// if this is an object -> increase its reference counter
+				// (only do this for variables)
+				if expr.Arguments[i].IsPersistent() {
+					if expr.Arguments[i].Type().IsObject {
+						emt.CreateReference(blk, arg, "copy to be passed into a parameter")
+					}
+				}
+
+				arguments = append(arguments, arg)
+			}
+
+			// wrap the parameters in an array
+			//argsArr := emt.CreateObject(blk, builtins.AnyArr, CI32(int32(len(arguments))))
+
+			// call the function
+			//fnc := (*blk).NewLoad(emt.IRTypes(expr.Base.Type()), base)
+			val = (*blk).NewCall(base, arguments...)
+
+			// memory cleanup
+			for i, arg := range arguments {
+				if expr.Arguments[i].Type().IsObject {
+					emt.DestroyReference(blk, arg, "ReturnARC of lambda call ->Run()")
+				}
+			}
+
+			break
 		}
 
 		fmt.Println("Unknown TypeCall!")
@@ -3036,7 +3069,7 @@ func (emt *Emitter) GetConstantStringConstant(literal string) constant.Constant 
 	return pointer
 }
 
-func (emt *Emitter) GetThreadWrapper(source symbols.FunctionSymbol) *ir.Func {
+func (emt *Emitter) GetThreadWrapper(source symbols.TypeSymbol) *ir.Func {
 	wrapper, ok := emt.FunctionWrappers[emt.Id(source)]
 
 	// if there's already a wrapper for this function, return it
@@ -3049,6 +3082,9 @@ func (emt *Emitter) GetThreadWrapper(source symbols.FunctionSymbol) *ir.Func {
 
 	// create a root block
 	root := newWrapper.NewBlock("")
+
+	// convert the void* into an array
+	//arr := root.NewBitCast(newWrapper.Params[0], emt.IRTypes(builtins.AnyArr))
 
 	// add its instructions
 	root.NewCall(emt.Functions[emt.Id(source)].IRFunction)

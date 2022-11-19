@@ -25,6 +25,9 @@ var (
 	Array  = symbols.CreateTypeSymbol("array", make([]symbols.TypeSymbol, 0), true, false)
 	PArray = symbols.CreateTypeSymbol("parray", make([]symbols.TypeSymbol, 0), true, false)
 
+	// lazy shortcut
+	AnyArr = symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{Any}, true, false)
+
 	// spoopy
 	Pointer = symbols.CreateTypeSymbol("pointer", make([]symbols.TypeSymbol, 0), false, false)
 
