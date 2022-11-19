@@ -343,7 +343,6 @@ const (
 	OutsideConstructorCallError           = "OutsideConstructorCallError"
 	InvalidClassAccessError               = "InvalidClassAccessError"
 	IllegalConstructorCallError           = "IllegalConstructorCallError"
-	IllegalDestructorCallError            = "IllegalDestructorCallError"
 	TernaryOperatorTypeError              = "TernaryOperatorTypeError"
 	UnknownClassError                     = "UnknownClassError"
 	UnknownStructError                    = "UnknownStructError"
@@ -360,7 +359,6 @@ const (
 	// Emitter Errors
 	UnknownVTableError       = "UnknownVTableError"
 	UnknownConstructorError  = "UnknownConsructorError"
-	UnknownDestructorError   = "UnknownDestructorError"
 	CAdapterCompilationError = "CAdapterCompilationError"
 	ExternalCAdapterWarning  = "ExternalCAdapterWarning"
 
@@ -430,7 +428,6 @@ const (
 	OutsideConstructorCallErrorCode           = iota + 3000
 	InvalidClassAccessErrorCode               = iota + 3000
 	IllegalConstructorCallErrorCode           = iota + 3000
-	IllegalDestructorCallErrorCode            = iota + 3000
 	TernaryOperatorTypeErrorCode              = iota + 3000
 	UnknownClassErrorCode                     = iota + 3000
 	FunctionAccessViolationErrorCode          = iota + 3000
@@ -447,7 +444,6 @@ const (
 	// Emitter ErrorCodes
 	UnknownVTableErrorCode       = iota + 4000
 	UnknownConstructorErrorCode  = iota + 4000
-	UnknownDestructorErrorCode   = iota + 4000
 	CAdapterCompilationErrorCode = iota + 4000
 	ExternalCAdapterWarningCode  = iota + 4000
 
@@ -498,7 +494,6 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	OutsideConstructorCallError:           OutsideConstructorCallErrorCode,
 	InvalidClassAccessError:               InvalidClassAccessErrorCode,
 	IllegalConstructorCallError:           IllegalConstructorCallErrorCode,
-	IllegalDestructorCallError:            IllegalDestructorCallErrorCode,
 	TernaryOperatorTypeError:              TernaryOperatorTypeErrorCode,
 	UnknownClassError:                     UnknownClassErrorCode,
 	FunctionAccessViolationError:          FunctionAccessViolationErrorCode,
@@ -507,7 +502,6 @@ var ErrorTypeCodeRelations = map[ErrorType]ErrorCode{
 	UnknownPackageError:                   UnknownPackageErrorCode,
 	UnknownVTableError:                    UnknownVTableErrorCode,
 	UnknownConstructorError:               UnknownConstructorErrorCode,
-	UnknownDestructorError:                UnknownDestructorErrorCode,
 	UnknownPackageModuleFileError:         UnknownPackageModuleFileErrorCode,
 	IllegalBoxedTypeError:                 IllegalBoxedTypeErrorCode,
 	IllegalUnspecificArrayTypeError:       IllegalUnspecificArrayTypeErrorCode,

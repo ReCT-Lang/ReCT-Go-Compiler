@@ -174,11 +174,7 @@ func (b *BoundProgram) PrintStatements() {
 			fmt.Println("  └ Function Body:")
 
 			for _, stmt := range fnc.Body.Statements {
-				if stmt.NodeType() == boundnodes.BoundGarbageCollectionStatement {
-					stmt.Print("    ")
-				} else {
-					fmt.Println("    └ " + stmt.NodeType())
-				}
+				fmt.Println("    └ " + stmt.NodeType())
 			}
 		}
 	}

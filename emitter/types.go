@@ -177,7 +177,6 @@ type Class struct {
 	vTable      types.Type
 	vConstant   *ir.Global
 	Constructor *ir.Func
-	Destructor  *ir.Func
 	Functions   map[string]*ir.Func
 	Fields      map[string]int
 	Name        string

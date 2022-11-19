@@ -1,7 +1,12 @@
 package sys;
 
 function main_impostor() {
-  sys::Print("Hello, world!");
+    var index <- 0;
+
+    while (true) {
+        sys::Print("Hello, world! #" + string(index));
+        index++;
+    }
 }
 
 main_impostor();

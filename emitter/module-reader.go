@@ -83,21 +83,15 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 		constructor := irtools.FindFunction(module, class.Name+"_public_Constructor")
 		emt.ImportFunction(constructor)
 
-		// find the destructor
-		destructor := irtools.FindFunction(module, class.Name+"_public_Die")
-		emt.ImportFunction(destructor)
-
 		// alter class object
 		class.Constructor = constructor
-		class.Destructor = destructor
 		emt.Classes[key] = class
 
 		// find all of its public functions
 		classFuncs := irtools.FindFunctionsWithPrefix(module, class.Name+"_public_")
 		for _, fnc := range classFuncs {
-			// if this isn't the constructor or destructor
-			if !strings.HasSuffix(fnc.Name(), "_Constructor") &&
-				!strings.HasSuffix(fnc.Name(), "_Die") {
+			// if this isn't the constructor
+			if !strings.HasSuffix(fnc.Name(), "_Constructor") {
 				emt.Classes[key].Functions[strings.Split(fnc.Name(), "_")[2]] = fnc
 				emt.ImportFunction(fnc)
 			}
@@ -192,30 +186,14 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 		}
 		emt.ImportFunction(constructor)
 
-		// find the destructor
-		destructor := irtools.FindFunction(module, class.Name+"_public_Die")
-		if destructor == nil {
-			print.Error(
-				"EMITTER",
-				print.UnknownDestructorError,
-				pack.ErrorLocation,
-				"Couldn't find Destructor for class \"%s\" from package \"%s\"! Is the package set up correctly?",
-				class.Name,
-				pack.Name,
-			)
-			os.Exit(-1)
-		}
-		emt.ImportFunction(destructor)
-
 		// alter class object
 		class.Constructor = constructor
-		class.Destructor = destructor
 		packClasses[key] = class
 
 		// import all of its public functions
 		for _, fnc := range key.Functions {
-			// if this isn't the constructor or destructor
-			if fnc.Name != "Constructor" && fnc.Name != "Die" {
+			// if this isn't the constructor
+			if fnc.Name != "Constructor" {
 				packClasses[key].Functions[emt.Id(fnc)] = fnc.IRFunction
 				emt.ImportFunction(fnc.IRFunction)
 			}

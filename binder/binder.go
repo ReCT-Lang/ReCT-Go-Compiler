@@ -127,26 +127,6 @@ func (bin *Binder) BindFunctionDeclaration(mem nodes.FunctionDeclarationMember, 
 			)
 			os.Exit(-1)
 		}
-
-		if functionSymbol.Name == "Die" && functionSymbol.Public {
-			print.Error(
-				"BINDER",
-				print.IllegalFunctionSignatureError,
-				mem.Identifier.Span,
-				"reserved function 'Die' is not allowed to be public!",
-			)
-			os.Exit(-1)
-		}
-
-		if functionSymbol.Name == "Die" && len(boundParameters) > 0 {
-			print.Error(
-				"BINDER",
-				print.IllegalFunctionSignatureError,
-				mem.Identifier.Span,
-				"reserved function 'Die' is not allowed to take in any parameters!",
-			)
-			os.Exit(-1)
-		}
 	} else {
 		if functionSymbol.Name == "main" {
 			print.Error(
@@ -437,8 +417,7 @@ func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundState
 			exprStmt.Expression.NodeType() == boundnodes.BoundPackageCallExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundAssignmentExpression ||
 			exprStmt.Expression.NodeType() == boundnodes.BoundArrayAssignmentExpression ||
-			exprStmt.Expression.NodeType() == boundnodes.BoundClassFieldAssignmentExpression ||
-			exprStmt.Expression.NodeType() == boundnodes.BoundClassDestructionExpression
+			exprStmt.Expression.NodeType() == boundnodes.BoundClassFieldAssignmentExpression
 
 		if !allowed {
 			//print.PrintC(print.Red, "Only call and assignment expressions are allowed to be used as statements!")
@@ -811,16 +790,6 @@ func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.
 				os.Exit(-1)
 			}
 
-			if bin.InClass && functionSymbol.Name == "Die" {
-				print.Error(
-					"BINDER",
-					print.IllegalDestructorCallError,
-					expr.Span(),
-					"Lambda reference to Destructor in own class is not allowed!",
-				)
-				os.Exit(-1)
-			}
-
 			return boundnodes.CreateBoundFunctionInClassExpressionNode(functionSymbol, bin.ClassSymbol, expr.Span())
 		} else {
 			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
@@ -1084,12 +1053,6 @@ func (bin *Binder) BindMakeStructExpression(expr nodes.MakeStructExpressionNode)
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundExpressionNode {
 	baseExpression := bin.BindExpression(expr.Base)
 
-	// if this is an object and the function is "Die()" and has 0 arguments -> this is a destructor call
-	if baseExpression.Type().IsObject &&
-		expr.CallIdentifier.Value == "Die" && len(expr.Arguments) == 0 {
-		return boundnodes.CreateBoundClassDestructionExpressionNode(baseExpression, expr.Span())
-	}
-
 	// if the base type is a class, redirect to BindClassCallExpression
 	if baseExpression.Type().IsUserDefined {
 		return bin.BindClassCallExpression(expr, baseExpression)
@@ -1316,16 +1279,6 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 			print.IllegalConstructorCallError,
 			expr.Span(),
 			"Call to Constructor in own class is not allowed!",
-		)
-		os.Exit(-1)
-	}
-
-	if bin.InClass && functionSymbol.Name == "Die" {
-		print.Error(
-			"BINDER",
-			print.IllegalDestructorCallError,
-			expr.Span(),
-			"Class is not allowed to destruct itself!",
 		)
 		os.Exit(-1)
 	}

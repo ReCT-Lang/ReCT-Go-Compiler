@@ -9,9 +9,9 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <gc.h>
 
 #include "../systemlib/objects.h"
-#include "../systemlib/arc.h"
 #include "../systemlib/exceptions.h"
 
 #define BUFFER 1042
@@ -49,12 +49,9 @@ class_String* sys_Input()
     if(str != NULL)
         str[pos] = '\0';
 
-	class_String *strInstance = (class_String*)malloc(sizeof(class_String));
-	strInstance->vtable = (Standard_vTable){NULL, "String", &String_public_Die};
+	class_String *strInstance = (class_String*)GC_MALLOC(sizeof(class_String));
+	strInstance->vtable = (Standard_vTable){NULL, "String"};
     strInstance->vtable.fingerprint = "TO_string[]_";
-
-    strInstance->referenceCounter = 0;
-	arc_RegisterReference((class_Any*)strInstance);
 
 	String_public_Constructor(strInstance);
 	String_public_Load(strInstance, str);
@@ -121,10 +118,12 @@ class_String *sys_Char(int index)
 	char *singleChar = (char*)malloc(1);
 	singleChar[0] = (char)index;
 
-	class_String *strInstance = (class_String*)malloc(sizeof(class_String));
+	class_String *strInstance = (class_String*)GC_MALLOC(sizeof(class_String));
+    strInstance->vtable = (Standard_vTable){NULL, "String"};
+    strInstance->vtable.fingerprint = "TO_string[]_";
+
 	String_public_Constructor(strInstance);
 	String_public_Load(strInstance, singleChar);
-	arc_RegisterReference((class_Any*)strInstance);
 
 	free(singleChar);
 

@@ -10,34 +10,25 @@ class SomeClass {
 	function Constructor() {
 		otherClass <- make OtherClass();
 	}
-
-	set function Die() {
-		CoolString->Die();
-		otherClass->Die();
-	}
 }
 
 class OtherClass {
 	set incrediblyCoolNumber <- 100;
-
-	function Die() {
-		var a <- "something";
-		sys::Print(a);
-		sys::Print("death is upon us");
-	}
+	set MyCoolerString <- "dun dun dun dun dun dun dun, dududun, BAM BAM";
 }
 
-var someInstance <- make SomeClass();
-//someInstance->Die();
-sus::Print(someInstance->CoolString);
+while(true) {
+    var someInstance <- make SomeClass();
+    //someInstance->Die();
+    sys::Print(someInstance->CoolString);
 
-var any someAny;
-someAny <- any(someInstance);
+    var any someAny;
+    someAny <- any(someInstance);
 
-var SomeClass instanceAgain;
-instanceAgain <- SomeClass(someAny);
-Print(someInstance->CoolString);
+    var SomeClass instanceAgain;
+    instanceAgain <- SomeClass(someAny);
+    sys::Print(someInstance->CoolString);
 
-if (true) {
-
+    sys::Print(someInstance->otherClass->MyCoolerString);
 }
+

@@ -59,7 +59,7 @@ type Emitter struct {
 }
 
 var VerboseARC = false
-var EmitDebugInfo = true
+var EmitDebugInfo = false
 
 var CompileAsPackage bool
 var PackageName string
@@ -177,13 +177,6 @@ func Emit(program binder.BoundProgram, useFingerprints bool) *ir.Module {
 				// if it is, hand it the already prepared constructor function
 				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Constructor, fnc.Body)
 
-			} else if fnc.Symbol.Name == "Die" {
-				// if its the destructor, clear all auto-generated code inside it
-				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks = emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks[1:]
-				emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor.Blocks[0].LocalID = 0
-
-				// hand it the already prepared destructor function
-				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Destructor, fnc.Body)
 			} else {
 				// if not, emit the function like normal
 				emitter.EmitBlockStatement(fnc.Symbol, emitter.Classes[emitter.Id(cls.Symbol.Type)].Functions[emitter.Id(fnc.Symbol)], fnc.Body)
@@ -265,8 +258,7 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	// ---------------------------------------------------------------------
 	// general struct format:
 	// ----------------------
-	// [0] Class vTable, contains the destructor and any virtual methods
-	// [1] Object reference counter for the ARC
+	// [0] Class vTable, contains obj data and any virtual methods
 	// ... Class data
 	// =====================================================================
 
@@ -289,18 +281,12 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	// create the class' struct definition
 	emt.Module.NewTypeDef("struct.class_"+bcls.Symbol.Name, cls.Type)
 
-	// ---------------------------------------------------------------------
-	// create the destructor
-	// ---------------------------------------------------------------------
-	destructor := emt.EmitClassDestructor(cls, bcls, clsFieldMap)
-
 	// create the vTable constant
 	vtc := constant.NewStruct(
 		emt.Classes[emt.Id(builtins.Any)].vTable.(*types.StructType), //clsvtable
 
 		constant.NewNull(types.I8Ptr),
 		emt.GetConstantStringConstant(bcls.Symbol.Name),
-		destructor,
 		constant.NewNull(types.I8Ptr),
 	)
 	clsvConstant := emt.Module.NewGlobalDef(bcls.Symbol.Name+"_vTable_Const", vtc)
@@ -315,7 +301,6 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	emt.Classes[emt.Id(bcls.Symbol.Type)].vConstant = clsvConstant
 
 	emt.Classes[emt.Id(bcls.Symbol.Type)].Constructor = constructor
-	emt.Classes[emt.Id(bcls.Symbol.Type)].Destructor = destructor
 
 	emt.Classes[emt.Id(bcls.Symbol.Type)].Functions = make(map[string]*ir.Func)
 	emt.Classes[emt.Id(bcls.Symbol.Type)].Fields = clsFieldMap
@@ -408,89 +393,6 @@ func (emt *Emitter) EmitClassConstructor(cls *Class, bcls binder.BoundClass, cls
 	croot.NewRet(nil)
 
 	return constructor
-}
-
-func (emt *Emitter) EmitClassDestructor(cls *Class, bcls binder.BoundClass, clsFieldMap map[string]int) *ir.Func {
-	// ---------------------------------------------------------------------
-	// create the destructor
-	// ---------------------------------------------------------------------
-
-	// create an IR function definition for the destructor
-	destructor := emt.Module.NewFunc(bcls.Symbol.Name+"_public_Die", types.Void, ir.NewParam("obj", types.I8Ptr))
-
-	// create a new root block
-	root := destructor.NewBlock("")
-
-	// bitcast the given void* into a class pointer
-	clsPtr := root.NewBitCast(destructor.Params[0], types.NewPointer(cls.Type))
-
-	// generate cleanup for all object members
-	root.Insts = append(root.Insts, NewComment("<DieARC>"))
-
-	for _, field := range bcls.Symbol.Fields {
-		if field.VarType().IsObject {
-			root.Insts = append(root.Insts, NewComment(fmt.Sprintf("-> destroying reference to '%s [Field %d]'", emt.Id(field), clsFieldMap[emt.Id(field)])))
-
-			// get the field's pointer
-			ptr := root.NewGetElementPtr(cls.Type, clsPtr, CI32(0), CI32(int32(clsFieldMap[emt.Id(field)])))
-
-			// load the pointer
-			obj := root.NewLoad(emt.IRTypes(field.VarType()), ptr)
-
-			// decrement its ARC reference counter
-			emt.DestroyReference(&root, obj, "")
-		}
-	}
-
-	root.Insts = append(root.Insts, NewComment("</DieARC>"))
-
-	// look for an explicit destructor
-	var destructorFunction *binder.BoundFunction
-	for _, fnc := range bcls.Functions {
-		if fnc.Symbol.Name == "Die" {
-			destructorFunction = &fnc
-			break
-		}
-	}
-
-	// create a second block for any local variable defintions
-	// if there are none this empty block will be optimized away by llvm
-	decl := destructor.NewBlock("$decl")
-	root.NewBr(decl)
-
-	// create locals array for destructor
-	// if the destructor has local variables they need to be present in there
-	if destructorFunction != nil {
-		// create locals array
-		locals := make(map[string]Local)
-
-		// create all needed locals in the decl block so GC can trash them anywhere
-		for _, stmt := range destructorFunction.Body.Statements {
-			if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
-				declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
-
-				if declStatement.Variable.IsGlobal() {
-					continue
-				}
-
-				varName := emt.Id(declStatement.Variable)
-
-				// create local variable
-				local := decl.NewAlloca(emt.IRTypes(declStatement.Variable.VarType()))
-				local.SetName(varName)
-
-				// save it for referencing later
-				locals[varName] = Local{IRLocal: local, IRBlock: decl, Type: declStatement.Variable.VarType()}
-			}
-		}
-
-		// store this for later
-		emt.FunctionLocals[bcls.Symbol.Name+"_private_"+emt.Id(destructorFunction.Symbol)] = locals
-	}
-
-	decl.NewRet(nil)
-
-	return destructor
 }
 
 // </CLASSES>------------------------------------------------------------------
@@ -758,6 +660,12 @@ func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func,
 	currentBlock.NewBr(semiroot)
 	currentBlock = semiroot
 
+	// if this is the main function (entry point)
+	if sym.Name == "main" {
+		// gc_init!
+		currentBlock.NewCall(emt.CFuncs["gc_init"])
+	}
+
 	// go through the body and register all label blocks
 	for _, stmt := range body.Statements {
 		if stmt.NodeType() == boundnodes.BoundLabelStatement {
@@ -800,9 +708,6 @@ func (emt *Emitter) EmitBlockStatement(sym symbols.FunctionSymbol, fnc *ir.Func,
 				emt.EmitReturnStatement(&currentBlock, stmt.(boundnodes.BoundReturnStatementNode))
 				// skip forward until we either hit a new block or the end of the function
 				skipToNextBlock = true
-
-			case boundnodes.BoundGarbageCollectionStatement:
-				emt.EmitGarbageCollectionStatement(&currentBlock, stmt.(boundnodes.BoundGarbageCollectionStatementNode))
 			}
 		}
 	}
@@ -818,11 +723,6 @@ func (emt *Emitter) EmitVariableDeclarationStatement(blk **ir.Block, stmt boundn
 	// if there's an initializer given
 	if stmt.Initializer != nil {
 		expression = emt.EmitExpression(blk, stmt.Initializer)
-
-		// if the expression is a variable and contains an object -> increase reference counter
-		if stmt.Initializer.IsPersistent() && stmt.Initializer.Type().IsObject {
-			emt.CreateReference(blk, expression, "variable declaration ["+varName+"]")
-		}
 
 		// if this is a struct we'll have to load it first
 		if stmt.Initializer.Type().IsUserDefined && !stmt.Initializer.Type().IsObject {
@@ -870,13 +770,7 @@ func (emt *Emitter) EmitConditionalGotoStatement(blk **ir.Block, stmt boundnodes
 }
 
 func (emt *Emitter) EmitBoundExpressionStatement(blk **ir.Block, stmt boundnodes.BoundExpressionStatementNode) {
-	expr := emt.EmitExpression(blk, stmt.Expression)
-
-	// if the expressions value is a string is requires cleanup
-	if stmt.Expression.Type().IsObject {
-		(*blk).Insts = append((*blk).Insts, NewComment("expression value unused -> destroying reference"))
-		emt.DestroyReference(blk, expr, "destroying unused expression")
-	}
+	emt.EmitExpression(blk, stmt.Expression)
 }
 
 func (emt *Emitter) EmitReturnStatement(blk **ir.Block, stmt boundnodes.BoundReturnStatementNode) {
@@ -886,45 +780,6 @@ func (emt *Emitter) EmitReturnStatement(blk **ir.Block, stmt boundnodes.BoundRet
 	// calculate the return value first (so its not destroyed by the GC)
 	if stmt.Expression != nil {
 		expression = emt.EmitExpression(blk, stmt.Expression)
-
-		// if the expression is an object, increase its reference count to not have it deleted
-		// only do this for variables, as expressions will already have the correct count
-		if stmt.Expression.IsPersistent() {
-			if stmt.Expression.Type().IsObject {
-				emt.CreateReference(blk, expression, "return value copy ["+emt.Function.Name()+"]")
-			}
-		}
-	}
-
-	// if this isnt a package, handle end-of-function cleanup
-	if !CompileAsPackage {
-		// --< state-of-the-art garbage collecting >---------------------------
-		// 1. go through all locals created up to this point
-		// 2. decrement their reference counter
-		(*blk).Insts = append((*blk).Insts, NewComment("<ReturnARC>"))
-		for name, local := range emt.Locals {
-
-			// if nothing has been assigned yet, there's no need to clean up
-			if !local.IsSet {
-				continue
-			}
-
-			// only clean up things that actually need it (any and string)
-			if local.Type.IsObject {
-				(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+name+"'"))
-				emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(local.Type), local.IRLocal), "ReturnGC variable '"+local.IRLocal.Ident()+"' (leaving '"+emt.Function.Name()+"')")
-			}
-		}
-
-		// clean up any parameters as well
-		// (passed variables wont be cleaned up as their reference counter has been increased before the call)
-		for _, param := range emt.FunctionSym.Parameters {
-			if param.Type.IsObject {
-				(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+param.Name+"'"))
-				emt.DestroyReference(blk, emt.Function.Params[param.Ordinal], "ReturnGC (parameter) (leaving '"+emt.Function.Name()+"')")
-			}
-		}
-		(*blk).Insts = append((*blk).Insts, NewComment("</ReturnARC>"))
 	}
 
 	if stmt.Expression != nil {
@@ -932,24 +787,6 @@ func (emt *Emitter) EmitReturnStatement(blk **ir.Block, stmt boundnodes.BoundRet
 	} else {
 		(*blk).NewRet(nil)
 	}
-}
-
-func (emt *Emitter) EmitGarbageCollectionStatement(blk **ir.Block, stmt boundnodes.BoundGarbageCollectionStatementNode) {
-	(*blk).Insts = append((*blk).Insts, NewComment("<GC - ARC>"))
-	for _, variable := range stmt.Variables {
-		// check if the variables type needs to be freed
-
-		if variable.VarType().IsObject {
-			varName := emt.Id(variable)
-			(*blk).Insts = append((*blk).Insts, NewComment(" -> destroying reference to '%"+varName+"'"))
-
-			emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(variable.VarType()), emt.Locals[varName].IRLocal), "GC statement (end of block)")
-
-			// write NULL to the pointer
-			(*blk).NewStore(constant.NewNull(emt.IRTypes(variable.VarType()).(*types.PointerType)), emt.Locals[varName].IRLocal)
-		}
-	}
-	(*blk).Insts = append((*blk).Insts, NewComment("</GC - ARC>"))
 }
 
 // </STATEMENTS>---------------------------------------------------------------
@@ -1016,9 +853,6 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 
 	case boundnodes.BoundClassFieldAssignmentExpression:
 		val = emt.EmitClassFieldAssignmentExpression(blk, expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
-
-	case boundnodes.BoundClassDestructionExpression:
-		val = emt.EmitClassDestructionExpression(blk, expr.(boundnodes.BoundClassDestructionExpressionNode))
 
 	case boundnodes.BoundConversionExpression:
 		val = emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
@@ -1135,12 +969,6 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 		if emt.IsInClass {
 			mePtr := value.Value(emt.Function.Params[0])
 
-			// if we're in a Destructor, the "mePtr" will be a generic void*
-			// that means it will need to be converted
-			if emt.FunctionSym.Name == "Die" && len(emt.Function.Params) == 1 {
-				mePtr = (*blk).NewBitCast(mePtr, types.NewPointer(emt.Class.Type))
-			}
-
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, mePtr, CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
 
 			// if what we're accessing is a struct, do not dereference it
@@ -1192,12 +1020,6 @@ func (emt *Emitter) EmitVariablePtr(blk **ir.Block, variable symbols.VariableSym
 		if emt.IsInClass {
 			mePtr := value.Value(emt.Function.Params[0])
 
-			// if we're in a Destructor, the "mePtr" will be a generic void*
-			// that means it will need to be converted
-			if emt.FunctionSym.Name == "Die" && len(emt.Function.Params) == 1 {
-				mePtr = (*blk).NewBitCast(mePtr, types.NewPointer(emt.Class.Type))
-			}
-
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, mePtr, CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
 			return ptr
 
@@ -1214,11 +1036,6 @@ func (emt *Emitter) EmitAssignmentExpression(blk **ir.Block, expr boundnodes.Bou
 	varName := emt.Id(expr.Variable)
 	expression := emt.EmitExpression(blk, expr.Expression)
 
-	// if the expression is a variable -> increase reference counter
-	if expr.Expression.IsPersistent() && expr.Expression.Type().IsObject {
-		emt.CreateReference(blk, expression, "variable assignment ["+varName+"]")
-	}
-
 	// if this is a struct we'll have to load it first
 	if expr.Expression.Type().IsUserDefined && !expr.Expression.Type().IsObject {
 		expression = (*blk).NewLoad(emt.IRTypes(expr.Expression.Type()), expression)
@@ -1229,38 +1046,18 @@ func (emt *Emitter) EmitAssignmentExpression(blk **ir.Block, expr boundnodes.Bou
 			// the location we need to store to
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, emt.Function.Params[0], CI32(0), CI32(int32(emt.Class.Fields[emt.Id(expr.Variable)])))
 
-			// if this variable already contained an object -> destroy the reference
-			if expr.Variable.VarType().IsObject {
-				emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Variable.VarType()), ptr), "destroying reference previously stored in '"+varName+"'")
-			}
-
 			// assign the value to the structs field
 			(*blk).NewStore(expression, ptr)
 		} else {
-			// if this variable already contained an object -> destroy the reference
-			if expr.Variable.VarType().IsObject {
-				emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Variable.VarType()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
-			}
 
 			// assign the value to the global variable
 			(*blk).NewStore(expression, emt.Globals[varName].IRGlobal)
 		}
 
 	} else {
-		// if this variable already contained an object -> destroy there reference
-		if expr.Variable.VarType().IsObject {
-			emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Variable.VarType()), emt.Locals[varName].IRLocal), "destroying reference previously stored in '"+varName+"'")
-		}
 
 		// assign the value to the local variable
 		(*blk).NewStore(expression, emt.Locals[varName].IRLocal)
-	}
-
-	// also return the value as this can also be used as an expression
-	// if we're working with objects, a new reference has to be counted
-	if expr.Variable.VarType().IsObject {
-		emt.CreateReference(blk, expression, "assignment value copy (for stuff like a <- b++)")
-		return expression
 	}
 
 	return expression
@@ -1272,16 +1069,6 @@ func (emt *Emitter) EmitMakeExpression(blk **ir.Block, expr boundnodes.BoundMake
 
 	for _, arg := range expr.Arguments {
 		expression := emt.EmitExpression(blk, arg)
-
-		// if this is an object -> increase its reference counter
-		// (only do this for variables)
-		if arg.IsPersistent() {
-			if arg.Type().Fingerprint() == builtins.String.Fingerprint() ||
-				arg.Type().Fingerprint() == builtins.Any.Fingerprint() {
-				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
-			}
-		}
-
 		arguments = append(arguments, expression)
 	}
 
@@ -1410,14 +1197,6 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 		// call the array's set element function
 		(*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], base, index, anyValue)
 
-		// if the element wasnt a variable -> decrease its reference counter
-		if !expr.Value.IsPersistent() && expr.Value.Type().IsObject {
-			emt.DestroyReference(blk, value, "array assignment cleanup")
-		}
-
-		// return a copy of the value (i really don't think this is necessary but oh well)
-		emt.CreateReference(blk, value, "assign value copy (array assignment)")
-
 	} else {
 		// get the elements pointer
 		elementPtr := (*blk).NewCall(emt.Classes[emt.Id(builtins.PArray)].Functions["GetElementPtr"], base, index)
@@ -1426,12 +1205,6 @@ func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnode
 		castedPtr := (*blk).NewBitCast(elementPtr, types.NewPointer(emt.IRTypes(expr.Base.Type().SubTypes[0])))
 
 		(*blk).NewStore(value, castedPtr)
-	}
-
-	// if base isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if !expr.Base.IsPersistent() {
-		emt.DestroyReference(blk, base, "array assignment base cleanup")
 	}
 
 	return value
@@ -1487,12 +1260,6 @@ func (emt *Emitter) EmitArrayAccessExpression(blk **ir.Block, expr boundnodes.Bo
 
 		// load the value
 		value = (*blk).NewLoad(emt.IRTypes(expr.Base.Type().SubTypes[0]), castedPtr)
-	}
-
-	// if base isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if !expr.Base.IsPersistent() {
-		emt.DestroyReference(blk, base, "array access base cleanup")
 	}
 
 	return value
@@ -1635,16 +1402,6 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			newStr := (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Concat"], left, right)
-
-			// if left and right aren't variables (meaning they are already memory managed)
-			// decrease their reference count
-			if !expr.Left.IsPersistent() {
-				emt.DestroyReference(blk, left, "string concat cleanup (left)")
-			}
-
-			if !expr.Right.IsPersistent() {
-				emt.DestroyReference(blk, right, "string concat cleanup (right)")
-			}
 
 			return newStr
 		}
@@ -1834,16 +1591,6 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 			// compare left and right using the string class' equal function
 			result := (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Equal"], left, right)
 
-			// if left and right aren't variables (meaning they are already memory managed)
-			// free() them
-			if !expr.Left.IsPersistent() {
-				emt.DestroyReference(blk, left, "string compare cleanup (left)")
-			}
-
-			if !expr.Right.IsPersistent() {
-				emt.DestroyReference(blk, right, "string compare cleanup (right)")
-			}
-
 			// return the result
 			return result
 		}
@@ -1873,16 +1620,6 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		} else if expr.Left.Type().Fingerprint() == builtins.String.Fingerprint() {
 			// compare left and right using the string class' equal function
 			result := (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Equal"], left, right)
-
-			// if left and right aren't variables (meaning they are already memory managed)
-			// free() them
-			if !expr.Left.IsPersistent() {
-				emt.DestroyReference(blk, left, "string compare cleanup (left)")
-			}
-
-			if !expr.Right.IsPersistent() {
-				emt.DestroyReference(blk, right, "string compare cleanup (right)")
-			}
 
 			// to check if they are unequal, negate the result
 			return (*blk).NewICmp(enum.IPredEQ, result, CI32(0))
@@ -2028,14 +1765,6 @@ func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCall
 	for _, arg := range expr.Arguments {
 		expression := emt.EmitExpression(blk, arg)
 
-		// if this is an object -> increase its reference counter
-		// (only do this for variables)
-		if arg.IsPersistent() {
-			if arg.Type().IsObject {
-				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
-			}
-		}
-
 		arguments = append(arguments, expression)
 	}
 
@@ -2051,16 +1780,6 @@ func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCall
 		call = (*blk).NewCall(emt.Functions[functionName].IRFunction, arguments...)
 	}
 
-	// if this is an external function it doesn't implement the garbage collector
-	// meaning we have to clean up its arguments ourselves
-	if expr.Function.BuiltIn {
-		for i, arg := range arguments {
-			if expr.Arguments[i].Type().IsObject {
-				emt.DestroyReference(blk, arg, "ReturnARC of system function '"+functionName+"'")
-			}
-		}
-	}
-
 	return call
 }
 
@@ -2070,27 +1789,11 @@ func (emt *Emitter) EmitPackageCallExpression(blk **ir.Block, expr boundnodes.Bo
 	for _, arg := range expr.Arguments {
 		expression := emt.EmitExpression(blk, arg)
 
-		// if this is an object -> increase its reference counter
-		// (only do this for variables)
-		if arg.IsPersistent() {
-			if arg.Type().IsObject {
-				emt.CreateReference(blk, expression, "copy to be passed into a parameter")
-			}
-		}
-
 		arguments = append(arguments, expression)
 	}
 
 	functionName := emt.Id(expr.Function)
 	call := (*blk).NewCall(emt.Packages[emt.Id(expr.Package)].Functions[functionName], arguments...)
-
-	// this is an external function so it doesn't implement the garbage collector
-	// meaning we have to clean up its arguments ourselves
-	for i, arg := range arguments {
-		if expr.Arguments[i].Type().IsObject {
-			emt.DestroyReference(blk, arg, "ReturnARC of external function '"+functionName+"'")
-		}
-	}
 
 	return call
 }
@@ -2145,11 +1848,6 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 		// call the array's push function
 		(*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["Push"], base, element)
 
-		// if the element wasn't a variable -> decrease its reference counter
-		if !expr.Arguments[0].IsPersistent() {
-			emt.DestroyReference(blk, element, "array push cleanup")
-		}
-
 		// no need for a return value, this is a void
 		val = nil
 
@@ -2189,27 +1887,12 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 			for i := range expr.Function.Parameters {
 				arg := emt.EmitExpression(blk, expr.Arguments[i])
 
-				// if this is an object -> increase its reference counter
-				// (only do this for variables)
-				if expr.Arguments[i].IsPersistent() {
-					if expr.Arguments[i].Type().IsObject {
-						emt.CreateReference(blk, arg, "copy to be passed into a parameter")
-					}
-				}
-
 				arguments = append(arguments, arg)
 			}
 
 			// call the function
 			//fnc := (*blk).NewLoad(emt.IRTypes(expr.Base.Type()), base)
 			val = (*blk).NewCall(base, arguments...)
-
-			// memory cleanup
-			for i, arg := range arguments {
-				if expr.Arguments[i].Type().IsObject {
-					emt.DestroyReference(blk, arg, "ReturnARC of lambda call ->Run()")
-				}
-			}
 
 			break
 		} else if expr.Function.Name == builtins.RunThread.Name {
@@ -2218,14 +1901,6 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 			// emit some quirky params
 			for i := range expr.Function.Parameters {
 				arg := emt.EmitExpression(blk, expr.Arguments[i])
-
-				// if this is an object -> increase its reference counter
-				// (only do this for variables)
-				if expr.Arguments[i].IsPersistent() {
-					if expr.Arguments[i].Type().IsObject {
-						emt.CreateReference(blk, arg, "copy to be passed into a parameter")
-					}
-				}
 
 				arguments = append(arguments, arg)
 			}
@@ -2237,24 +1912,11 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 			//fnc := (*blk).NewLoad(emt.IRTypes(expr.Base.Type()), base)
 			val = (*blk).NewCall(base, arguments...)
 
-			// memory cleanup
-			for i, arg := range arguments {
-				if expr.Arguments[i].Type().IsObject {
-					emt.DestroyReference(blk, arg, "ReturnARC of lambda call ->Run()")
-				}
-			}
-
 			break
 		}
 
 		fmt.Println("Unknown TypeCall!")
 		return nil
-	}
-
-	// if base isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if expr.Base.Type().IsObject && !expr.Base.IsPersistent() {
-		emt.DestroyReference(blk, base, "type call base cleanup")
 	}
 
 	return val
@@ -2278,28 +1940,7 @@ func (emt *Emitter) EmitClassCallExpression(blk **ir.Block, expr boundnodes.Boun
 
 	call := (*blk).NewCall(emt.Classes[emt.Id(expr.Base.Type())].Functions[emt.Id(expr.Function)], args...)
 
-	// if base isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if !expr.Base.IsPersistent() {
-		emt.DestroyReference(blk, base, "class call base cleanup")
-	}
-
 	return call
-}
-
-func (emt *Emitter) EmitClassDestructionExpression(blk **ir.Block, expr boundnodes.BoundClassDestructionExpressionNode) value.Value {
-	// load the base value
-	// -------------------
-	base := emt.EmitExpression(blk, expr.Base)
-
-	// run a null check on the base
-	//(*blk).NewCall(emt.ExcFuncs["ThrowIfNull"], (*blk).NewBitCast(base, types.I8Ptr))
-
-	// destroy the object (mercilessly)
-	any := (*blk).NewBitCast(base, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	(*blk).NewCall(emt.ArcFuncs["DestroyObject"], any)
-
-	return (*blk).NewPtrToInt((*blk).NewBitCast(base, types.I8Ptr), types.I32)
 }
 
 func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnodes.BoundClassFieldAccessExpressionNode) value.Value {
@@ -2308,13 +1949,7 @@ func (emt *Emitter) EmitClassFieldAccessExpression(blk **ir.Block, expr boundnod
 		return emt.EmitStructFieldAccessExpression(blk, expr)
 	}
 
-	ptr, base := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
-
-	// if value isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if !expr.Base.IsPersistent() {
-		emt.DestroyReference(blk, base, "class field access base cleanup")
-	}
+	ptr, _ := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
 
 	return (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr)
 }
@@ -2350,11 +1985,10 @@ func (emt *Emitter) EmitStructFieldAccessExpressionRef(blk **ir.Block, base boun
 	fieldIndex := emt.Structs[emt.Id(base.Type())].Fields[field.Fingerprint()]
 
 	var basePtr value.Value
-	var baseExp value.Value
 	var val value.Value
 
 	if base.IsPersistent() {
-		basePtr, baseExp = emt.EmitUnloadedReference(blk, base)
+		basePtr, _ = emt.EmitUnloadedReference(blk, base)
 
 		if basePtr != nil {
 			goto FINISH
@@ -2369,12 +2003,6 @@ func (emt *Emitter) EmitStructFieldAccessExpressionRef(blk **ir.Block, base boun
 
 FINISH:
 	gep := (*blk).NewGetElementPtr(emt.Structs[emt.Id(base.Type())].Type, basePtr, CI32(0), CI32(int32(fieldIndex)))
-
-	// if base isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if !base.IsPersistent() {
-		emt.DestroyReference(blk, baseExp, "array assignment base cleanup")
-	}
 
 	return gep
 }
@@ -2394,32 +2022,11 @@ func (emt *Emitter) EmitClassFieldAssignmentExpression(blk **ir.Block, expr boun
 		value = (*blk).NewLoad(emt.IRTypes(expr.Value.Type()), value)
 	}
 
-	// if the expression is a variable -> increase reference counter
-	if expr.Value.IsPersistent() && expr.Value.Type().IsObject {
-		emt.CreateReference(blk, value, "field assignment ["+expr.Field.SymbolName()+"]")
-	}
-
 	// the location we need to store to
-	ptr, base := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
-
-	// if this variable already contained an object -> destroy the reference
-	if expr.Field.VarType().IsObject {
-		emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(expr.Field.VarType()), ptr), "destroying reference previously stored in '"+expr.Field.SymbolName()+"'")
-	}
+	ptr, _ := emt.EmitClassFieldAccessExpressionRef(blk, expr.Base, expr.Field)
 
 	// assign the value to the structs field
 	(*blk).NewStore(value, ptr)
-
-	// return a copy of the value (i really don't think this is necessary but oh well)
-	if expr.Value.Type().IsObject {
-		emt.CreateReference(blk, value, "assign value copy (field assignment)")
-	}
-
-	// if value isn't a variable (meaning its already memory managed)
-	// decrement its reference counter
-	if !expr.Base.IsPersistent() {
-		emt.DestroyReference(blk, base, "class field assignment cleanup")
-	}
 
 	return value
 }
@@ -2581,12 +2188,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// see if the string we got is equal to "true"
 			result := (*blk).NewCall(emt.CFuncs["strcmp"], (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value), emt.GetStringConstant(blk, "true"))
 
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "string to bool conversion cleanup")
-			}
-
 			// to check if they are equal, check if the result is 0
 			return (*blk).NewICmp(enum.IPredEQ, result, CI32(0))
 
@@ -2600,12 +2201,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Bool)].Functions["GetValue"], boxedBool)
 
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to bool conversion cleanup")
-			}
-
 			return primitive
 		}
 
@@ -2613,12 +2208,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 	} else if expr.ToType.Fingerprint() == builtins.Int.Fingerprint() {
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			result := (*blk).NewCall(emt.CFuncs["atoi"], (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value))
-
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "string to int conversion cleanup")
-			}
 
 			return result
 
@@ -2631,12 +2220,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Int)].Functions["GetValue"], boxedInt)
-
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to int conversion cleanup")
-			}
 
 			return primitive
 		} else if expr.Expression.Type().Fingerprint() == builtins.Byte.Fingerprint() {
@@ -2683,12 +2266,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Byte)].Functions["GetValue"], boxedByte)
 
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to byte conversion cleanup")
-			}
-
 			return primitive
 		}
 	} else if expr.ToType.Fingerprint() == builtins.Long.Fingerprint() {
@@ -2720,21 +2297,9 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Long)].Functions["GetValue"], boxedLong)
 
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to long conversion cleanup")
-			}
-
 			return primitive
 		} else if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			result := (*blk).NewCall(emt.CFuncs["atol"], (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value))
-
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "string to long conversion cleanup")
-			}
 
 			return result
 		}
@@ -2761,12 +2326,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// convert the result from a double to a float
 			floatRes := (*blk).NewFPTrunc(result, types.Float)
 
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "string to float conversion cleanup")
-			}
-
 			return floatRes
 
 		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
@@ -2778,12 +2337,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Float)].Functions["GetValue"], boxedFloat)
-
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to float conversion cleanup")
-			}
 
 			return primitive
 		} else if expr.Expression.Type().Fingerprint() == builtins.Double.Fingerprint() {
@@ -2805,12 +2358,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 		if expr.Expression.Type().Fingerprint() == builtins.String.Fingerprint() {
 			result := (*blk).NewCall(emt.CFuncs["atof"], (*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["GetBuffer"], value))
 
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "string to float conversion cleanup")
-			}
-
 			return result
 
 		} else if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
@@ -2822,12 +2369,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Double)].Functions["GetValue"], boxedDouble)
-
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to float conversion cleanup")
-			}
 
 			return primitive
 		} else if expr.Expression.Type().Fingerprint() == builtins.Float.Fingerprint() {
@@ -2878,12 +2419,6 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 			// load its value
 			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Long)].Functions["GetValue"], boxedLong)
-
-			// if value isn't a variable (meaning its already memory managed)
-			// decrement its reference counter
-			if !expr.Expression.IsPersistent() {
-				emt.DestroyReference(blk, value, "any to long conversion cleanup")
-			}
 
 			return (*blk).NewIntToPtr(primitive, emt.IRTypes(expr.ToType))
 		}
@@ -3114,19 +2649,16 @@ func (emt *Emitter) CreateObject(blk **ir.Block, src symbols.TypeSymbol, args ..
 	sizeInt := (*blk).NewPtrToInt(size, types.I32)
 
 	// create space for the instance
-	instance := (*blk).NewBitCast((*blk).NewCall(emt.CFuncs["malloc"], sizeInt), types.NewPointer(emt.Classes[typeName].Type))
+	instance := (*blk).NewBitCast((*blk).NewCall(emt.CFuncs["gc_malloc"], sizeInt), types.NewPointer(emt.Classes[typeName].Type))
 
 	// initialize reference count
-	arcCounterPointer := (*blk).NewGetElementPtr(emt.Classes[typeName].Type, instance, CI32(0), CI32(1))
-	(*blk).NewStore(CI32(0), arcCounterPointer)
+	//arcCounterPointer := (*blk).NewGetElementPtr(emt.Classes[typeName].Type, instance, CI32(0), CI32(1))
+	//(*blk).NewStore(CI32(0), arcCounterPointer)
 
 	// load the vTable
 	arcVTablePointer := (*blk).NewGetElementPtr(emt.Classes[typeName].Type, instance, CI32(0), CI32(0))
 	vTable := emt.GetVtableConstant(src, typeName)
 	(*blk).NewStore(vTable, arcVTablePointer)
-
-	// create reference
-	emt.CreateReference(blk, instance, "initial instance")
 
 	// constructor arguments
 	arguments := []value.Value{instance}
@@ -3150,7 +2682,7 @@ func (emt *Emitter) GetVtableConstant(src symbols.TypeSymbol, typ string) value.
 	fields = append(fields, emt.GetConstantStringConstant(strings.ToUpper(src.Name[:1])+src.Name[1:]))
 
 	// die() pointer
-	fields = append(fields, template.Fields[2])
+	// fields = append(fields, template.Fields[2])
 
 	// instance fingerprint
 	fields = append(fields, emt.GetConstantStringConstant(src.Fingerprint()))
@@ -3187,53 +2719,6 @@ func (emt *Emitter) Box(blk **ir.Block, val value.Value, typ symbols.TypeSymbol)
 	return obj
 }
 
-// ARC FUNCTIONS
-func (emt *Emitter) CreateReference(blk **ir.Block, expr value.Value, comment string) {
-	if VerboseARC {
-		emt.CreateReferenceVerbose(blk, expr, emt.GetStringConstant(blk, comment))
-	} else {
-		emt.CreateReferenceNormal(blk, expr)
-	}
-}
-
-func (emt *Emitter) DestroyReference(blk **ir.Block, expr value.Value, comment string) {
-	if VerboseARC {
-		emt.DestroyReferenceVerbose(blk, expr, emt.GetStringConstant(blk, comment))
-	} else {
-		emt.DestroyReferenceNormal(blk, expr)
-	}
-}
-
-// NORMAL ARC FUNCTIONS
-func (emt *Emitter) CreateReferenceNormal(blk **ir.Block, expr value.Value) {
-	// bitcast the expression to an Any-Pointer
-	// (meaning we dont change any data, we only change the pointer type)
-	any := (*blk).NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	(*blk).NewCall(emt.ArcFuncs["RegisterReference"], any)
-}
-
-func (emt *Emitter) DestroyReferenceNormal(blk **ir.Block, expr value.Value) {
-	// bitcast the expression to an Any-Pointer
-	// (meaning we dont change any data, we only change the pointer type)
-	any := (*blk).NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	(*blk).NewCall(emt.ArcFuncs["UnregisterReference"], any)
-}
-
-// DEBUG ARC FUNCTIONS
-func (emt *Emitter) CreateReferenceVerbose(blk **ir.Block, expr value.Value, comment value.Value) {
-	// bitcast the expression to an Any-Pointer
-	// (meaning we dont change any data, we only change the pointer type)
-	any := (*blk).NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	(*blk).NewCall(emt.ArcFuncs["RegisterReferenceVerbose"], any, comment)
-}
-
-func (emt *Emitter) DestroyReferenceVerbose(blk **ir.Block, expr value.Value, comment value.Value) {
-	// bitcast the expression to an Any-Pointer
-	// (meaning we dont change any data, we only change the pointer type)
-	any := (*blk).NewBitCast(expr, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].Type))
-	(*blk).NewCall(emt.ArcFuncs["UnregisterReferenceVerbose"], any, comment)
-}
-
 func (emt *Emitter) EmitVariableDeclaration(blk **ir.Block, varibale symbols.LocalVariableSymbol, isTmp bool) {
 	varName := emt.Id(varibale)
 	expression := emt.DefaultConstant(blk, varibale.VarType())
@@ -3255,31 +2740,15 @@ func (emt *Emitter) EmitAssignment(blk **ir.Block, variable symbols.LocalVariabl
 	varName := emt.Id(variable)
 	expression := emt.EmitExpression(blk, val)
 
-	// if the expression is a variable -> increase reference counter
-	if val.IsPersistent() && val.Type().IsObject {
-		emt.CreateReference(blk, expression, "variable assignment ["+varName+"]")
-	}
-
 	// if this is a struct we'll have to load it first
 	if val.Type().IsUserDefined && !val.Type().IsObject {
 		expression = (*blk).NewLoad(emt.IRTypes(val.Type()), expression)
 	}
 
 	if variable.IsGlobal() {
-		// if this variable already contained an object -> destroy the reference
-		if variable.VarType().IsObject {
-			emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(variable.VarType()), emt.Globals[varName].IRGlobal), "destroying reference previously stored in '"+varName+"'")
-		}
-
 		// assign the vTernaralue to the global variable
 		(*blk).NewStore(expression, emt.Globals[varName].IRGlobal)
-
 	} else {
-		// if this variable already contained an object -> destroy there reference
-		if variable.VarType().IsObject {
-			emt.DestroyReference(blk, (*blk).NewLoad(emt.IRTypes(variable.VarType()), emt.Locals[varName].IRLocal), "destroying reference previously stored in '"+varName+"'")
-		}
-
 		// assign the value to the local variable
 		(*blk).NewStore(expression, emt.Locals[varName].IRLocal)
 	}
@@ -3302,11 +2771,6 @@ func (emt *Emitter) EmitArrayAssignment(blk **ir.Block, base value.Value, index 
 
 		// call the array's set element function
 		(*blk).NewCall(emt.Classes[emt.Id(builtins.Array)].Functions["SetElement"], base, index, anyValue)
-
-		// if the element wasnt a variable -> decrease its reference counter
-		if !literalValue.IsPersistent() && literalValue.Type().IsObject {
-			emt.DestroyReference(blk, value, "array assignment cleanup")
-		}
 
 		// return a copy of the value (i really don't think this is necessary but oh well)
 		//emt.CreateReference(blk, value, "assign value copy (array assignment)")

@@ -52,19 +52,20 @@ func (emt *Emitter) EmitCLibReferences() {
 
 	atof := emt.Module.NewFunc("atof", types.Double, ir.NewParam("str", types.I8Ptr))
 	emt.CFuncs["atof"] = atof
+
+	gc_init := emt.Module.NewFunc("GC_init", types.I8Ptr)
+	emt.CFuncs["gc_init"] = gc_init
+
+	gc_malloc := emt.Module.NewFunc("GC_malloc", types.I8Ptr, ir.NewParam("len", types.I32))
+	emt.CFuncs["gc_malloc"] = gc_malloc
+
+	gc_realloc := emt.Module.NewFunc("GC_realloc", types.I8Ptr, ir.NewParam("ptr", types.I8Ptr), ir.NewParam("len", types.I32))
+	emt.CFuncs["gc_realloc"] = gc_realloc
 }
 
 func (emt *Emitter) EmitClassAndArcReferences(module *ir.Module) {
 	// load module
 	emt.LoadAndReferenceClasses(module)
-
-	// reference arc functions
-	arcFuncs := irtools.FindFunctionsWithPrefix(module, "arc_")
-
-	for _, fnc := range arcFuncs {
-		emt.ArcFuncs[strings.Split(fnc.Name(), "_")[1]] = fnc
-		emt.ImportFunction(fnc)
-	}
 
 	// reference exc functions
 	excFuncs := irtools.FindFunctionsWithPrefix(module, "exc_")

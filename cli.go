@@ -283,7 +283,7 @@ func CompileFiles(files []string) {
 	}
 
 	// clang arguments
-	clargs := []string{opt, "-lm", "-pthread", "-rdynamic", exPath + "/.tmp/completeout.bc", "-o", outPath}
+	clargs := []string{opt, "-lm", "-lgc", "-pthread", "-rdynamic", exPath + "/.tmp/completeout.bc", "-o", outPath}
 	clargs = append(clargs, args...)
 
 	// call clang
