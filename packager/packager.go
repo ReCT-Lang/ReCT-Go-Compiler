@@ -182,21 +182,14 @@ func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpa
 		cnst := CreateFunctionSymbolFromModule(constructor, class.Name+"_public_", false, classes, errorLocation)
 		cnst.Parameters = cnst.Parameters[1:]
 
-		// find the destructor
-		destructor := irtools.FindFunction(module, class.Name+"_public_Die")
-		dstr := symbols.CreateFunctionSymbol("Die", make([]symbols.ParameterSymbol, 0), builtins.Void, nodes.FunctionDeclarationMember{}, false)
-		dstr.IRFunction = destructor
-
 		// alter class object
 		class.Functions = append(class.Functions, cnst)
-		class.Functions = append(class.Functions, dstr)
 
 		// find all of its public functions
 		classFuncs := irtools.FindFunctionsWithPrefix(module, class.Name+"_public_")
 		for _, fnc := range classFuncs {
-			// if this isn't the constructor or destructor
-			if !strings.HasSuffix(fnc.Name(), "_Constructor") &&
-				!strings.HasSuffix(fnc.Name(), "_Die") {
+			// if this isn't the constructor
+			if !strings.HasSuffix(fnc.Name(), "_Constructor") {
 				fncSym := CreateFunctionSymbolFromModule(fnc, class.Name+"_public_", true, classes, errorLocation)
 				fncSym.Parameters = fncSym.Parameters[1:]
 

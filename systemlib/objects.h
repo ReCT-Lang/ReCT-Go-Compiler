@@ -22,22 +22,6 @@ typedef struct class_Array     class_Array;
 typedef struct class_pArray    class_pArray;
 typedef struct class_Thread    class_Thread;
 
-// declare destructor function pointer
-typedef void (*DiePointer)(void*);
-
-// declare all destructors
-void Any_public_Die    (void*);
-void String_public_Die (void*);
-void Int_public_Die    (void*);
-void Byte_public_Die   (void*);
-void Long_public_Die   (void*);
-void Float_public_Die  (void*);
-void Double_public_Die (void*);
-void Bool_public_Die   (void*);
-void Array_public_Die  (void*);
-void pArray_public_Die (void*);
-void Thread_public_Die (void*);
-
 // declare all constructors
 void Any_public_Constructor(class_Any*);
 void String_public_Constructor(class_String*);
@@ -59,7 +43,6 @@ struct Standard_vTable {
     // ---------------------
 	const void* parentVTable;  // vTable of the object's parent
 	const char* className;     // object class name "Any" for "any", "Array" for "array[int]"
-	DiePointer dieFunction;    // destructor function pointer
 
 	// Object specific fields
     // ----------------------
@@ -74,7 +57,6 @@ struct Standard_vTable {
 // the objects struct
 struct class_Any {
 	Standard_vTable vtable; // "any" is pretty boring, it doesnt store any data
-	int referenceCounter;     // except for the objects reference counter (required for ARC)
 };
 
 // -----------------------------------------------------------------------------
@@ -85,7 +67,6 @@ struct class_Any {
 // the objects struct
 struct class_String {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;   // implementation of the reference counter
 	char* buffer;           // for info on this string implementation check out:
 	int length;             // https://mapping-high-level-constructs-to-llvm-ir.readthedocs.io/en/latest/appendix-a-how-to-implement-a-string-type-in-llvm/index.html
 	int maxLen;
@@ -110,7 +91,6 @@ class_String *String_public_Substring(class_String*, int, int);
 // the objects struct
 struct class_Int {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;      // implementation of the reference counter
 	int value;
 };
 
@@ -125,7 +105,6 @@ int Int_public_GetValue(class_Int*);
 // the objects struct
 struct class_Byte {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;       // implementation of the reference counter
 	char value;
 };
 
@@ -140,7 +119,6 @@ char Byte_public_GetValue(class_Byte*);
 // the objects struct
 struct class_Long {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;       // implementation of the reference counter
 	long value;
 };
 
@@ -155,7 +133,6 @@ long Long_public_GetValue(class_Long*);
 // the objects struct
 struct class_Float {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;   // implementation of the reference counter
 	float value;
 };
 
@@ -170,7 +147,6 @@ float Float_public_GetValue(class_Float*);
 // the objects struct
 struct class_Double {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;   // implementation of the reference counter
 	float value;
 };
 
@@ -185,7 +161,6 @@ double Double_public_GetValue(class_Double*);
 // the objects struct
 struct class_Bool {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;   // implementation of the reference counter
 	bool value;
 };
 
@@ -201,7 +176,6 @@ bool Bool_public_GetValue(class_Bool*);
 // the objects struct
 struct class_Array {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;           // implementation of the reference counter
 	class_Any **elements;           // marks the start of our array
 	int length;					    // the length of this array
 	int maxLen;                     // buffer length
@@ -218,8 +192,7 @@ void Array_public_Push(class_Array*, class_Any*);
 #define DEFINE_ARRAY(class)                                 \
 	typedef struct class_Array_##class class_Array_##class; \
 	struct class_Array_##class {                            \
-		Standard_vTable vtable;                      \
-		int referenceCounter;                               \
+		Standard_vTable vtable;                             \
 		class_Any **elements;                               \
 		int length;                                         \
 		int maxLen;                                         \
@@ -238,7 +211,6 @@ DEFINE_ARRAY(Any);
 // the objects struct
 struct class_pArray {
 	Standard_vTable vtable;  // our vTable
-	int referenceCounter;         // implementation of the reference counter
 	void *elements;               // marks the start of our array
 	int length;                   // array length
 	int maxLen;                   // buffer length
@@ -256,7 +228,6 @@ void *pArray_public_GetElementPtr(class_pArray*, int);
 	typedef struct class_pArray_##type class_pArray_##type;   \
 	struct class_pArray_##type {                              \
 		Standard_vTable vtable;                               \
-		int referenceCounter;                                 \
 		void *elements;                                       \
 		int length;                                           \
 		int maxLen;                                           \
@@ -278,8 +249,7 @@ DEFINE_PARRAY(Float);
 
 // the objects struct
 struct class_Thread {
-	Standard_vTable vtable;  // the epic vTable
-	int referenceCounter;           // you guessed it, reference counter for the ARC
+	Standard_vTable vtable;         // the epic vTable
 	void *(*__routine)(void*);      // thread routine (this is the function the thread runs)
 	void *args;                     // (the arguments to the function the thread runs)
 	pthread_t id;                   // thread id

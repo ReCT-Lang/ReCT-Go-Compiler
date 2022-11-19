@@ -3,9 +3,10 @@
 #include<stdbool.h>
 #include<stdio.h>
 #include<pthread.h>  // For thread object UwU
+#include<gc.h>       // For garbage (collection)
+
 
 #include "objects.h" // ReCT stdlib headers
-#include "arc.h"
 #include "exceptions.h"
 
 // NOTE: I made all class names capitalised, this is to distinguish primitives
@@ -17,15 +18,12 @@
 // -----------------------------------------------------------------------------
 
 // definition for the Any vTable
-const Standard_vTable Any_vTable_Const = {NULL, "Any", &Any_public_Die};
+const Standard_vTable Any_vTable_Const = {NULL, "Any"};
 
 // definition for the objects constructor
 void Any_public_Constructor(class_Any* this) {
 	// nothin to construct
 }
-
-// definition for the objects destructor
-void Any_public_Die(void* this) {}
 
 // -----------------------------------------------------------------------------
 // "string" object type
@@ -33,7 +31,7 @@ void Any_public_Die(void* this) {}
 // -----------------------------------------------------------------------------
 
 // definition for the String vTable
-const Standard_vTable String_vTable_Const = {&Any_vTable_Const, "String", &String_public_Die};
+const Standard_vTable String_vTable_Const = {&Any_vTable_Const, "String"};
 
 // definition for the objects constructor
 void String_public_Constructor(class_String* this) {
@@ -41,16 +39,6 @@ void String_public_Constructor(class_String* this) {
 	this->length = 0;
 	this->maxLen = 0;
 	this->factor = 16;
-}
-
-// definition for the objects destructor
-void String_public_Die(void* this) {
-    // convert generic pointer to string class pointer
-    class_String* me = (class_String*)this;
-
-	if (me->buffer != NULL) {
-		free(me->buffer);
-	}
 }
 
 // definition for a string.Load method
@@ -63,14 +51,14 @@ void String_public_Load(class_String* this, char* source) {
 	int size = strlen(source);
 
 	// allocate a new buffer
-	char* output = malloc(size + 1);
+	char* output = GC_MALLOC(size + 1);
 
 	// copy over the source
 	memcpy(output, source, size + 1);
 
 	// free the old buffer if theres anything in there
 	if (this->buffer != NULL)
-		free(this->buffer);
+		GC_FREE(this->buffer);
 
 	// change our pointer
 	this->buffer = output;
@@ -83,13 +71,13 @@ void String_public_Load(class_String* this, char* source) {
 // definition for a string.Resize() method
 void String_public_Resize(class_String* this, int size) {
 	// allocate a new buffer
-	char* output = malloc(size);
+	char* output = GC_MALLOC(size);
 
 	// copy over the old one
 	memcpy(output, this->buffer, this->length);
 
 	// free the old buffer
-	free(this->buffer);
+    GC_FREE(this->buffer);
 
 	// change our pointer
 	this->buffer = output;
@@ -121,12 +109,9 @@ class_String* String_public_Concat(class_String* a, class_String* b) {
 	strcat(newBuffer, b->buffer);
 
 	// create a new string object
-	class_String *newStr = (class_String*)malloc(sizeof(class_String));
+	class_String *newStr = (class_String*)GC_MALLOC(sizeof(class_String));
 	newStr->vtable = String_vTable_Const;
 	newStr->vtable.fingerprint = a->vtable.fingerprint;
-
-    newStr->referenceCounter = 0;
-	arc_RegisterReference((class_Any*)newStr);
 
 	String_public_Constructor(newStr);
 	String_public_Load(newStr, newBuffer);
@@ -175,12 +160,9 @@ class_String *String_public_Substring(class_String* this, int start, int length)
 	}
 	
 	// create a string object
-	class_String *newString = (class_String*)malloc(sizeof(class_String));
+	class_String *newString = (class_String*)GC_MALLOC(sizeof(class_String));
     newString->vtable = String_vTable_Const;
     newString->vtable.fingerprint = this->vtable.fingerprint;
-
-    newString->referenceCounter = 0;
-	arc_RegisterReference((class_Any*)newString);
 
 	String_public_Constructor(newString);
 	String_public_Load(newString, subBuffer);
@@ -198,15 +180,12 @@ class_String *String_public_Substring(class_String* this, int start, int length)
 // -----------------------------------------------------------------------------
 
 // definition for the Int vTable
-const Standard_vTable Int_vTable_Const = {&Any_vTable_Const, "Int", &Int_public_Die};
+const Standard_vTable Int_vTable_Const = {&Any_vTable_Const, "Int"};
 
 // definition for the objects constructor
 void Int_public_Constructor(class_Int* this, int value) {
 	this->value = value;
 }
-
-// definition for the objects destructor
-void Int_public_Die(void* this) {}
 
 // definition for an int.GetValue() method
 int Int_public_GetValue(class_Int* this) {
@@ -223,15 +202,12 @@ int Int_public_GetValue(class_Int* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Int vTable
-const Standard_vTable Byte_vTable_Const = {&Any_vTable_Const, "Byte", &Byte_public_Die};
+const Standard_vTable Byte_vTable_Const = {&Any_vTable_Const, "Byte"};
 
 // definition for the objects constructor
 void Byte_public_Constructor(class_Byte* this, char value) {
 	this->value = value;
 }
-
-// definition for the objects destructor
-void Byte_public_Die(void* this) {}
 
 // definition for an int.GetValue() method
 char Byte_public_GetValue(class_Byte* this) {
@@ -248,15 +224,12 @@ char Byte_public_GetValue(class_Byte* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Int vTable
-const Standard_vTable Long_vTable_Const = {&Any_vTable_Const, "Long", &Long_public_Die};
+const Standard_vTable Long_vTable_Const = {&Any_vTable_Const, "Long"};
 
 // definition for the objects constructor
 void Long_public_Constructor(class_Long* this, long value) {
 	this->value = value;
 }
-
-// definition for the objects destructor
-void Long_public_Die(void* this) {}
 
 // definition for an int.GetValue() method
 long Long_public_GetValue(class_Long* this) {
@@ -273,15 +246,12 @@ long Long_public_GetValue(class_Long* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Float vTable
-const Standard_vTable Float_vTable_Const = {&Any_vTable_Const, "Float", &Float_public_Die};
+const Standard_vTable Float_vTable_Const = {&Any_vTable_Const, "Float"};
 
 // definition for the objects constructor
 void Float_public_Constructor(class_Float* this, float value) {
 	this->value = value;
 }
-
-// definition for the objects destructor
-void Float_public_Die(void* this) {}
 
 // definition for a float.GetValue() method
 float Float_public_GetValue(class_Float* this) {
@@ -298,15 +268,12 @@ float Float_public_GetValue(class_Float* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Double vTable
-const Standard_vTable Double_vTable_Const = {&Any_vTable_Const, "Double", &Double_public_Die};
+const Standard_vTable Double_vTable_Const = {&Any_vTable_Const, "Double"};
 
 // definition for the objects constructor
 void Double_public_Constructor(class_Double* this, double value) {
 	this->value = value;
 }
-
-// definition for the objects destructor
-void Double_public_Die(void* this) {}
 
 // definition for a float.GetValue() method
 double Double_public_GetValue(class_Double* this) {
@@ -323,15 +290,12 @@ double Double_public_GetValue(class_Double* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Bool vTable
-const Standard_vTable Bool_vTable_Const = {&Any_vTable_Const, "Bool", &Bool_public_Die};
+const Standard_vTable Bool_vTable_Const = {&Any_vTable_Const, "Bool"};
 
 // definition for the objects constructor
 void Bool_public_Constructor(class_Bool* this, bool value) {
 	this->value = value;
 }
-
-// definition for the objects destructor
-void Bool_public_Die(void* this) {}
 
 // definition for a bool.GetValue() method
 bool Bool_public_GetValue(class_Bool* this) {
@@ -349,7 +313,7 @@ bool Bool_public_GetValue(class_Bool* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Array vTable
-const Standard_vTable Array_vTable_Const = {&Any_vTable_Const, "Array", &Array_public_Die};
+const Standard_vTable Array_vTable_Const = {&Any_vTable_Const, "Array"};
 
 // definition for the objects constructor
 void Array_public_Constructor(class_Array* this, int length) {
@@ -358,21 +322,7 @@ void Array_public_Constructor(class_Array* this, int length) {
 	this->factor = 5;
 
 	// allocate space needed for our pointers
-	this->elements = (class_Any**)calloc(length, sizeof(class_Any*));
-}
-
-// definition for the objects destructor
-void Array_public_Die(void* this) {
-	// bitcast the void* into an Array pointer
-	class_Array *me = (class_Array*)this;
-
-	// go through each object and dereference it
-	for (int i = 0; i < me->length; i++) {
-		arc_UnregisterReference(me->elements[i]);
-	}
-
-	// free the allocated space
-	free(me->elements);
+	this->elements = (class_Any**)GC_MALLOC(length * sizeof(class_Any*));
 }
 
 // definition for a element access
@@ -387,12 +337,6 @@ class_Any* Array_public_GetElement(class_Array* this, int index) {
 void Array_public_SetElement(class_Array* this, int index, class_Any *element) {
 	if (index < 0 || index >= this->length)
 		exc_Throw("Array index out of range!");
-
-	// increase arc reference count
-	arc_RegisterReference(element);
-
-	// decrease arc reference count for the previous element
-	arc_UnregisterReference((class_Any*)this->elements[index]);
 
 	*(this->elements + index) = element;
 }
@@ -410,18 +354,18 @@ void Array_public_Push(class_Array* this, class_Any *element) {
 		int newLength = this->length + this->factor;
 
 		// try to use realloc() first bc its faster
-		class_Any **newBuffer = realloc(this->elements, sizeof(class_Any*) * newLength);
+		class_Any **newBuffer = GC_REALLOC(this->elements, sizeof(class_Any*) * newLength);
 
 		// if that failed, do it the long way
 		if (newBuffer == NULL) {
 			// allocate a new buffer
-			newBuffer = (class_Any**)malloc(sizeof(class_Any*) * newLength);
+			newBuffer = (class_Any**)GC_MALLOC(sizeof(class_Any*) * newLength);
 
 			// copy over the old one
 			memcpy(newBuffer, this->elements, sizeof(class_Any*) * this->length);
 
 			// free the old buffer
-			free(this->elements);
+			GC_FREE(this->elements);
 
 		}
 		
@@ -450,7 +394,7 @@ void Array_public_Push(class_Array* this, class_Any *element) {
 // -----------------------------------------------------------------------------
 
 // definition for the Bool vTable
-const Standard_vTable pArray_vTable_Const = {&Any_vTable_Const, "pArray", &pArray_public_Die};
+const Standard_vTable pArray_vTable_Const = {&Any_vTable_Const, "pArray"};
 
 // definition for the objects constructor
 void pArray_public_Constructor(class_pArray* this, int length, int elemSize) {
@@ -459,16 +403,7 @@ void pArray_public_Constructor(class_pArray* this, int length, int elemSize) {
 	this->factor   = 4;
 	this->elemSize = elemSize;
 
-	this->elements = calloc(length, elemSize);
-}
-
-// definition for the objects destructor
-void pArray_public_Die(void* this) {
-	// bitcast the void* into an Array pointer
-	class_pArray *me = (class_pArray*)this;
-
-	// free the allocated space
-	free(me->elements);
+	this->elements = GC_MALLOC(length * elemSize);
 }
 
 // definition for array length
@@ -485,18 +420,18 @@ void *pArray_public_Grow(class_pArray* this) {
 		int newLength = (this->length + this->factor) * this->elemSize;
 
 		// try to use realloc() first bc its faster
-		void *output = realloc(this->elements, newLength);
+		void *output = GC_REALLOC(this->elements, newLength);
 
 		// if that failed, do it the long way
 		if (output == NULL) {
 			// allocate a new buffer
-			output = malloc(newLength);
+			output = GC_MALLOC(newLength);
 
 			// copy over the old one
 			memcpy(output, this->elements, this->length * this->elemSize);
 
 			// free the old buffer
-			free(this->elements);
+			GC_FREE(this->elements);
 
 		}
 
@@ -532,16 +467,13 @@ void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 // -----------------------------------------------------------------------------
 
 // definition for the Thread vTable
-const Standard_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread", &Thread_public_Die};
+const Standard_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread"};
 
 // definition for the objects constructor
 void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
 	this->__routine = __routine;
 	this->args = args;
 }
-
-// definition for the objects destructor
-void Thread_public_Die(void* this) {}
 
 // start thread
 void Thread_public_Start(class_Thread *this) {

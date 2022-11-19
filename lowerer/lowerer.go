@@ -42,8 +42,6 @@ func Flatten(functionSymbol symbols.FunctionSymbol, stmt boundnodes.BoundStateme
 
 	pushTo(&stack, stmt)
 
-	root := true
-
 	for len(stack) > 0 {
 		current := popFrom(&stack)
 
@@ -52,34 +50,16 @@ func Flatten(functionSymbol symbols.FunctionSymbol, stmt boundnodes.BoundStateme
 			// this is so we can insert nodes before these if we need to
 			localStack := make([]boundnodes.BoundStatementNode, 0)
 
-			// keep track of any variable declarations made in this block
-			variables := make([]symbols.VariableSymbol, 0)
-
 			// push all elements onto the stack in reverse order (bc yk stacks are like that)
 			currentBlock := current.(boundnodes.BoundBlockStatementNode)
 			for i := len(currentBlock.Statements) - 1; i >= 0; i-- {
 				stmt := currentBlock.Statements[i]
 
 				pushTo(&localStack, stmt)
-
-				// if this is a variable declaration, keep track of its variable!
-				if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
-					declStatement := stmt.(boundnodes.BoundVariableDeclarationStatementNode)
-
-					if !declStatement.Variable.IsGlobal() {
-						variables = append(variables, declStatement.Variable)
-					}
-				}
-			}
-
-			// if we have any variables in here and this isnt the function body itself, add a GC call
-			if len(variables) != 0 && !root {
-				pushTo(&stack, boundnodes.CreateBoundGarbageCollectionStatementNode(variables, print.TextSpan{}))
 			}
 
 			// transfer elements from out local stack over to the main one
 			transferTo(&stack, localStack)
-			root = false
 		} else {
 			statements = append(statements, current)
 		}
@@ -341,8 +321,6 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteClassFieldAccessExpression(expr.(boundnodes.BoundClassFieldAccessExpressionNode))
 	case boundnodes.BoundClassFieldAssignmentExpression:
 		return RewriteClassFieldAssignmentExpression(expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
-	case boundnodes.BoundClassDestructionExpression:
-		return RewriteClassDestructionExpression(expr.(boundnodes.BoundClassDestructionExpressionNode))
 	case boundnodes.BoundArrayAccessExpression:
 		return RewriteArrayAccessExpression(expr.(boundnodes.BoundArrayAccessExpressionNode))
 	case boundnodes.BoundArrayAssignmentExpression:
@@ -479,12 +457,6 @@ func RewriteClassFieldAssignmentExpression(expr boundnodes.BoundClassFieldAssign
 	rewrittenValue := RewriteExpression(expr.Value)
 
 	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(rewrittenBase, expr.Field, rewrittenValue, expr.BoundSpan)
-}
-
-func RewriteClassDestructionExpression(expr boundnodes.BoundClassDestructionExpressionNode) boundnodes.BoundClassDestructionExpressionNode {
-	rewrittenBase := RewriteExpression(expr.Base)
-
-	return boundnodes.CreateBoundClassDestructionExpressionNode(rewrittenBase, expr.BoundSpan)
 }
 
 func RewriteArrayAccessExpression(expr boundnodes.BoundArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
