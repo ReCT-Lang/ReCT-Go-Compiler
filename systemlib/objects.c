@@ -17,12 +17,11 @@
 // -----------------------------------------------------------------------------
 
 // definition for the Any vTable
-const Any_vTable Any_vTable_Const = {NULL, "Any", &Any_public_Die};
+const Standard_vTable Any_vTable_Const = {NULL, "Any", &Any_public_Die};
 
 // definition for the objects constructor
 void Any_public_Constructor(class_Any* this) {
-	this->vtable = &Any_vTable_Const;
-	this->referenceCounter = 0;
+	// nothin to construct
 }
 
 // definition for the objects destructor
@@ -34,12 +33,10 @@ void Any_public_Die(void* this) {}
 // -----------------------------------------------------------------------------
 
 // definition for the String vTable
-const String_vTable String_vTable_Const = {&Any_vTable_Const, "String", &String_public_Die};
+const Standard_vTable String_vTable_Const = {&Any_vTable_Const, "String", &String_public_Die};
 
 // definition for the objects constructor
 void String_public_Constructor(class_String* this) {
-	this->vtable = &String_vTable_Const;
-	this->referenceCounter = 0;
 	this->buffer = NULL;
 	this->length = 0;
 	this->maxLen = 0;
@@ -125,9 +122,14 @@ class_String* String_public_Concat(class_String* a, class_String* b) {
 
 	// create a new string object
 	class_String *newStr = (class_String*)malloc(sizeof(class_String));
+	newStr->vtable = String_vTable_Const;
+	newStr->vtable.fingerprint = a->vtable.fingerprint;
+
+    newStr->referenceCounter = 0;
+	arc_RegisterReference((class_Any*)newStr);
+
 	String_public_Constructor(newStr);
 	String_public_Load(newStr, newBuffer);
-	arc_RegisterReference((class_Any*)newStr);
 
 	free(newBuffer);
 	return newStr;
@@ -174,9 +176,14 @@ class_String *String_public_Substring(class_String* this, int start, int length)
 	
 	// create a string object
 	class_String *newString = (class_String*)malloc(sizeof(class_String));
+    newString->vtable = String_vTable_Const;
+    newString->vtable.fingerprint = this->vtable.fingerprint;
+
+    newString->referenceCounter = 0;
+	arc_RegisterReference((class_Any*)newString);
+
 	String_public_Constructor(newString);
 	String_public_Load(newString, subBuffer);
-	arc_RegisterReference((class_Any*)newString);
 
 	// clear the work buffer
 	free(subBuffer);
@@ -191,12 +198,10 @@ class_String *String_public_Substring(class_String* this, int start, int length)
 // -----------------------------------------------------------------------------
 
 // definition for the Int vTable
-const Int_vTable Int_vTable_Const = {&Any_vTable_Const, "Int", &Int_public_Die};
+const Standard_vTable Int_vTable_Const = {&Any_vTable_Const, "Int", &Int_public_Die};
 
 // definition for the objects constructor
 void Int_public_Constructor(class_Int* this, int value) {
-	this->vtable = &Int_vTable_Const;
-	this->referenceCounter = 0;
 	this->value = value;
 }
 
@@ -218,12 +223,10 @@ int Int_public_GetValue(class_Int* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Int vTable
-const Byte_vTable Byte_vTable_Const = {&Any_vTable_Const, "Byte", &Byte_public_Die};
+const Standard_vTable Byte_vTable_Const = {&Any_vTable_Const, "Byte", &Byte_public_Die};
 
 // definition for the objects constructor
 void Byte_public_Constructor(class_Byte* this, char value) {
-	this->vtable = &Byte_vTable_Const;
-	this->referenceCounter = 0;
 	this->value = value;
 }
 
@@ -245,12 +248,10 @@ char Byte_public_GetValue(class_Byte* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Int vTable
-const Long_vTable Long_vTable_Const = {&Any_vTable_Const, "Long", &Long_public_Die};
+const Standard_vTable Long_vTable_Const = {&Any_vTable_Const, "Long", &Long_public_Die};
 
 // definition for the objects constructor
 void Long_public_Constructor(class_Long* this, long value) {
-	this->vtable = &Long_vTable_Const;
-	this->referenceCounter = 0;
 	this->value = value;
 }
 
@@ -267,44 +268,15 @@ long Long_public_GetValue(class_Long* this) {
 }
 
 // -----------------------------------------------------------------------------
-// "pointer" object type
-// Note: this is an object version of a long, this is to box and crunch it
-// -----------------------------------------------------------------------------
-
-// definition for the Pointer vTable
-const Pointer_vTable Pointer_vTable_Const = {&Any_vTable_Const, "Pointer", &Pointer_public_Die};
-
-// definition for the objects constructor
-void Pointer_public_Constructor(class_Pointer* this, long value) {
-	this->vtable = &Pointer_vTable_Const;
-	this->referenceCounter = 0;
-	this->value = value;
-}
-
-// definition for the objects destructor
-void Pointer_public_Die(void* this) {}
-
-// definition for an int.GetValue() method
-long Pointer_public_GetValue(class_Pointer* this) {
-	// if the object is null -> return the default value
-	if (this == NULL) return 0;
-
-	// if not -> return the stored value
-	return this->value;
-}
-
-// -----------------------------------------------------------------------------
 // "float" object type
 // Note: this is an object version of a float, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
 // definition for the Float vTable
-const Float_vTable Float_vTable_Const = {&Any_vTable_Const, "Float", &Float_public_Die};
+const Standard_vTable Float_vTable_Const = {&Any_vTable_Const, "Float", &Float_public_Die};
 
 // definition for the objects constructor
 void Float_public_Constructor(class_Float* this, float value) {
-	this->vtable = &Float_vTable_Const;
-	this->referenceCounter = 0;
 	this->value = value;
 }
 
@@ -326,12 +298,10 @@ float Float_public_GetValue(class_Float* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Double vTable
-const Double_vTable Double_vTable_Const = {&Any_vTable_Const, "Double", &Double_public_Die};
+const Standard_vTable Double_vTable_Const = {&Any_vTable_Const, "Double", &Double_public_Die};
 
 // definition for the objects constructor
 void Double_public_Constructor(class_Double* this, double value) {
-	this->vtable = &Double_vTable_Const;
-	this->referenceCounter = 0;
 	this->value = value;
 }
 
@@ -353,12 +323,10 @@ double Double_public_GetValue(class_Double* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Bool vTable
-const Bool_vTable Bool_vTable_Const = {&Any_vTable_Const, "Bool", &Bool_public_Die};
+const Standard_vTable Bool_vTable_Const = {&Any_vTable_Const, "Bool", &Bool_public_Die};
 
 // definition for the objects constructor
 void Bool_public_Constructor(class_Bool* this, bool value) {
-	this->vtable = &Bool_vTable_Const;
-	this->referenceCounter = 0;
 	this->value = value;
 }
 
@@ -381,12 +349,10 @@ bool Bool_public_GetValue(class_Bool* this) {
 // -----------------------------------------------------------------------------
 
 // definition for the Array vTable
-const Array_vTable Array_vTable_Const = {&Any_vTable_Const, "Array", &Array_public_Die};
+const Standard_vTable Array_vTable_Const = {&Any_vTable_Const, "Array", &Array_public_Die};
 
 // definition for the objects constructor
 void Array_public_Constructor(class_Array* this, int length) {
-	this->vtable = &Array_vTable_Const;
-	this->referenceCounter = 0;
 	this->length = length;
 	this->maxLen = length;
 	this->factor = 5;
@@ -484,12 +450,10 @@ void Array_public_Push(class_Array* this, class_Any *element) {
 // -----------------------------------------------------------------------------
 
 // definition for the Bool vTable
-const pArray_vTable pArray_vTable_Const = {&Any_vTable_Const, "pArray", &pArray_public_Die};
+const Standard_vTable pArray_vTable_Const = {&Any_vTable_Const, "pArray", &pArray_public_Die};
 
 // definition for the objects constructor
 void pArray_public_Constructor(class_pArray* this, int length, int elemSize) {
-	this->vtable   = &pArray_vTable_Const;
-	this->referenceCounter = 0;
 	this->length   = length;
 	this->maxLen   = length;
 	this->factor   = 4;
@@ -568,12 +532,10 @@ void *pArray_public_GetElementPtr(class_pArray* this, int index) {
 // -----------------------------------------------------------------------------
 
 // definition for the Thread vTable
-const Thread_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread", &Thread_public_Die};
+const Standard_vTable Thread_vTable_Const = {&Any_vTable_Const, "Thread", &Thread_public_Die};
 
 // definition for the objects constructor
 void Thread_public_Constructor(class_Thread *this, void *(*__routine) (void*), void *args) {
-	this->vtable = &Thread_vTable_Const;
-	this->referenceCounter = 0;
 	this->__routine = __routine;
 	this->args = args;
 }

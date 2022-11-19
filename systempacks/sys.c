@@ -50,9 +50,14 @@ class_String* sys_Input()
         str[pos] = '\0';
 
 	class_String *strInstance = (class_String*)malloc(sizeof(class_String));
+	strInstance->vtable = (Standard_vTable){NULL, "String", &String_public_Die};
+    strInstance->vtable.fingerprint = "TO_string[]_";
+
+    strInstance->referenceCounter = 0;
+	arc_RegisterReference((class_Any*)strInstance);
+
 	String_public_Constructor(strInstance);
 	String_public_Load(strInstance, str);
-	arc_RegisterReference((class_Any*)strInstance);
 
 	if(str != NULL)
 		free(str);

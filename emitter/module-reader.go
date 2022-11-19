@@ -56,7 +56,7 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 
 			// 1. format the name (removing % prefix and * suffix)
 			vTableType := typ.(*types.StructType).Fields[0].String()
-			vTableType = vTableType[1 : len(vTableType)-1]
+			vTableType = vTableType[1:]
 
 			// 2. finding and importing the type
 			vTable := FindType(module, vTableType)
@@ -105,8 +105,12 @@ func (emt *Emitter) LoadAndReferenceClasses(module *ir.Module) {
 	}
 
 	// sneaky
-	//emt.Classes[emt.Id(builtins.UInt)] = emt.Classes[emt.Id(builtins.Int)]
-	//emt.Classes[emt.Id(builtins.ULong)] = emt.Classes[emt.Id(builtins.Long)]
+	emt.Classes[emt.Id(builtins.UInt)] = emt.Classes[emt.Id(builtins.Int)]
+	emt.Classes[emt.Id(builtins.ULong)] = emt.Classes[emt.Id(builtins.Long)]
+
+	// pointers are a lie.
+	emt.Classes[emt.Id(builtins.Pointer)] = emt.Classes[emt.Id(builtins.Long)]
+	emt.Classes[emt.Id(builtins.Action)] = emt.Classes[emt.Id(builtins.Long)]
 }
 
 func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack symbols.PackageSymbol) {
@@ -121,7 +125,7 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 
 		// 1. format the name (removing % prefix and * suffix)
 		vTableType := typ.(*types.StructType).Fields[0].String()
-		vTableType = vTableType[1 : len(vTableType)-1]
+		vTableType = vTableType[1:]
 
 		// 2. finding and importing the type
 		vTable := FindType(module, vTableType)

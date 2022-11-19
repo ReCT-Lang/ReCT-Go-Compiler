@@ -3,8 +3,8 @@ source_filename = "./arc.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-%struct.class_Any = type { %struct.Any_vTable*, i32 }
-%struct.Any_vTable = type { i8*, i8*, void (i8*)* }
+%struct.class_Any = type { %struct.Standard_vTable, i32 }
+%struct.Standard_vTable = type { i8*, i8*, void (i8*)*, i8* }
 
 @.str = private unnamed_addr constant [59 x i8] c"\1B[36mARC \1B[0m- \1B[32mRegistered %s reference [%d] - %s\1B[0m\0A\00", align 1
 @.str.1 = private unnamed_addr constant [61 x i8] c"\1B[36mARC \1B[0m- \1B[33mUnregistered %s reference [%d] - %s\1B[0m\0A\00", align 1
@@ -43,7 +43,7 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* noundef %0) #0
   br i1 %4, label %5, label %6
 
 5:                                                ; preds = %1
-  br label %25
+  br label %24
 
 6:                                                ; preds = %1
   %7 = load %struct.class_Any*, %struct.class_Any** %2, align 8
@@ -55,23 +55,22 @@ define dso_local void @arc_UnregisterReference(%struct.class_Any* noundef %0) #0
   %12 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %11, i32 0, i32 1
   %13 = load i32, i32* %12, align 8
   %14 = icmp sle i32 %13, 0
-  br i1 %14, label %15, label %25
+  br i1 %14, label %15, label %24
 
 15:                                               ; preds = %6
   %16 = load %struct.class_Any*, %struct.class_Any** %2, align 8
   %17 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %16, i32 0, i32 0
-  %18 = load %struct.Any_vTable*, %struct.Any_vTable** %17, align 8
-  %19 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %18, i32 0, i32 2
-  %20 = load void (i8*)*, void (i8*)** %19, align 8
-  %21 = load %struct.class_Any*, %struct.class_Any** %2, align 8
-  %22 = bitcast %struct.class_Any* %21 to i8*
-  call void %20(i8* noundef %22)
-  %23 = load %struct.class_Any*, %struct.class_Any** %2, align 8
-  %24 = bitcast %struct.class_Any* %23 to i8*
-  call void @free(i8* noundef %24) #3
-  br label %25
+  %18 = getelementptr inbounds %struct.Standard_vTable, %struct.Standard_vTable* %17, i32 0, i32 2
+  %19 = load void (i8*)*, void (i8*)** %18, align 8
+  %20 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %21 = bitcast %struct.class_Any* %20 to i8*
+  call void %19(i8* noundef %21)
+  %22 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %23 = bitcast %struct.class_Any* %22 to i8*
+  call void @free(i8* noundef %23) #3
+  br label %24
 
-25:                                               ; preds = %5, %15, %6
+24:                                               ; preds = %5, %15, %6
   ret void
 }
 
@@ -87,23 +86,22 @@ define dso_local void @arc_DestroyObject(%struct.class_Any* noundef %0) #0 {
   br i1 %4, label %5, label %6
 
 5:                                                ; preds = %1
-  br label %16
+  br label %15
 
 6:                                                ; preds = %1
   %7 = load %struct.class_Any*, %struct.class_Any** %2, align 8
   %8 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %7, i32 0, i32 0
-  %9 = load %struct.Any_vTable*, %struct.Any_vTable** %8, align 8
-  %10 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %9, i32 0, i32 2
-  %11 = load void (i8*)*, void (i8*)** %10, align 8
-  %12 = load %struct.class_Any*, %struct.class_Any** %2, align 8
-  %13 = bitcast %struct.class_Any* %12 to i8*
-  call void %11(i8* noundef %13)
-  %14 = load %struct.class_Any*, %struct.class_Any** %2, align 8
-  %15 = bitcast %struct.class_Any* %14 to i8*
-  call void @free(i8* noundef %15) #3
-  br label %16
+  %9 = getelementptr inbounds %struct.Standard_vTable, %struct.Standard_vTable* %8, i32 0, i32 2
+  %10 = load void (i8*)*, void (i8*)** %9, align 8
+  %11 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %12 = bitcast %struct.class_Any* %11 to i8*
+  call void %10(i8* noundef %12)
+  %13 = load %struct.class_Any*, %struct.class_Any** %2, align 8
+  %14 = bitcast %struct.class_Any* %13 to i8*
+  call void @free(i8* noundef %14) #3
+  br label %15
 
-16:                                               ; preds = %6, %5
+15:                                               ; preds = %6, %5
   ret void
 }
 
@@ -120,14 +118,13 @@ define dso_local void @arc_RegisterReferenceVerbose(%struct.class_Any* noundef %
   store i32 %8, i32* %6, align 8
   %9 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %10 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %9, i32 0, i32 0
-  %11 = load %struct.Any_vTable*, %struct.Any_vTable** %10, align 8
-  %12 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %11, i32 0, i32 1
-  %13 = load i8*, i8** %12, align 8
-  %14 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %15 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %14, i32 0, i32 1
-  %16 = load i32, i32* %15, align 8
-  %17 = load i8*, i8** %4, align 8
-  %18 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([59 x i8], [59 x i8]* @.str, i64 0, i64 0), i8* noundef %13, i32 noundef %16, i8* noundef %17)
+  %11 = getelementptr inbounds %struct.Standard_vTable, %struct.Standard_vTable* %10, i32 0, i32 1
+  %12 = load i8*, i8** %11, align 8
+  %13 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %14 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %13, i32 0, i32 1
+  %15 = load i32, i32* %14, align 8
+  %16 = load i8*, i8** %4, align 8
+  %17 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([59 x i8], [59 x i8]* @.str, i64 0, i64 0), i8* noundef %12, i32 noundef %15, i8* noundef %16)
   ret void
 }
 
@@ -144,7 +141,7 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* noundef
   br i1 %6, label %7, label %8
 
 7:                                                ; preds = %2
-  br label %56
+  br label %53
 
 8:                                                ; preds = %2
   %9 = load %struct.class_Any*, %struct.class_Any** %3, align 8
@@ -154,60 +151,57 @@ define dso_local void @arc_UnregisterReferenceVerbose(%struct.class_Any* noundef
   store i32 %12, i32* %10, align 8
   %13 = load %struct.class_Any*, %struct.class_Any** %3, align 8
   %14 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %13, i32 0, i32 0
-  %15 = load %struct.Any_vTable*, %struct.Any_vTable** %14, align 8
-  %16 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %15, i32 0, i32 1
-  %17 = load i8*, i8** %16, align 8
-  %18 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %19 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %18, i32 0, i32 1
-  %20 = load i32, i32* %19, align 8
-  %21 = load i8*, i8** %4, align 8
-  %22 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([61 x i8], [61 x i8]* @.str.1, i64 0, i64 0), i8* noundef %17, i32 noundef %20, i8* noundef %21)
-  %23 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %24 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %23, i32 0, i32 1
-  %25 = load i32, i32* %24, align 8
-  %26 = icmp eq i32 %25, 0
-  br i1 %26, label %27, label %44
+  %15 = getelementptr inbounds %struct.Standard_vTable, %struct.Standard_vTable* %14, i32 0, i32 1
+  %16 = load i8*, i8** %15, align 8
+  %17 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %18 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %17, i32 0, i32 1
+  %19 = load i32, i32* %18, align 8
+  %20 = load i8*, i8** %4, align 8
+  %21 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([61 x i8], [61 x i8]* @.str.1, i64 0, i64 0), i8* noundef %16, i32 noundef %19, i8* noundef %20)
+  %22 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %23 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %22, i32 0, i32 1
+  %24 = load i32, i32* %23, align 8
+  %25 = icmp eq i32 %24, 0
+  br i1 %25, label %26, label %41
 
-27:                                               ; preds = %8
-  %28 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %29 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %28, i32 0, i32 0
-  %30 = load %struct.Any_vTable*, %struct.Any_vTable** %29, align 8
-  %31 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %30, i32 0, i32 1
-  %32 = load i8*, i8** %31, align 8
-  %33 = load i8*, i8** %4, align 8
-  %34 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([53 x i8], [53 x i8]* @.str.2, i64 0, i64 0), i8* noundef %32, i8* noundef %33)
-  %35 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %36 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %35, i32 0, i32 0
-  %37 = load %struct.Any_vTable*, %struct.Any_vTable** %36, align 8
-  %38 = getelementptr inbounds %struct.Any_vTable, %struct.Any_vTable* %37, i32 0, i32 2
-  %39 = load void (i8*)*, void (i8*)** %38, align 8
-  %40 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %41 = bitcast %struct.class_Any* %40 to i8*
-  call void %39(i8* noundef %41)
+26:                                               ; preds = %8
+  %27 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %28 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %27, i32 0, i32 0
+  %29 = getelementptr inbounds %struct.Standard_vTable, %struct.Standard_vTable* %28, i32 0, i32 1
+  %30 = load i8*, i8** %29, align 8
+  %31 = load i8*, i8** %4, align 8
+  %32 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([53 x i8], [53 x i8]* @.str.2, i64 0, i64 0), i8* noundef %30, i8* noundef %31)
+  %33 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %34 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %33, i32 0, i32 0
+  %35 = getelementptr inbounds %struct.Standard_vTable, %struct.Standard_vTable* %34, i32 0, i32 2
+  %36 = load void (i8*)*, void (i8*)** %35, align 8
+  %37 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %38 = bitcast %struct.class_Any* %37 to i8*
+  call void %36(i8* noundef %38)
+  %39 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %40 = bitcast %struct.class_Any* %39 to i8*
+  call void @free(i8* noundef %40) #3
+  br label %53
+
+41:                                               ; preds = %8
   %42 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %43 = bitcast %struct.class_Any* %42 to i8*
-  call void @free(i8* noundef %43) #3
-  br label %56
+  %43 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %42, i32 0, i32 1
+  %44 = load i32, i32* %43, align 8
+  %45 = icmp slt i32 %44, 0
+  br i1 %45, label %46, label %52
 
-44:                                               ; preds = %8
-  %45 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %46 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %45, i32 0, i32 1
-  %47 = load i32, i32* %46, align 8
-  %48 = icmp slt i32 %47, 0
-  br i1 %48, label %49, label %55
+46:                                               ; preds = %41
+  %47 = load %struct.class_Any*, %struct.class_Any** %3, align 8
+  %48 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %47, i32 0, i32 1
+  %49 = load i32, i32* %48, align 8
+  %50 = load i8*, i8** %4, align 8
+  %51 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([44 x i8], [44 x i8]* @.str.3, i64 0, i64 0), i32 noundef %49, i8* noundef %50)
+  br label %52
 
-49:                                               ; preds = %44
-  %50 = load %struct.class_Any*, %struct.class_Any** %3, align 8
-  %51 = getelementptr inbounds %struct.class_Any, %struct.class_Any* %50, i32 0, i32 1
-  %52 = load i32, i32* %51, align 8
-  %53 = load i8*, i8** %4, align 8
-  %54 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([44 x i8], [44 x i8]* @.str.3, i64 0, i64 0), i32 noundef %52, i8* noundef %53)
-  br label %55
+52:                                               ; preds = %46, %41
+  br label %53
 
-55:                                               ; preds = %49, %44
-  br label %56
-
-56:                                               ; preds = %7, %55, %27
+53:                                               ; preds = %7, %52, %26
   ret void
 }
 

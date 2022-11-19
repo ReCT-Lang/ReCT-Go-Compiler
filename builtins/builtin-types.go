@@ -16,7 +16,7 @@ var (
 	Any    = symbols.CreateTypeSymbol("any", make([]symbols.TypeSymbol, 0), true, false)
 
 	// lambda/functionExpression/action/etc
-	Action = symbols.CreateTypeSymbol("action", make([]symbols.TypeSymbol, 0), true, false)
+	Action = symbols.CreateTypeSymbol("action", make([]symbols.TypeSymbol, 0), false, false)
 
 	// threads
 	Thread = symbols.CreateTypeSymbol("thread", make([]symbols.TypeSymbol, 0), true, false)

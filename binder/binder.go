@@ -559,39 +559,6 @@ func (bin *Binder) BindElseClause(clause nodes.ElseClauseNode) boundnodes.BoundS
 	return bin.BindStatement(clause.ElseStatement)
 }
 
-func (bin *Binder) BindThreadStatement(stmt nodes.ThreadExpressionNode) boundnodes.BoundThreadExpressionNode {
-	symbol := bin.ActiveScope.TryLookupSymbol(stmt.Expression.Identifier.Value)
-
-	if symbol == nil || symbol.SymbolType() != symbols.Function {
-		print.Error(
-			"BINDER",
-			print.UndefinedFunctionCallError,
-			stmt.Expression.Span(),
-			"Function \"%s\" does not exist! (THREAD)",
-			stmt.Expression.Identifier.Value,
-		)
-		os.Exit(-1)
-	}
-
-	functionSymbol := symbol.(symbols.FunctionSymbol)
-
-	// This technically shouldn't be possible, but never underestimate the human spirit... And shitty code.
-	if len(functionSymbol.Parameters) > 0 {
-		print.Error(
-			"BINDER",
-			print.BadNumberOfParametersError,
-			stmt.Expression.Span(),
-			"type function \"%s\" expects %d arguments but got %d!",
-			stmt.Expression.Identifier,
-			0,
-			len(functionSymbol.Parameters),
-		)
-		os.Exit(-1)
-	}
-
-	return boundnodes.CreateBoundThreadExpressionNode(functionSymbol, stmt.Span())
-}
-
 func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnodes.BoundReturnStatementNode {
 	var expression boundnodes.BoundExpressionNode = nil
 
@@ -765,8 +732,6 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 		return bin.BindArrayAccessExpression(expr.(nodes.ArrayAccessExpressionNode))
 	case nodes.ArrayAssignmentExpression:
 		return bin.BindArrayAssignmentExpression(expr.(nodes.ArrayAssignmentExpressionNode))
-	case nodes.ThreadExpression: // :(  // :) - RedCube
-		return bin.BindThreadStatement(expr.(nodes.ThreadExpressionNode))
 	case nodes.MakeExpression:
 		return bin.BindMakeExpression(expr.(nodes.MakeExpressionNode))
 	case nodes.MakeArrayExpression:
@@ -1709,6 +1674,19 @@ func (bin *Binder) LookupTypeFunction(name string, baseType symbols.TypeSymbol, 
 
 		// we constructed a very nice type func :)
 		return sym
+
+	case "RunThread":
+		// recycling :)
+		sym := builtins.RunThread
+
+		// add some quirky params
+		for i, symbol := range baseType.SubTypes[:len(baseType.SubTypes)-1] {
+			sym.Parameters = append(sym.Parameters, symbols.CreateParameterSymbol(fmt.Sprintf("prm_%d", i), i, symbol))
+		}
+
+		// we constructed a very nice type func :)
+		return sym
+
 	default:
 		/*print.PrintC(
 			print.Red,

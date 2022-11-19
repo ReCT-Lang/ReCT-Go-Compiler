@@ -25,7 +25,7 @@ void arc_UnregisterReference(class_Any* obj)
     // if the reference pointer is 0 (or negative for some random reason)
     // clear it!
     if (obj->referenceCounter <= 0) {
-        obj->vtable->dieFunction((void*)obj); // destroy the objects data
+        obj->vtable.dieFunction((void*)obj); // destroy the objects data
 		free(obj);                            // destroy the struct
     }
 }
@@ -35,7 +35,7 @@ void arc_DestroyObject(class_Any* obj)
 {
     if (obj == NULL) return;
 	
-	obj->vtable->dieFunction((void*)obj); // destroy the objects data
+	obj->vtable.dieFunction((void*)obj); // destroy the objects data
 	free(obj);                            // destroy the struct
 }
 
@@ -45,7 +45,7 @@ void arc_RegisterReferenceVerbose(class_Any* obj, char* comment)
     obj->referenceCounter++;
 
 	// debug message
-    printf("\33[36mARC \33[0m- \33[32mRegistered %s reference [%d] - %s\33[0m\n", obj->vtable->className, obj->referenceCounter, comment);
+    printf("\33[36mARC \33[0m- \33[32mRegistered %s reference [%d] - %s\33[0m\n", obj->vtable.className, obj->referenceCounter, comment);
 }
 
 // record a reference being destroyed
@@ -56,15 +56,15 @@ void arc_UnregisterReferenceVerbose(class_Any* obj, char* comment)
     obj->referenceCounter--;
 
 	// debug message
-    printf("\33[36mARC \33[0m- \33[33mUnregistered %s reference [%d] - %s\33[0m\n", obj->vtable->className, obj->referenceCounter, comment);	
+    printf("\33[36mARC \33[0m- \33[33mUnregistered %s reference [%d] - %s\33[0m\n", obj->vtable.className, obj->referenceCounter, comment);
 
     // if the reference pointer is 0 (or negative for some random reason)
     // clear it!
     if (obj->referenceCounter == 0) {
 		// debug message
-        printf("\33[36mARC \33[0m- \33[31mDestroying %s instance - %s\33[0m\n", obj->vtable->className, comment);
+        printf("\33[36mARC \33[0m- \33[31mDestroying %s instance - %s\33[0m\n", obj->vtable.className, comment);
 
-        obj->vtable->dieFunction((void*)obj);
+        obj->vtable.dieFunction((void*)obj);
 		free(obj); 
     }
 	else if (obj->referenceCounter < 0) {

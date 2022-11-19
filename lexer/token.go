@@ -28,7 +28,6 @@ const (
 	ContinueKeyword  TokenKind = "continue (keyword)"
 	BreakKeyword     TokenKind = "break (Keyword)"
 	MakeKeyword      TokenKind = "make (Keyword)"
-	ThreadKeyword    TokenKind = "Thread (keyword)"
 	PackageKeyword   TokenKind = "package (keyword)"
 	ExternalKeyword  TokenKind = "external (keyword)"
 	CVariadicKeyword TokenKind = "c_variadic (keyword)"

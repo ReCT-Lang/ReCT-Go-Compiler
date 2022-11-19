@@ -479,8 +479,6 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return ContinueKeyword
 	case "make":
 		return MakeKeyword
-	case "Thread":
-		return ThreadKeyword
 	case "package":
 		return PackageKeyword
 	case "external":

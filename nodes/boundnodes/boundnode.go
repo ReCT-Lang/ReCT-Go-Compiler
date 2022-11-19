@@ -71,7 +71,6 @@ const (
 	BoundMakeExpression                 BoundType = "BoundMakeExpression"
 	BoundMakeArrayExpression            BoundType = "BoundMakeArrayExpression"
 	BoundFunctionExpression             BoundType = "BoundFunctionExpression"
-	BoundThreadExpression               BoundType = "BoundThreadExpression"
 	BoundTernaryExpression              BoundType = "BoundTernaryExpression"
 	BoundReferenceExpression            BoundType = "BoundReferenceExpression"
 	BoundDereferenceExpression          BoundType = "BoundDereferenceExpression"

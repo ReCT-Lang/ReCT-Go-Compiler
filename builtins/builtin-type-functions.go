@@ -87,8 +87,16 @@ var (
 
 	Run = symbols.CreateBuiltInTypeFunctionSymbol(
 		"Run",
-		[]symbols.ParameterSymbol{}, // ---> these two get filled in on a case by case basis in the binder
+		[]symbols.ParameterSymbol{}, // ---> these two get filled in on a case by case basis by the binder
 		Void,                        // -/
+		nodes.FunctionDeclarationMember{},
+		Action,
+	)
+
+	RunThread = symbols.CreateBuiltInTypeFunctionSymbol(
+		"RunThread",
+		[]symbols.ParameterSymbol{}, // ---> gets filled in on a case by case basis by the binder
+		Thread,
 		nodes.FunctionDeclarationMember{},
 		Action,
 	)

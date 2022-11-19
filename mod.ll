@@ -3,17 +3,16 @@ source_filename = "llvm-link"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-%struct.Any_vTable = type { i8*, i8*, void (i8*)* }
-%struct.String_vTable = type { %struct.Any_vTable*, i8*, void (i8*)* }
-%struct.class_Any = type { %struct.Any_vTable*, i32 }
-%struct.class_String = type { %struct.String_vTable*, i32, i8*, i32, i32, i32 }
-%struct.class_Array = type { %struct.String_vTable*, i32, %struct.class_Any**, i32, i32, i32 }
-%struct.class_pArray = type { %struct.String_vTable*, i32, i8*, i32, i32, i32, i32 }
-%struct.class_Int = type { %struct.String_vTable*, i32, i32 }
-%struct.class_Byte = type { %struct.String_vTable*, i32, i8 }
-%struct.class_Long = type { %struct.String_vTable*, i32, i64 }
-%struct.class_Float = type { %struct.String_vTable*, i32, float }
-%struct.class_Thread = type { %struct.Any_vTable*, i32, i8* (i8*)*, i8*, i64 }
+%struct.Standard_vTable = type { i8*, i8*, void (i8*)*, i8* }
+%struct.class_Any = type { %struct.Standard_vTable, i32 }
+%struct.class_String = type { %struct.Standard_vTable, i32, i8*, i32, i32, i32 }
+%struct.class_Array = type { %struct.Standard_vTable, i32, %struct.class_Any**, i32, i32, i32 }
+%struct.class_pArray = type { %struct.Standard_vTable, i32, i8*, i32, i32, i32, i32 }
+%struct.class_Int = type { %struct.Standard_vTable, i32, i32 }
+%struct.class_Byte = type { %struct.Standard_vTable, i32, i8 }
+%struct.class_Long = type { %struct.Standard_vTable, i32, i64 }
+%struct.class_Float = type { %struct.Standard_vTable, i32, float }
+%struct.class_Thread = type { %struct.Standard_vTable, i32, i8* (i8*)*, i8*, i64 }
 %union.pthread_attr_t = type { i64, [48 x i8] }
 
 @.str = private unnamed_addr constant [59 x i8] c"\1B[36mARC \1B[0m- \1B[32mRegistered %s reference [%d] - %s\1B[0m\0A\00", align 1
@@ -21,31 +20,31 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.2 = private unnamed_addr constant [53 x i8] c"\1B[36mARC \1B[0m- \1B[31mDestroying %s instance - %s\1B[0m\0A\00", align 1
 @.str.3 = private unnamed_addr constant [44 x i8] c"\1B[36mARC \1B[0m- \1B[0;35mWhat?? [%d] - %s\1B[0m\0A\00", align 1
 @.str.4 = private unnamed_addr constant [4 x i8] c"Any\00", align 1
-@Any_vTable_Const = dso_local constant %struct.Any_vTable { i8* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.4, i32 0, i32 0), void (i8*)* @Any_public_Die }, align 8
+@Any_vTable_Const = dso_local constant %struct.Standard_vTable { i8* null, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.4, i32 0, i32 0), void (i8*)* @Any_public_Die, i8* null }, align 8
 @.str.1.5 = private unnamed_addr constant [7 x i8] c"String\00", align 1
-@String_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.1.5, i32 0, i32 0), void (i8*)* @String_public_Die }, align 8
+@String_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.1.5, i32 0, i32 0), void (i8*)* @String_public_Die, i8* null }, align 8
 @.str.2.6 = private unnamed_addr constant [42 x i8] c"Substring start-index cannot be negative!\00", align 1
 @.str.3.7 = private unnamed_addr constant [37 x i8] c"Substring length cannot be negative!\00", align 1
 @.str.4.8 = private unnamed_addr constant [24 x i8] c"Substring out of range!\00", align 1
 @.str.5 = private unnamed_addr constant [4 x i8] c"Int\00", align 1
-@Int_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.5, i32 0, i32 0), void (i8*)* @Int_public_Die }, align 8
+@Int_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.5, i32 0, i32 0), void (i8*)* @Int_public_Die, i8* null }, align 8
 @.str.6 = private unnamed_addr constant [5 x i8] c"Byte\00", align 1
-@Byte_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.6, i32 0, i32 0), void (i8*)* @Byte_public_Die }, align 8
+@Byte_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.6, i32 0, i32 0), void (i8*)* @Byte_public_Die, i8* null }, align 8
 @.str.7 = private unnamed_addr constant [5 x i8] c"Long\00", align 1
-@Long_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.7, i32 0, i32 0), void (i8*)* @Long_public_Die }, align 8
+@Long_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.7, i32 0, i32 0), void (i8*)* @Long_public_Die, i8* null }, align 8
 @.str.8 = private unnamed_addr constant [6 x i8] c"Float\00", align 1
-@Float_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.8, i32 0, i32 0), void (i8*)* @Float_public_Die }, align 8
+@Float_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.8, i32 0, i32 0), void (i8*)* @Float_public_Die, i8* null }, align 8
 @.str.9 = private unnamed_addr constant [7 x i8] c"Double\00", align 1
-@Double_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.9, i32 0, i32 0), void (i8*)* @Double_public_Die }, align 8
+@Double_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.9, i32 0, i32 0), void (i8*)* @Double_public_Die, i8* null }, align 8
 @.str.10 = private unnamed_addr constant [5 x i8] c"Bool\00", align 1
-@Bool_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.10, i32 0, i32 0), void (i8*)* @Bool_public_Die }, align 8
+@Bool_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str.10, i32 0, i32 0), void (i8*)* @Bool_public_Die, i8* null }, align 8
 @.str.11 = private unnamed_addr constant [6 x i8] c"Array\00", align 1
-@Array_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.11, i32 0, i32 0), void (i8*)* @Array_public_Die }, align 8
+@Array_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.11, i32 0, i32 0), void (i8*)* @Array_public_Die, i8* null }, align 8
 @.str.12 = private unnamed_addr constant [26 x i8] c"Array index out of range!\00", align 1
 @.str.13 = private unnamed_addr constant [7 x i8] c"pArray\00", align 1
-@pArray_vTable_Const = dso_local constant %struct.String_vTable { %struct.Any_vTable* @Any_vTable_Const, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.13, i32 0, i32 0), void (i8*)* @pArray_public_Die }, align 8
+@pArray_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.13, i32 0, i32 0), void (i8*)* @pArray_public_Die, i8* null }, align 8
 @.str.14 = private unnamed_addr constant [7 x i8] c"Thread\00", align 1
-@Thread_vTable_Const = dso_local constant %struct.Any_vTable { i8* bitcast (%struct.Any_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.14, i32 0, i32 0), void (i8*)* @Thread_public_Die }, align 8
+@Thread_vTable_Const = dso_local constant %struct.Standard_vTable { i8* bitcast (%struct.Standard_vTable* @Any_vTable_Const to i8*), i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.14, i32 0, i32 0), void (i8*)* @Thread_public_Die, i8* null }, align 8
 @.str.15 = private unnamed_addr constant [45 x i8] c"%s[RUNTIME] %sEncountered Exception! %s'%s'\0A\00", align 1
 @.str.1.16 = private unnamed_addr constant [8 x i8] c"\1B[1;31m\00", align 1
 @.str.2.17 = private unnamed_addr constant [8 x i8] c"\1B[0;31m\00", align 1
@@ -374,7 +373,7 @@ define dso_local void @exc_ThrowIfNull(i8* noundef %0) #0  {
 }
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
-define dso_local void @exc_ThrowIfInvalidCast(%struct.class_Any* noundef %0, %struct.Any_vTable* noundef %1) #0  {
+define dso_local void @exc_ThrowIfInvalidCast(%struct.class_Any* noundef %0, %struct.Standard_vTable* noundef %1, i8* noundef %2) #0  {
   ret void
 }
 

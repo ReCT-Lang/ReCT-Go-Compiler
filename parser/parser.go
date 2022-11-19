@@ -456,9 +456,6 @@ func (prs *Parser) parseStatement() nodes.StatementNode {
 	} else if cur == lexer.FromKeyword {
 		statement = prs.parseFromToStatement()
 
-	} else if cur == lexer.ThreadKeyword {
-		statement = prs.parseThreadExpression()
-
 	} else {
 		// Lastly we process an expression
 		statement = prs.parseExpressionStatement()
@@ -743,11 +740,6 @@ func (prs *Parser) parseExpression() nodes.ExpressionNode {
 	// object / array creating
 	if prs.current().Kind == lexer.MakeKeyword {
 		return prs.parseMakeExpression()
-	}
-
-	// thread creating
-	if prs.current().Kind == lexer.ThreadKeyword {
-		return prs.parseThreadExpression()
 	}
 
 	// lambda functions
@@ -1146,18 +1138,6 @@ func (prs *Parser) parseMakeArrayExpression() nodes.MakeArrayExpressionNode {
 
 	// return an array access expression
 	return nodes.CreateMakeArrayExpressionNode(baseType, length, kw, closing)
-}
-
-// parseThreadExpression this for creating threads
-// For example: Thread(someFunction)
-func (prs *Parser) parseThreadExpression() nodes.ExpressionNode {
-	keyword := prs.consume(lexer.ThreadKeyword)
-
-	prs.consume(lexer.OpenParenthesisToken)
-	expression := prs.parseNameExpression()
-	closing := prs.consume(lexer.CloseParenthesisToken)
-
-	return nodes.CreateThreadExpressionNode(keyword, expression, closing)
 }
 
 // parseLambdaExpression checks for a valid order of Tokens, parses all the statements inside the function

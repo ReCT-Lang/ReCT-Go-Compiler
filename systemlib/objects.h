@@ -9,30 +9,18 @@ extern "C" {
 #endif
 
 // declare all struct names
-typedef struct Any_vTable     Any_vTable;
-typedef struct class_Any      class_Any;
-typedef struct String_vTable  String_vTable;
-typedef struct class_String   class_String;
-typedef struct Int_vTable     Int_vTable;
-typedef struct class_Int      class_Int;
-typedef struct Byte_vTable    Byte_vTable;
-typedef struct class_Byte     class_Byte;
-typedef struct Long_vTable    Long_vTable;
-typedef struct class_Long     class_Long;
-typedef struct Pointer_vTable Pointer_vTable;
-typedef struct class_Pointer  class_Pointer;
-typedef struct Float_vTable   Float_vTable;
-typedef struct class_Float    class_Float;
-typedef struct Double_vTable  Double_vTable;
-typedef struct class_Double   class_Double;
-typedef struct Bool_vTable    Bool_vTable;
-typedef struct class_Bool     class_Bool;
-typedef struct Array_vTable   Array_vTable;
-typedef struct class_Array    class_Array;
-typedef struct pArray_vTable  pArray_vTable;
-typedef struct class_pArray   class_pArray;
-typedef struct class_Thread   class_Thread;
-typedef struct Thread_vTable  Thread_vTable;
+typedef struct Standard_vTable Standard_vTable;
+typedef struct class_Any       class_Any;
+typedef struct class_String    class_String;
+typedef struct class_Int       class_Int;
+typedef struct class_Byte      class_Byte;
+typedef struct class_Long      class_Long;
+typedef struct class_Float     class_Float;
+typedef struct class_Double    class_Double;
+typedef struct class_Bool      class_Bool;
+typedef struct class_Array     class_Array;
+typedef struct class_pArray    class_pArray;
+typedef struct class_Thread    class_Thread;
 
 // declare destructor function pointer
 typedef void (*DiePointer)(void*);
@@ -43,7 +31,6 @@ void String_public_Die (void*);
 void Int_public_Die    (void*);
 void Byte_public_Die   (void*);
 void Long_public_Die   (void*);
-void Pointer_public_Die(void*);
 void Float_public_Die  (void*);
 void Double_public_Die (void*);
 void Bool_public_Die   (void*);
@@ -57,7 +44,6 @@ void String_public_Constructor(class_String*);
 void Int_public_Constructor(class_Int*, int);
 void Byte_public_Constructor(class_Byte*, char);
 void Long_public_Constructor(class_Long*, long);
-void Pointer_public_Constructor(class_Pointer*, long);
 void Float_public_Constructor(class_Float*, float);
 void Double_public_Constructor(class_Double*, double);
 void Bool_public_Constructor(class_Bool*, bool);
@@ -66,20 +52,28 @@ void pArray_public_Constructor(class_pArray*, int, int);
 void Thread_public_Constructor(class_Thread*, void *(*)(void *), void *);
 
 // -----------------------------------------------------------------------------
+// standard vTable, this is the base requirement for all vtables
+// -----------------------------------------------------------------------------
+struct Standard_vTable {
+    // Class specific fields
+    // ---------------------
+	const void* parentVTable;  // vTable of the object's parent
+	const char* className;     // object class name "Any" for "any", "Array" for "array[int]"
+	DiePointer dieFunction;    // destructor function pointer
+
+	// Object specific fields
+    // ----------------------
+    const char* fingerprint;   // instance fingerprint "TO_any[]_" for "any", "TO_array[T_int[]_]_" for "array[int]"
+};
+
+// -----------------------------------------------------------------------------
 // base "any" object type
 // Note: all object types will inherit from this
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Any_vTable {
-	const void* parentVTable; // will be NULL for "any" as its the root
-	const char* className;                 // will be "Any"
-	DiePointer dieFunction;                 // destructor function pointer
-};
-
 // the objects struct
 struct class_Any {
-	const Any_vTable* vtable; // "any" is pretty boring, it doesnt store any data
+	Standard_vTable vtable; // "any" is pretty boring, it doesnt store any data
 	int referenceCounter;     // except for the objects reference counter (required for ARC)
 };
 
@@ -88,16 +82,9 @@ struct class_Any {
 // Note: this is our wrapper for strings!
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct String_vTable {
-	const Any_vTable* parentVTable;  // will be a pointer to the "any" vTable
-	const char* className;           // will be "String"
-	DiePointer dieFunction;           // destructor function pointer
-};
-
 // the objects struct
 struct class_String {
-	const String_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;   // implementation of the reference counter
 	char* buffer;           // for info on this string implementation check out:
 	int length;             // https://mapping-high-level-constructs-to-llvm-ir.readthedocs.io/en/latest/appendix-a-how-to-implement-a-string-type-in-llvm/index.html
@@ -120,16 +107,9 @@ class_String *String_public_Substring(class_String*, int, int);
 // Note: this is an object version of an int, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Int_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Int"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
 // the objects struct
 struct class_Int {
-	const Int_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;      // implementation of the reference counter
 	int value;
 };
@@ -142,16 +122,9 @@ int Int_public_GetValue(class_Int*);
 // Note: this is an object version of a byte, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Byte_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Byte"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
 // the objects struct
 struct class_Byte {
-	const Byte_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;       // implementation of the reference counter
 	char value;
 };
@@ -164,16 +137,9 @@ char Byte_public_GetValue(class_Byte*);
 // Note: this is an object version of a long, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Long_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Long"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
 // the objects struct
 struct class_Long {
-	const Long_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;       // implementation of the reference counter
 	long value;
 };
@@ -182,42 +148,13 @@ struct class_Long {
 long Long_public_GetValue(class_Long*);
 
 // -----------------------------------------------------------------------------
-// "pointer" object type
-// Note: this is an object version of a pointer, this is to box and crunch it
-// -----------------------------------------------------------------------------
-
-// the object's vtable (for method lookup and method overriding)
-struct Pointer_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Pointer"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
-// the objects struct
-struct class_Pointer {
-	const Pointer_vTable* vtable;  // our vTable
-	int referenceCounter;       // implementation of the reference counter
-	long value;
-};
-
-// the objects methods
-long Pointer_public_GetValue(class_Pointer*);
-
-// -----------------------------------------------------------------------------
 // "float" object type
 // Note: this is an object version of a float, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Float_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Float"
-	DiePointer dieFunction;          // destructor function pointer
-};
-
 // the objects struct
 struct class_Float {
-	const Float_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;   // implementation of the reference counter
 	float value;
 };
@@ -230,16 +167,9 @@ float Float_public_GetValue(class_Float*);
 // Note: this is an object version of a double, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Double_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Double"
-	DiePointer dieFunction;          // destructor function pointer
-};
-
 // the objects struct
 struct class_Double {
-	const Double_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;   // implementation of the reference counter
 	float value;
 };
@@ -252,16 +182,9 @@ double Double_public_GetValue(class_Double*);
 // Note: this is an object version of a bool, this is to box and crunch it
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Bool_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Bool"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
 // the objects struct
 struct class_Bool {
-	const Bool_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;   // implementation of the reference counter
 	bool value;
 };
@@ -275,21 +198,14 @@ bool Bool_public_GetValue(class_Bool*);
 // The array wont make data copies, it will just hold references
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct Array_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "Array"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
 // the objects struct
 struct class_Array {
-	const Array_vTable* vtable;  // our vTable
-	int referenceCounter;        // implementation of the reference counter
-	class_Any **elements;        // marks the start of our array
-	int length;					 // the length of this array
-	int maxLen;                  // buffer length
-	int factor;                  // growth factor 
+	Standard_vTable vtable;  // our vTable
+	int referenceCounter;           // implementation of the reference counter
+	class_Any **elements;           // marks the start of our array
+	int length;					    // the length of this array
+	int maxLen;                     // buffer length
+	int factor;                     // growth factor
 };
 
 // the objects methods
@@ -302,7 +218,7 @@ void Array_public_Push(class_Array*, class_Any*);
 #define DEFINE_ARRAY(class)                                 \
 	typedef struct class_Array_##class class_Array_##class; \
 	struct class_Array_##class {                            \
-		const Array_vTable* vtable;                         \
+		Standard_vTable vtable;                      \
 		int referenceCounter;                               \
 		class_Any **elements;                               \
 		int length;                                         \
@@ -319,16 +235,9 @@ DEFINE_ARRAY(Any);
 // Note: this is a primitive version of "array"
 // -----------------------------------------------------------------------------
 
-// the object's vtable (for method lookup and method overriding)
-struct pArray_vTable {
-	const Any_vTable* parentVTable; // will be a pointer to the "any" vTable
-	const char* className;          // will be "pArray"
-	DiePointer dieFunction;         // destructor function pointer
-};
-
 // the objects struct
 struct class_pArray {
-	const pArray_vTable* vtable;  // our vTable
+	Standard_vTable vtable;  // our vTable
 	int referenceCounter;         // implementation of the reference counter
 	void *elements;               // marks the start of our array
 	int length;                   // array length
@@ -346,7 +255,7 @@ void *pArray_public_GetElementPtr(class_pArray*, int);
 #define DEFINE_PARRAY(type)                                   \
 	typedef struct class_pArray_##type class_pArray_##type;   \
 	struct class_pArray_##type {                              \
-		const pArray_vTable* vtable;                          \
+		Standard_vTable vtable;                               \
 		int referenceCounter;                                 \
 		void *elements;                                       \
 		int length;                                           \
@@ -367,22 +276,13 @@ DEFINE_PARRAY(Float);
 // Developer Note: This requires -lpthread flag because we're using pthread.h
 // -----------------------------------------------------------------------------
 
-// Thread are a recreation using the old documentation: https://docs.rect.ml/threading
-
-// the object's vtable (for method lookup and method overriding)
-struct Thread_vTable {
-	const void* parentVTable;              // will be a pointer to the "any" vTable
-	const char* className;                 // will be "Thread" (I think)
-	DiePointer dieFunction;                // destructor function pointer
-};
-
 // the objects struct
 struct class_Thread {
-	const Thread_vTable* vtable;   // the epic vTable
-	int referenceCounter;       // you guessed it, reference counter for the ARc
-	void *(*__routine)(void*);  // thread routine (this is the function the thread runs)
-	void *args;                 // (the arguments to the function the thread runs)
-	pthread_t id;               // thread id
+	Standard_vTable vtable;  // the epic vTable
+	int referenceCounter;           // you guessed it, reference counter for the ARC
+	void *(*__routine)(void*);      // thread routine (this is the function the thread runs)
+	void *args;                     // (the arguments to the function the thread runs)
+	pthread_t id;                   // thread id
 };
 
 // the objects methods

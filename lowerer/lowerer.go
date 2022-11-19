@@ -355,8 +355,6 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteMakeStructExpression(expr.(boundnodes.BoundMakeStructExpressionNode))
 	case boundnodes.BoundFunctionExpression:
 		return RewriteFunctionExpression(expr.(boundnodes.BoundFunctionExpressionNode))
-	case boundnodes.BoundThreadExpression:
-		return RewriteThreadExpression(expr.(boundnodes.BoundThreadExpressionNode))
 	case boundnodes.BoundTernaryExpression:
 		return RewriteTernaryExpression(expr.(boundnodes.BoundTernaryExpressionNode))
 	case boundnodes.BoundReferenceExpression:
@@ -536,10 +534,6 @@ func RewriteMakeStructExpression(expr boundnodes.BoundMakeStructExpressionNode) 
 }
 
 func RewriteFunctionExpression(expr boundnodes.BoundFunctionExpressionNode) boundnodes.BoundFunctionExpressionNode {
-	return expr
-}
-
-func RewriteThreadExpression(expr boundnodes.BoundThreadExpressionNode) boundnodes.BoundThreadExpressionNode {
 	return expr
 }
 

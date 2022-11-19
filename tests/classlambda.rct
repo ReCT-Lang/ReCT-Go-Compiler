@@ -6,7 +6,9 @@ class SomeClass {
     function Constructor() {
         // lmd is automatically defined as action[SomeClass, void]
         var lmd <- someOtherFunction;
-        lmd->Run(this); // ref to this obj
+        //lmd->Run(this); // ref to this obj
+        var obj <- any(lmd);
+        action[SomeClass, void](obj)->Run(this);
     }
 
     // nothing special going on with this func
@@ -15,5 +17,7 @@ class SomeClass {
     }
 }
 
-var obj <- make SomeClass();
-sys::Print(obj->Fld);
+while (true) {
+   var obj <- make SomeClass();
+   sys::Print(obj->Fld);
+}

@@ -13,7 +13,7 @@ void exc_Throw(char *message);
 
 // exception shortcuts
 void exc_ThrowIfNull(void *pointer);
-void exc_ThrowIfInvalidCast(class_Any* from, Any_vTable *to);
+void exc_ThrowIfInvalidCast(class_Any* from, Standard_vTable *to, const char *toFingerprint);
 
 #ifdef __cplusplus
 }

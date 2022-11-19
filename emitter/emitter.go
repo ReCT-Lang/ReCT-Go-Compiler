@@ -7,6 +7,7 @@ import (
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"strings"
 
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/constant"
@@ -251,13 +252,13 @@ func (emt *Emitter) EmitClass(cls binder.BoundClass) {
 
 func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	// create the class' vTable type
-	clsvTable := emt.Module.NewTypeDef("struct."+bcls.Symbol.Name+"_vTable",
-		types.NewStruct(
-			types.NewPointer(emt.Classes[emt.Id(builtins.Any)].vTable),
-			types.I8Ptr,
-			types.NewPointer(types.NewFunc(types.Void, types.I8Ptr)),
-		),
-	)
+	//clsvTable := emt.Module.NewTypeDef("struct."+bcls.Symbol.Name+"_vTable",
+	//	types.NewStruct(
+	//		types.NewPointer(emt.Classes[emt.Id(builtins.Any)].vTable),
+	//		types.I8Ptr,
+	//		types.NewPointer(types.NewFunc(types.Void, types.I8Ptr)),
+	//	),
+	//)
 
 	// =====================================================================
 	// create the llvm type
@@ -273,8 +274,8 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	clsFields := make([]types.Type, 0)
 	clsFieldMap := make(map[string]int)
 
-	clsFields = append(clsFields, types.NewPointer(clsvTable)) // vTable
-	clsFields = append(clsFields, types.I32)                   // ARC counter
+	clsFields = append(clsFields, emt.Classes[emt.Id(builtins.Any)].vTable) // standard vTable
+	clsFields = append(clsFields, types.I32)                                // ARC counter
 
 	// add our types one by one
 	for i, field := range bcls.Symbol.Fields {
@@ -295,10 +296,12 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 
 	// create the vTable constant
 	vtc := constant.NewStruct(
-		clsvTable.(*types.StructType),
-		emt.Classes[emt.Id(builtins.Any)].vConstant,
+		emt.Classes[emt.Id(builtins.Any)].vTable.(*types.StructType), //clsvtable
+
+		constant.NewNull(types.I8Ptr),
 		emt.GetConstantStringConstant(bcls.Symbol.Name),
 		destructor,
+		constant.NewNull(types.I8Ptr),
 	)
 	clsvConstant := emt.Module.NewGlobalDef(bcls.Symbol.Name+"_vTable_Const", vtc)
 
@@ -308,7 +311,7 @@ func (emt *Emitter) PopulateClass(cls *Class, bcls binder.BoundClass) {
 	constructor := emt.EmitClassConstructor(cls, bcls, clsvConstant, clsFieldMap)
 
 	// store all of this info in the class object
-	emt.Classes[emt.Id(bcls.Symbol.Type)].vTable = clsvTable
+	emt.Classes[emt.Id(bcls.Symbol.Type)].vTable = emt.Classes[emt.Id(builtins.Any)].vTable //clsvtable
 	emt.Classes[emt.Id(bcls.Symbol.Type)].vConstant = clsvConstant
 
 	emt.Classes[emt.Id(bcls.Symbol.Type)].Constructor = constructor
@@ -353,11 +356,11 @@ func (emt *Emitter) EmitClassConstructor(cls *Class, bcls binder.BoundClass, cls
 	croot := constructor.NewBlock("")
 	clsMePtr := croot.NewAlloca(types.NewPointer(cls.Type))
 	croot.NewStore(clsParams[0], clsMePtr)
-	clsMe := croot.NewLoad(types.NewPointer(cls.Type), clsMePtr)
+	//clsMe := croot.NewLoad(types.NewPointer(cls.Type), clsMePtr)
 
 	// set the vTable to the vTable constant
-	clsMyVTable := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(0))
-	croot.NewStore(clsvConstant, clsMyVTable)
+	//clsMyVTable := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(0))
+	//croot.NewStore(clsvConstant, clsMyVTable)
 
 	// set the reference count to 0
 	//clsMyRefCount := croot.NewGetElementPtr(cls.Type, clsMe, CI32(0), CI32(1))
@@ -953,85 +956,98 @@ func (emt *Emitter) EmitGarbageCollectionStatement(blk **ir.Block, stmt boundnod
 // <EXPRESSIONS>---------------------------------------------------------------
 
 func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressionNode) value.Value {
-	switch expr.NodeType() {
-	case boundnodes.BoundLiteralExpression:
-		return emt.EmitLiteralExpression(blk, expr.(boundnodes.BoundLiteralExpressionNode))
 
-	case boundnodes.BoundVariableExpression:
-		return emt.EmitVariableExpression(blk, expr.(boundnodes.BoundVariableExpressionNode))
-
-	case boundnodes.BoundAssignmentExpression:
-		return emt.EmitAssignmentExpression(blk, expr.(boundnodes.BoundAssignmentExpressionNode))
-
-	case boundnodes.BoundMakeExpression:
-		return emt.EmitMakeExpression(blk, expr.(boundnodes.BoundMakeExpressionNode))
-
-	case boundnodes.BoundMakeArrayExpression:
-		return emt.EmitMakeArrayExpression(blk, expr.(boundnodes.BoundMakeArrayExpressionNode))
-
-	case boundnodes.BoundMakeStructExpression:
-		return emt.EmitMakeStructExpression(blk, expr.(boundnodes.BoundMakeStructExpressionNode))
-
-	case boundnodes.BoundArrayAccessExpression:
-		return emt.EmitArrayAccessExpression(blk, expr.(boundnodes.BoundArrayAccessExpressionNode))
-
-	case boundnodes.BoundArrayAssignmentExpression:
-		return emt.EmitArrayAssignmentExpression(blk, expr.(boundnodes.BoundArrayAssignmentExpressionNode))
-
-	case boundnodes.BoundUnaryExpression:
-		return emt.EmitUnaryExpression(blk, expr.(boundnodes.BoundUnaryExpressionNode))
-
-	case boundnodes.BoundBinaryExpression:
-		return emt.EmitBinaryExpression(blk, expr.(boundnodes.BoundBinaryExpressionNode))
-
-	case boundnodes.BoundTernaryExpression:
-		return emt.EmitTernaryExpression(blk, expr.(boundnodes.BoundTernaryExpressionNode))
-
-	case boundnodes.BoundCallExpression:
-		return emt.EmitCallExpression(blk, expr.(boundnodes.BoundCallExpressionNode))
-
-	case boundnodes.BoundPackageCallExpression:
-		return emt.EmitPackageCallExpression(blk, expr.(boundnodes.BoundPackageCallExpressionNode))
-
-	case boundnodes.BoundTypeCallExpression:
-		return emt.EmitTypeCallExpression(blk, expr.(boundnodes.BoundTypeCallExpressionNode))
-
-	case boundnodes.BoundClassCallExpression:
-		return emt.EmitClassCallExpression(blk, expr.(boundnodes.BoundClassCallExpressionNode))
-
-	case boundnodes.BoundClassFieldAccessExpression:
-		return emt.EmitClassFieldAccessExpression(blk, expr.(boundnodes.BoundClassFieldAccessExpressionNode))
-
-	case boundnodes.BoundClassFieldAssignmentExpression:
-		return emt.EmitClassFieldAssignmentExpression(blk, expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
-
-	case boundnodes.BoundClassDestructionExpression:
-		return emt.EmitClassDestructionExpression(blk, expr.(boundnodes.BoundClassDestructionExpressionNode))
-
-	case boundnodes.BoundConversionExpression:
-		return emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
-
-	case boundnodes.BoundThreadExpression:
-		return emt.EmitThreadStatement(blk, expr.(boundnodes.BoundThreadExpressionNode))
-
-	case boundnodes.BoundReferenceExpression:
-		return emt.EmitReferenceExpression(blk, expr.(boundnodes.BoundReferenceExpressionNode))
-
-	case boundnodes.BoundDereferenceExpression:
-		return emt.EmitDereferenceExpression(blk, expr.(boundnodes.BoundDereferenceExpressionNode))
-
-	case boundnodes.BoundLambdaExpression:
-		return emt.EmitLambdaExpression(blk, expr.(boundnodes.BoundLambdaExpressionNode))
-
-	case boundnodes.BoundFunctionExpression:
-		return emt.EmitFunctionExpression(blk, expr.(boundnodes.BoundFunctionExpressionNode))
-
-	case boundnodes.BoundThisExpression:
-		return emt.EmitThisExpression(blk, expr.(boundnodes.BoundThisExpressionNode))
+	// cheeky comments
+	if EmitDebugInfo {
+		(*blk).Insts = append((*blk).Insts, NewComment("<"+string(expr.NodeType())+">"))
 	}
 
-	fmt.Println("Unimplemented node: " + expr.NodeType())
-	return nil
+	// return value
+	var val value.Value
+
+	switch expr.NodeType() {
+	case boundnodes.BoundLiteralExpression:
+		val = emt.EmitLiteralExpression(blk, expr.(boundnodes.BoundLiteralExpressionNode))
+
+	case boundnodes.BoundVariableExpression:
+		val = emt.EmitVariableExpression(blk, expr.(boundnodes.BoundVariableExpressionNode))
+
+	case boundnodes.BoundAssignmentExpression:
+		val = emt.EmitAssignmentExpression(blk, expr.(boundnodes.BoundAssignmentExpressionNode))
+
+	case boundnodes.BoundMakeExpression:
+		val = emt.EmitMakeExpression(blk, expr.(boundnodes.BoundMakeExpressionNode))
+
+	case boundnodes.BoundMakeArrayExpression:
+		val = emt.EmitMakeArrayExpression(blk, expr.(boundnodes.BoundMakeArrayExpressionNode))
+
+	case boundnodes.BoundMakeStructExpression:
+		val = emt.EmitMakeStructExpression(blk, expr.(boundnodes.BoundMakeStructExpressionNode))
+
+	case boundnodes.BoundArrayAccessExpression:
+		val = emt.EmitArrayAccessExpression(blk, expr.(boundnodes.BoundArrayAccessExpressionNode))
+
+	case boundnodes.BoundArrayAssignmentExpression:
+		val = emt.EmitArrayAssignmentExpression(blk, expr.(boundnodes.BoundArrayAssignmentExpressionNode))
+
+	case boundnodes.BoundUnaryExpression:
+		val = emt.EmitUnaryExpression(blk, expr.(boundnodes.BoundUnaryExpressionNode))
+
+	case boundnodes.BoundBinaryExpression:
+		val = emt.EmitBinaryExpression(blk, expr.(boundnodes.BoundBinaryExpressionNode))
+
+	case boundnodes.BoundTernaryExpression:
+		val = emt.EmitTernaryExpression(blk, expr.(boundnodes.BoundTernaryExpressionNode))
+
+	case boundnodes.BoundCallExpression:
+		val = emt.EmitCallExpression(blk, expr.(boundnodes.BoundCallExpressionNode))
+
+	case boundnodes.BoundPackageCallExpression:
+		val = emt.EmitPackageCallExpression(blk, expr.(boundnodes.BoundPackageCallExpressionNode))
+
+	case boundnodes.BoundTypeCallExpression:
+		val = emt.EmitTypeCallExpression(blk, expr.(boundnodes.BoundTypeCallExpressionNode))
+
+	case boundnodes.BoundClassCallExpression:
+		val = emt.EmitClassCallExpression(blk, expr.(boundnodes.BoundClassCallExpressionNode))
+
+	case boundnodes.BoundClassFieldAccessExpression:
+		val = emt.EmitClassFieldAccessExpression(blk, expr.(boundnodes.BoundClassFieldAccessExpressionNode))
+
+	case boundnodes.BoundClassFieldAssignmentExpression:
+		val = emt.EmitClassFieldAssignmentExpression(blk, expr.(boundnodes.BoundClassFieldAssignmentExpressionNode))
+
+	case boundnodes.BoundClassDestructionExpression:
+		val = emt.EmitClassDestructionExpression(blk, expr.(boundnodes.BoundClassDestructionExpressionNode))
+
+	case boundnodes.BoundConversionExpression:
+		val = emt.EmitConversionExpression(blk, expr.(boundnodes.BoundConversionExpressionNode))
+
+	case boundnodes.BoundReferenceExpression:
+		val = emt.EmitReferenceExpression(blk, expr.(boundnodes.BoundReferenceExpressionNode))
+
+	case boundnodes.BoundDereferenceExpression:
+		val = emt.EmitDereferenceExpression(blk, expr.(boundnodes.BoundDereferenceExpressionNode))
+
+	case boundnodes.BoundLambdaExpression:
+		val = emt.EmitLambdaExpression(blk, expr.(boundnodes.BoundLambdaExpressionNode))
+
+	case boundnodes.BoundFunctionExpression:
+		val = emt.EmitFunctionExpression(blk, expr.(boundnodes.BoundFunctionExpressionNode))
+
+	case boundnodes.BoundThisExpression:
+		val = emt.EmitThisExpression(blk, expr.(boundnodes.BoundThisExpressionNode))
+
+	default:
+		fmt.Println("Unimplemented node: " + expr.NodeType())
+		return nil
+	}
+
+	if EmitDebugInfo {
+		(*blk).Insts = append((*blk).Insts, NewComment("</"+string(expr.NodeType())+">"))
+	}
+
+	return val
 }
 
 func (emt *Emitter) EmitUnloadedReference(blk **ir.Block, expr boundnodes.BoundExpressionNode) (value.Value, value.Value) {
@@ -1081,7 +1097,7 @@ func (emt *Emitter) EmitLiteralExpression(blk **ir.Block, expr boundnodes.BoundL
 		return constant.NewFloat(types.Float, float64(expr.Value.(float32)))
 	case builtins.String.Fingerprint():
 		charPtr := emt.GetStringConstant(blk, expr.Value.(string))
-		strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+		strObj := emt.CreateObject(blk, builtins.String)
 		(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, charPtr)
 		return strObj
 	default:
@@ -1270,7 +1286,7 @@ func (emt *Emitter) EmitMakeExpression(blk **ir.Block, expr boundnodes.BoundMake
 	}
 
 	// create an object of the given type
-	obj := emt.CreateObject(blk, emt.Id(expr.BaseType.Type), arguments...)
+	obj := emt.CreateObject(blk, expr.BaseType.Type, arguments...)
 
 	// return the object
 	return obj
@@ -1292,13 +1308,17 @@ func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.Boun
 	// check if this is an object array or a primitive array
 	if expr.BaseType.IsObject {
 		// create a new object array object
-		arrObject = emt.CreateObject(blk, emt.Id(builtins.Array), length)
+		arrObject = emt.CreateObject(blk, expr.Type(), length)
 	} else {
 		// get the size of the primitive we want to allocate
 		size := emt.SizeOf(blk, expr.BaseType)
 
+		// construct the correct type symbol
+		typ := expr.Type()
+		typ.Name = "parray"
+
 		// create a new primitive array object
-		arrObject = emt.CreateObject(blk, emt.Id(builtins.PArray), length, size)
+		arrObject = emt.CreateObject(blk, typ, length, size)
 	}
 
 	// if this is a literal, load its values
@@ -1350,24 +1370,6 @@ func (emt *Emitter) EmitMakeStructExpression(blk **ir.Block, expr boundnodes.Bou
 	ld := (*blk).NewLoad(emt.IRTypes(expr.StructType), stc)
 	//ld.Align = 1
 	return ld
-}
-
-func (emt *Emitter) EmitThreadStatement(blk **ir.Block, stmt boundnodes.BoundThreadExpressionNode) value.Value {
-
-	// get this function's thread wrapper
-	wrapper := emt.GetThreadWrapper(stmt.Function)
-
-	// get a pointer to the thread wrapper
-	wrapperPointer := (*blk).NewAlloca(wrapper.Typ)
-	(*blk).NewStore(wrapper, wrapperPointer)
-
-	// load the pointer again
-	pointer := (*blk).NewLoad(wrapper.Typ, wrapperPointer)
-
-	// Not sure how to approach passing arguments to the constructor in CreateObject (class_Action)
-	obj := emt.CreateObject(blk, emt.Id(builtins.Thread), pointer, constant.NewNull(types.I8Ptr))
-
-	return obj
 }
 
 func (emt *Emitter) EmitArrayAssignmentExpression(blk **ir.Block, expr boundnodes.BoundArrayAssignmentExpressionNode) value.Value {
@@ -2218,7 +2220,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 
 	// if base isn't a variable (meaning its already memory managed)
 	// decrement its reference counter
-	if !expr.Base.IsPersistent() {
+	if expr.Base.Type().IsObject && !expr.Base.IsPersistent() {
 		emt.DestroyReference(blk, base, "type call base cleanup")
 	}
 
@@ -2412,14 +2414,25 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 
 	if expr.ToType.Fingerprint() == builtins.Any.Fingerprint() {
 
-		// if this is a string we only need to change the pointer type as it's already an object
+		// if this is an object we only need to change the pointer type as it's already an object
 		if expr.Expression.Type().IsObject || expr.Expression.Type().Name == "pointer" {
 			// change the pointer type
 			return (*blk).NewBitCast(value, emt.IRTypes(builtins.Any))
 
 		} else {
 			// if it's not a string it needs to be boxed
-			boxedValue := emt.Box(blk, value, expr.Expression.Type())
+			// -----------------------------------------
+
+			typ := expr.Expression.Type()
+
+			// if the thing we're boxing is a pointer -> convert it to int first
+			if expr.Expression.Type().Name == "pointer" ||
+				expr.Expression.Type().Name == "action" {
+				value = (*blk).NewPtrToInt(value, types.I64)
+				typ = builtins.Long
+			}
+
+			boxedValue := emt.Box(blk, value, typ)
 			return (*blk).NewBitCast(boxedValue, emt.IRTypes(builtins.Any))
 		}
 
@@ -2436,7 +2449,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			trueStr := emt.GetStringConstant(blk, "true")
 			falseStr := emt.GetStringConstant(blk, "false")
 
-			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			strObj := emt.CreateObject(blk, builtins.String)
 			(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, (*blk).NewSelect(value, trueStr, falseStr))
 
 			return strObj
@@ -2451,7 +2464,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			(*blk).NewCall(emt.CFuncs["snprintf"], newStr, (*blk).NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%d"), value)
 
 			// create a new string object
-			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			strObj := emt.CreateObject(blk, builtins.String)
 			(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			(*blk).NewCall(emt.CFuncs["free"], newStr)
 
@@ -2468,7 +2481,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			(*blk).NewCall(emt.CFuncs["snprintf"], newStr, (*blk).NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%ld"), value)
 
 			// create a new string object
-			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			strObj := emt.CreateObject(blk, builtins.String)
 			(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			(*blk).NewCall(emt.CFuncs["free"], newStr)
 
@@ -2485,7 +2498,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			(*blk).NewCall(emt.CFuncs["snprintf"], newStr, (*blk).NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%u"), value)
 
 			// create a new string object
-			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			strObj := emt.CreateObject(blk, builtins.String)
 			(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			(*blk).NewCall(emt.CFuncs["free"], newStr)
 
@@ -2502,7 +2515,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			(*blk).NewCall(emt.CFuncs["snprintf"], newStr, (*blk).NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%lu"), value)
 
 			// create a new string object
-			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			strObj := emt.CreateObject(blk, builtins.String)
 			(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			(*blk).NewCall(emt.CFuncs["free"], newStr)
 
@@ -2522,7 +2535,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			(*blk).NewCall(emt.CFuncs["snprintf"], newStr, (*blk).NewAdd(len, CI32(1)), emt.GetStringConstant(blk, "%g"), double)
 
 			// create a new string object
-			strObj := emt.CreateObject(blk, emt.Id(builtins.String))
+			strObj := emt.CreateObject(blk, builtins.String)
 			(*blk).NewCall(emt.Classes[emt.Id(builtins.String)].Functions["Load"], strObj, newStr)
 			(*blk).NewCall(emt.CFuncs["free"], newStr)
 
@@ -2799,13 +2812,13 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 			// object arrays
 			if expr.ToType.SubTypes[0].IsObject {
 				// make sure this conversion is valid
-				emt.EmitValidConversionCheck(blk, builtins.Array, value)
+				emt.EmitValidConversionCheck(blk, expr.ToType, value)
 
 				// change the pointer type
 				return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
 			} else {
 				// make sure this conversion is valid
-				emt.EmitValidConversionCheck(blk, builtins.PArray, value)
+				emt.EmitValidConversionCheck(blk, expr.ToType, value)
 
 				// change the pointer type
 				return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
@@ -2821,6 +2834,25 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 		} else if expr.Expression.Type().Name == builtins.Pointer.Name {
 			// beep boop we bit casting
 			return (*blk).NewBitCast(value, emt.IRTypes(expr.ToType))
+		}
+	} else if expr.ToType.Name == builtins.Action.Name {
+		if expr.Expression.Type().Fingerprint() == builtins.Any.Fingerprint() {
+			// make sure this conversion is valid
+			emt.EmitValidConversionCheck(blk, builtins.Long, value)
+
+			// bitcast to boxed long
+			boxedLong := (*blk).NewBitCast(value, types.NewPointer(emt.Classes[emt.Id(builtins.Long)].Type))
+
+			// load its value
+			primitive := (*blk).NewCall(emt.Classes[emt.Id(builtins.Long)].Functions["GetValue"], boxedLong)
+
+			// if value isn't a variable (meaning its already memory managed)
+			// decrement its reference counter
+			if !expr.Expression.IsPersistent() {
+				emt.DestroyReference(blk, value, "any to long conversion cleanup")
+			}
+
+			return (*blk).NewIntToPtr(primitive, emt.IRTypes(expr.ToType))
 		}
 	}
 
@@ -2903,7 +2935,9 @@ func (emt *Emitter) EmitThisExpression(blk **ir.Block, expr boundnodes.BoundThis
 // <UTILS>---------------------------------------------------------------------
 
 func (emt *Emitter) EmitValidConversionCheck(blk **ir.Block, typ symbols.TypeSymbol, val value.Value) {
-	(*blk).NewCall(emt.ExcFuncs["ThrowIfInvalidCast"], (*blk).NewBitCast(val, emt.IRTypes(builtins.Any)), (*blk).NewBitCast(emt.Classes[emt.Id(typ)].vConstant, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].vTable)))
+	bas := typ
+	bas.SubTypes = make([]symbols.TypeSymbol, 0) // remove subtypes
+	(*blk).NewCall(emt.ExcFuncs["ThrowIfInvalidCast"], (*blk).NewBitCast(val, emt.IRTypes(builtins.Any)), (*blk).NewBitCast(emt.Classes[emt.Id(bas)].vConstant, types.NewPointer(emt.Classes[emt.Id(builtins.Any)].vTable)), emt.GetConstantStringConstant(typ.Fingerprint()))
 }
 
 func (emt *Emitter) DefaultConstant(blk **ir.Block, typ symbols.TypeSymbol) constant.Constant {
@@ -3027,36 +3061,68 @@ func (emt *Emitter) GetThreadWrapper(source symbols.FunctionSymbol) *ir.Func {
 	return newWrapper
 }
 
-func (emt *Emitter) CreateObject(blk **ir.Block, typ string, args ...value.Value) value.Value {
-	size := (*blk).NewGetElementPtr(emt.Classes[typ].Type, constant.NewNull(types.NewPointer(emt.Classes[typ].Type)), CI32(1))
+func (emt *Emitter) CreateObject(blk **ir.Block, src symbols.TypeSymbol, args ...value.Value) value.Value {
+	// make a copy of our source type to not lose any info
+	typ := src
+
+	// simplify types with subtypes
+	if len(typ.SubTypes) > 0 {
+		typ.SubTypes = make([]symbols.TypeSymbol, 0) // empty subtype list
+	}
+
+	// class name
+	typeName := emt.Id(typ)
+
+	// sizeof the struct
+	size := (*blk).NewGetElementPtr(emt.Classes[typeName].Type, constant.NewNull(types.NewPointer(emt.Classes[typeName].Type)), CI32(1))
 	sizeInt := (*blk).NewPtrToInt(size, types.I32)
 
 	// create space for the instance
-	instance := (*blk).NewBitCast((*blk).NewCall(emt.CFuncs["malloc"], sizeInt), types.NewPointer(emt.Classes[typ].Type))
+	instance := (*blk).NewBitCast((*blk).NewCall(emt.CFuncs["malloc"], sizeInt), types.NewPointer(emt.Classes[typeName].Type))
 
-	// get pointer to instance
-	//instancePointer := (*blk).NewGetElementPtr(emt.Classes[typ].Type, instance, CI32(0))
-	instancePointer := instance
+	// initialize reference count
+	arcCounterPointer := (*blk).NewGetElementPtr(emt.Classes[typeName].Type, instance, CI32(0), CI32(1))
+	(*blk).NewStore(CI32(0), arcCounterPointer)
 
-	// temporarily increase ref count without alerting ARC (shh)
-	// (this is literally a bodged bug fix which is trying to be sneaky to not break compatibility)
-	arcCounterPointer := (*blk).NewGetElementPtr(emt.Classes[typ].Type, instance, CI32(0), CI32(1))
-	(*blk).NewStore(CI32(1), arcCounterPointer)
+	// load the vTable
+	arcVTablePointer := (*blk).NewGetElementPtr(emt.Classes[typeName].Type, instance, CI32(0), CI32(0))
+	vTable := emt.GetVtableConstant(src, typeName)
+	(*blk).NewStore(vTable, arcVTablePointer)
+
+	// create reference
+	emt.CreateReference(blk, instance, "initial instance")
 
 	// constructor arguments
-	arguments := []value.Value{instancePointer}
+	arguments := []value.Value{instance}
 	arguments = append(arguments, args...)
 
 	// call the constructor
-	(*blk).NewCall(emt.Classes[typ].Constructor, arguments...)
+	(*blk).NewCall(emt.Classes[typeName].Constructor, arguments...)
 
-	// remove temporary arc counter increase
-	(*blk).NewStore(CI32(0), arcCounterPointer)
+	// mmm don
+	return instance
+}
 
-	// create reference
-	emt.CreateReference(blk, instancePointer, "initial instance")
+func (emt *Emitter) GetVtableConstant(src symbols.TypeSymbol, typ string) value.Value {
+	fields := make([]constant.Constant, 0)
+	template := emt.Classes[typ].vConstant.Init.(*constant.Struct)
 
-	return instancePointer
+	// parent vTable
+	fields = append(fields, template.Fields[0])
+
+	// class name
+	fields = append(fields, emt.GetConstantStringConstant(strings.ToUpper(src.Name[:1])+src.Name[1:]))
+
+	// die() pointer
+	fields = append(fields, template.Fields[2])
+
+	// instance fingerprint
+	fields = append(fields, emt.GetConstantStringConstant(src.Fingerprint()))
+
+	return constant.NewStruct(
+		template.Typ,
+		fields...,
+	)
 }
 
 func (emt *Emitter) SizeOf(blk **ir.Block, typ symbols.TypeSymbol) value.Value {
@@ -3073,8 +3139,14 @@ func (emt *Emitter) Box(blk **ir.Block, val value.Value, typ symbols.TypeSymbol)
 	// boxing is the act of "objectifying" primitive types
 	// (like an int or bool)
 
+	// (or, an action)
+	// actions need some special treatment here as they have subtypes and that breaks everything
+	if typ.Name == builtins.Action.Name {
+		typ = builtins.Action
+	}
+
 	// create a new object and give it the primitive to be "capsuled"
-	obj := emt.CreateObject(blk, emt.Id(typ), val)
+	obj := emt.CreateObject(blk, typ, val)
 
 	return obj
 }
