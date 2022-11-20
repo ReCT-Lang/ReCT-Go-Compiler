@@ -30,3 +30,4 @@ var sum <- Sum; // sum now has the type of action[int, int, int]
 sys::Print(string(
     sum->Run(2,5) // runnin the other gamer
 ));
+

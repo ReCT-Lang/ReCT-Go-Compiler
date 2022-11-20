@@ -341,6 +341,9 @@ func (lxr *Lexer) getOperator() {
 		} else if peek(1) == '=' {
 			lxr.Increment()
 			_token = LessEqualsToken
+		} else if peek(1) == '<' {
+			lxr.Increment()
+			_token = ShiftLeftToken
 		} else {
 			_token = LessThanToken
 		}
@@ -348,6 +351,9 @@ func (lxr *Lexer) getOperator() {
 		if peek(1) == '=' {
 			lxr.Increment()
 			_token = GreaterEqualsToken
+		} else if peek(1) == '>' {
+			lxr.Increment()
+			_token = ShiftRightToken
 		} else {
 			_token = GreaterThanToken
 		}

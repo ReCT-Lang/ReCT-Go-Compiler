@@ -67,6 +67,8 @@ const (
 	HatToken           TokenKind = "HatToken '^'"
 	AssignToken        TokenKind = "AssignToken '<-'"
 	AccessToken        TokenKind = "AccessToken '->'"
+	ShiftLeftToken     TokenKind = "ShiftLeftToken '<<'"
+	ShiftRightToken    TokenKind = "ShiftRightToken '>>'"
 
 	OpenBraceToken        TokenKind = "OpenBrace '{'"
 	CloseBraceToken       TokenKind = "Closebrace '}'"

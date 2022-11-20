@@ -32,7 +32,9 @@ func GetBinaryOperatorPrecedence(tok lexer.Token) int {
 		lexer.LessThanToken,
 		lexer.GreaterThanToken,
 		lexer.LessEqualsToken,
-		lexer.GreaterEqualsToken:
+		lexer.GreaterEqualsToken,
+		lexer.ShiftLeftToken,
+		lexer.ShiftRightToken:
 		return 3
 
 	case lexer.AmpersandsToken:

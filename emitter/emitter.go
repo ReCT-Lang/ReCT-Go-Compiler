@@ -1718,6 +1718,39 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 			return (*blk).NewOr(left, right)
 		}
 
+	case boundnodes.BitshiftRight:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return (*blk).NewLShr(left, right)
+
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewLShr((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return (*blk).NewLShr(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
+			return (*blk).NewLShr(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.UInt.Fingerprint() {
+			return (*blk).NewLShr(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.ULong.Fingerprint() {
+			return (*blk).NewLShr(left, right)
+		}
+
+	case boundnodes.BitshiftLeft:
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+			return (*blk).NewShl(left, right)
+
+		} else if expr.Left.Type().Name == builtins.Pointer.Name {
+			return (*blk).NewIntToPtr((*blk).NewShl((*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
+
+		} else if expr.Left.Type().Fingerprint() == builtins.Byte.Fingerprint() {
+			return (*blk).NewShl(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.Long.Fingerprint() {
+			return (*blk).NewShl(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.UInt.Fingerprint() {
+			return (*blk).NewShl(left, right)
+		} else if expr.Left.Type().Fingerprint() == builtins.ULong.Fingerprint() {
+			return (*blk).NewShl(left, right)
+		}
 	}
 
 	fmt.Println("Unknown Binary!")
