@@ -43,6 +43,7 @@ const (
 	ClassDeclaration            NodeType = "Class Declaration"
 	StructDeclaration           NodeType = "Struct Declaration"
 	PackageReference            NodeType = "Package Reference"
+	PackageAlias                NodeType = "Package Alias"
 
 	// General
 	// -------

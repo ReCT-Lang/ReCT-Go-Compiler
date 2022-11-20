@@ -9,7 +9,9 @@ import (
 type PackageSymbol struct {
 	Symbol
 
-	Exists bool
+	Exists   bool
+	IsAlias  bool
+	Original *PackageSymbol
 
 	Name      string
 	Functions []FunctionSymbol

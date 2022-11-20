@@ -525,6 +525,10 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return MakeKeyword
 	case "package":
 		return PackageKeyword
+	case "use":
+		return UseKeyword
+	case "alias":
+		return AliasKeyword
 	case "external":
 		return ExternalKeyword
 	case "c_variadic":

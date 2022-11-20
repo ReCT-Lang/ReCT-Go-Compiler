@@ -130,6 +130,10 @@ func (prs *Parser) parseMember(allowClasses bool, allowPackages bool) nodes.Memb
 		return prs.parsePackageReference()
 	}
 
+	if prs.current().Kind == lexer.AliasKeyword && allowPackages {
+		return prs.parsePackageAlias()
+	}
+
 	// global statements (any statements outside any functions)
 	return prs.parseGlobalStatement()
 }
@@ -281,6 +285,18 @@ func (prs *Parser) parsePackageReference() nodes.PackageReferenceMember {
 	}
 
 	return nodes.CreatePackageReferenceMember(kw, id)
+}
+
+func (prs *Parser) parsePackageAlias() nodes.PackageAliasMember {
+	kw := prs.consume(lexer.AliasKeyword)
+	src := prs.consume(lexer.IdToken)
+	als := prs.consume(lexer.IdToken)
+
+	if prs.current().Kind == lexer.Semicolon {
+		prs.consume(lexer.Semicolon)
+	}
+
+	return nodes.CreatePackageAliasMember(kw, src, als)
 }
 
 // parseParameterList we parse a list of arguments (usually for a function or functionCall)

@@ -29,6 +29,8 @@ const (
 	BreakKeyword     TokenKind = "break (Keyword)"
 	MakeKeyword      TokenKind = "make (Keyword)"
 	PackageKeyword   TokenKind = "package (keyword)"
+	UseKeyword       TokenKind = "use (keyword)"
+	AliasKeyword     TokenKind = "alias (keyword)"
 	ExternalKeyword  TokenKind = "external (keyword)"
 	CVariadicKeyword TokenKind = "c_variadic (keyword)"
 	CAdaptedKeyword  TokenKind = "c_adapted (keyword)"

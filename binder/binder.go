@@ -393,9 +393,54 @@ func (bin *Binder) BindPackageReference(mem nodes.PackageReferenceMember) {
 			"BINDER",
 			print.DuplicatePackageImportError,
 			mem.Span(),
-			"a package with the name \"%s\" has already been loaded! \"%s\" could not be referenced!",
+			"a member with the name \"%s\" has already been loaded! \"%s\" could not be referenced!",
 			pack.Name,
 			pack.Name,
+		)
+		os.Exit(-1)
+	}
+}
+
+func (bin *Binder) BindPackageAlias(mem nodes.PackageAliasMember) {
+	symbol := bin.ActiveScope.TryLookupSymbol(mem.Package.Value)
+
+	if symbol == nil || symbol.SymbolType() != symbols.Package {
+		print.Error(
+			"BINDER",
+			print.UnknownPackageError,
+			mem.Span(),
+			"a package with the name \"%s\" could not be found!",
+			mem.Package.Value,
+		)
+		os.Exit(-1)
+	}
+
+	original := symbol.(symbols.PackageSymbol)
+	if original.IsAlias {
+		print.Error(
+			"BINDER",
+			print.DuplicatePackageImportError,
+			mem.Span(),
+			"creating an alias of an alias is not allowed!",
+		)
+		os.Exit(-1)
+	}
+
+	// create a copy
+	packageSym := symbol.(symbols.PackageSymbol)
+
+	// change the copys name and mark it as an alias
+	packageSym.IsAlias = true
+	packageSym.Name = mem.Alias.Value
+	packageSym.Original = &original
+
+	if !bin.ActiveScope.TryDeclareSymbol(packageSym) {
+		print.Error(
+			"BINDER",
+			print.DuplicatePackageImportError,
+			mem.Span(),
+			"a member with the name \"%s\" has already been loaded! Alias could not be created!",
+			packageSym.Name,
 		)
 		os.Exit(-1)
 	}

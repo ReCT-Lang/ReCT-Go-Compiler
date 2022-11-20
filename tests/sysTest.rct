@@ -1,7 +1,9 @@
 package sys;
+alias sys sus;
+
 sys::Print("i wanna die");
 someFunc();
 
 function someFunc() void {
-    sys::Print("hmm");
+    sus::Print("hmm");
 }

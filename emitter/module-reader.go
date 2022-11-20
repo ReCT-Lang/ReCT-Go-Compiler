@@ -14,6 +14,11 @@ import (
 )
 
 func (emt *Emitter) ImportPackage(pack symbols.PackageSymbol) {
+	if pack.IsAlias {
+		emt.Packages[emt.Id(pack)] = emt.Packages[emt.Id(pack.Original)]
+		return // no duplicates
+	}
+
 	// create a package object
 	pck := Package{
 		Functions: make(map[string]*ir.Func),
