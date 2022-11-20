@@ -1,5 +1,5 @@
 package test
-Print(test::GetString());
+//Print(test::GetString());
 
 while (true) {
 	// create an instance of the package class

@@ -446,6 +446,23 @@ func (bin *Binder) BindPackageAlias(mem nodes.PackageAliasMember) {
 	}
 }
 
+func (bin *Binder) BindPackageUse(mem nodes.PackageUseMember) {
+	symbol := bin.ActiveScope.TryLookupSymbol(mem.Package.Value)
+
+	if symbol == nil || symbol.SymbolType() != symbols.Package {
+		print.Error(
+			"BINDER",
+			print.UnknownPackageError,
+			mem.Span(),
+			"a package with the name \"%s\" could not be found!",
+			mem.Package.Value,
+		)
+		os.Exit(-1)
+	}
+
+	PackageUseList = append(PackageUseList, symbol.(symbols.PackageSymbol))
+}
+
 // </MEMBERS> ----------------------------------------------------------------
 // <STATEMENTS> ---------------------------------------------------------------
 func (bin *Binder) BindStatement(stmt nodes.StatementNode) boundnodes.BoundStatementNode {
@@ -989,8 +1006,28 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 
 	} else {
 		// resolve the type symbol
-		bType, _ := bin.LookupClass(expr.BaseType.Value, false, expr.BaseType.Span)
-		baseType = bType
+		bType, ok := bin.LookupClass(expr.BaseType.Value, true, expr.BaseType.Span)
+		if ok {
+			baseType = bType
+		} else {
+			found := false
+			// resolve the type symbol in all used packages
+			for _, pck := range PackageUseList {
+				classSymbol, exists := LookupClassInPackage(expr.BaseType.Value, pck, true, expr.BaseType.Span)
+				// if it worked -> create a class conversion
+				if exists {
+					baseType = classSymbol
+					found = true
+					break
+				}
+			}
+
+			// if we found nothing -> trigger LookupClass again, just to trigger the error message
+			if !found {
+				bin.LookupClass(expr.BaseType.Value, false, expr.BaseType.Span)
+			}
+		}
+
 	}
 
 	// bind the constructors arguments
@@ -1298,6 +1335,17 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 			expression := bin.BindExpression(expr.Arguments[0])
 			return bin.BindConversion(expression, complexTypeSymbol, true, expr.Span())
 		}
+
+		// check if this is a class cast from a package
+		for _, pck := range PackageUseList {
+			classSymbol, exists := LookupClassInPackage(expr.Identifier.Value, pck, true, expr.Identifier.Span)
+			// if it worked -> create a class conversion
+			if exists && len(expr.Arguments) == 1 {
+				// bind the expression and return a conversion
+				expression := bin.BindExpression(expr.Arguments[0])
+				return bin.BindConversion(expression, classSymbol.Type, true, expr.Span())
+			}
+		}
 	}
 
 	// normal function calling
@@ -1314,7 +1362,23 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		searchingScope = MainScope
 	}
 
+	var InPackage symbols.PackageSymbol
 	symbol := searchingScope.TryLookupSymbol(expr.Identifier.Value)
+
+	// if we didnt find anything and this call doesnt have any prefix
+	if symbol == nil && !expr.InMain {
+		// search through all used packages
+		for _, pck := range PackageUseList {
+			funcSymbol, exists := LookupFunctionInPackage(expr.Identifier.Value, pck, true, expr.Identifier.Span)
+			// if it worked -> create a class conversion
+			if exists {
+				symbol = funcSymbol
+				InPackage = pck
+				break
+			}
+		}
+	}
+
 	if symbol == nil ||
 		symbol.SymbolType() != symbols.Function {
 		print.Error(
@@ -1375,7 +1439,12 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.InMain, expr.Span())
+	if InPackage.Exists {
+		return boundnodes.CreateBoundPackageCallExpressionNode(InPackage, functionSymbol, boundArguments, expr.Span())
+	} else {
+		return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.InMain, expr.Span())
+	}
+
 }
 
 func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNode) boundnodes.BoundExpressionNode {
@@ -1404,7 +1473,7 @@ func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNod
 		boundArguments = append(boundArguments, boundArg)
 	}
 
-	functionSymbol := LookupFunctionInPackage(expr.Identifier.Value, pack, expr.Package.Span.SpanBetween(expr.Identifier.Span))
+	functionSymbol, _ := LookupFunctionInPackage(expr.Identifier.Value, pack, false, expr.Package.Span.SpanBetween(expr.Identifier.Span))
 	if len(boundArguments) != len(functionSymbol.Parameters) {
 		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
 		print.Error(
@@ -2190,24 +2259,26 @@ func LookupClassInPackage(name string, pack symbols.PackageSymbol, canFail bool,
 	return symbols.ClassSymbol{}, false
 }
 
-func LookupFunctionInPackage(name string, pack symbols.PackageSymbol, errorLocation print.TextSpan) symbols.FunctionSymbol {
+func LookupFunctionInPackage(name string, pack symbols.PackageSymbol, canFail bool, errorLocation print.TextSpan) (symbols.FunctionSymbol, bool) {
 	for _, fnc := range pack.Functions {
 		if fnc.Name == name {
-			return fnc
+			return fnc, true
 		}
 	}
 
-	print.Error(
-		"BINDER",
-		print.UndefinedFunctionCallError,
-		errorLocation,
-		"Couldn't find function \"%s\" in package \"%s\"! Are you sure it exists?",
-		name,
-		pack.Name,
-	)
-	os.Exit(-1)
+	if !canFail {
+		print.Error(
+			"BINDER",
+			print.UndefinedFunctionCallError,
+			errorLocation,
+			"Couldn't find function \"%s\" in package \"%s\"! Are you sure it exists?",
+			name,
+			pack.Name,
+		)
+		os.Exit(-1)
+	}
 
-	return symbols.FunctionSymbol{}
+	return symbols.FunctionSymbol{}, false
 }
 
 func FailClassLookup(name string, canFail bool, errorLocation print.TextSpan) (symbols.ClassSymbol, bool) {

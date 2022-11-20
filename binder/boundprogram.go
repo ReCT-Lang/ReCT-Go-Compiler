@@ -10,6 +10,7 @@ import (
 )
 
 var MainScope Scope
+var PackageUseList []symbols.PackageSymbol
 
 type BoundProgram struct {
 	GlobalScope       *GlobalScope
@@ -37,6 +38,8 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 	functionBodies := make([]BoundFunction, 0)
 	functionReferences := make([]symbols.FunctionSymbol, 0)
 	classes := make([]BoundClass, 0)
+
+	PackageUseList = make([]symbols.PackageSymbol, 0)
 
 	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements, print.TextSpan{})
 	loweredMainBody := lowerer.Lower(globalScope.MainFunction, mainBody)

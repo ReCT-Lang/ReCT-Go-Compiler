@@ -44,6 +44,7 @@ const (
 	StructDeclaration           NodeType = "Struct Declaration"
 	PackageReference            NodeType = "Package Reference"
 	PackageAlias                NodeType = "Package Alias"
+	PackageUse                  NodeType = "Package Use"
 
 	// General
 	// -------
