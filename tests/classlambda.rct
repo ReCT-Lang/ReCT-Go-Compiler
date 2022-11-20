@@ -2,11 +2,23 @@ package sys;
 
 external clock() long;
 
+set CoolVar <- 100;
+
+set function FuncInMain() {
+   sys::Print("CoolVar is " + string(CoolVar));
+   sys::Print("Changing to " + string(CoolVar + 10) + "...");
+   CoolVar <- CoolVar + 10;
+}
+
 class SomeClass {
     set string Fld <- "cool string";
     set thread Thrd;
 
     function Constructor() {
+        main->CoolVar <- 200;
+        main->FuncInMain->Run();
+        sys::Print(string(main->CoolVar));
+
         // lmd is automatically defined as action[SomeClass, void]
         var lmd <- someOtherFunction;
         Thrd <- lmd->RunThread(this);
@@ -19,9 +31,9 @@ class SomeClass {
     }
 }
 
-while (clock() < 10000000) {
+//while (clock() < 10000000) {
    var obj <- make SomeClass();
    sys::Print(obj->Fld + " : " + string(clock()));
    obj->Thrd->Join();
    sys::Print(obj->Fld + " : " + string(clock()));
-}
+//}

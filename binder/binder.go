@@ -765,17 +765,39 @@ func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressio
 }
 
 func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.BoundExpressionNode {
-	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
+	searchingScope := *bin.ActiveScope
+	if expr.InMain {
+		searchingScope = MainScope
+	}
+
+	symbol := searchingScope.TryLookupSymbol(expr.Identifier.Value)
 	// normal variable lookup
 	if symbol == nil || symbol.SymbolType() != symbols.Function {
-		variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
-		return boundnodes.CreateBoundVariableExpressionNode(variable, expr.Span())
+		variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span, expr.InMain)
+		return boundnodes.CreateBoundVariableExpressionNode(variable, expr.InMain, expr.Span())
 
 		// funky function lookup
 	} else if symbol.SymbolType() == symbols.Function {
 		functionSymbol := symbol.(symbols.FunctionSymbol)
 
-		if bin.InClass {
+		if expr.InMain {
+			// we protecc
+			// ----------
+
+			// private functions
+			if !functionSymbol.Public {
+				print.Error(
+					"BINDER",
+					print.FunctionAccessViolationError,
+					expr.Span(),
+					"Function \"%s\" in class \"main\" is not accessible, is the function intended to be public?",
+					expr.Identifier.Value,
+				)
+				os.Exit(-1)
+			}
+
+			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
+		} else if bin.InClass {
 			// we protecc
 			// ----------
 
@@ -802,16 +824,16 @@ func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.
 }
 
 func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
-	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
+	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span, expr.InMain)
 	expression := bin.BindExpression(expr.Expression)
 	convertedExpression := bin.BindConversion(expression, variable.VarType(), false, expr.Expression.Span())
 
-	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression, expr.Span())
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression, expr.InMain, expr.Span())
 }
 
 func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpressionNode) boundnodes.BoundAssignmentExpressionNode {
 	// bind the variable
-	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span)
+	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span, false)
 
 	// create a placeholder expression of value 1
 	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, expr.Span())
@@ -822,13 +844,13 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 	}
 
 	binaryExpression := bin.BindBinaryExpressionInternal(
-		boundnodes.CreateBoundVariableExpressionNode(variable, expr.Span()),
+		boundnodes.CreateBoundVariableExpressionNode(variable, false, expr.Span()),
 		expression,
 		expr.Operator.Kind,
 	)
 
 	// return it as an assignment
-	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression, expr.Span())
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression, false, expr.Span())
 }
 
 func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
@@ -1198,37 +1220,39 @@ func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssig
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
-	// check if this is a cast
-	// -----------------------
+	if !expr.InMain {
+		// check if this is a cast
+		// -----------------------
 
-	// check if it's a primitive cast
-	typeSymbol, exists := LookupPrimitiveType(expr.Identifier.Value, true, expr.Identifier.Span)
+		// check if it's a primitive cast
+		typeSymbol, exists := LookupPrimitiveType(expr.Identifier.Value, true, expr.Identifier.Span)
 
-	// if it worked -> create a primitive conversion
-	if exists && len(expr.Arguments) == 1 {
-		// bind the expression and return a conversion
-		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, typeSymbol, true, expr.Span())
-	}
+		// if it worked -> create a primitive conversion
+		if exists && len(expr.Arguments) == 1 {
+			// bind the expression and return a conversion
+			expression := bin.BindExpression(expr.Arguments[0])
+			return bin.BindConversion(expression, typeSymbol, true, expr.Span())
+		}
 
-	// check if it's a class cast
-	classSymbol, exists := bin.LookupClass(expr.Identifier.Value, true, expr.Identifier.Span)
+		// check if it's a class cast
+		classSymbol, exists := bin.LookupClass(expr.Identifier.Value, true, expr.Identifier.Span)
 
-	// if it worked -> create a class conversion
-	if exists && len(expr.Arguments) == 1 {
-		// bind the expression and return a conversion
-		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, classSymbol.Type, true, expr.Span())
-	}
+		// if it worked -> create a class conversion
+		if exists && len(expr.Arguments) == 1 {
+			// bind the expression and return a conversion
+			expression := bin.BindExpression(expr.Arguments[0])
+			return bin.BindConversion(expression, classSymbol.Type, true, expr.Span())
+		}
 
-	// check if it's a complex cast
-	complexTypeSymbol, exists := bin.LookupType(expr.CastingType, true)
+		// check if it's a complex cast
+		complexTypeSymbol, exists := bin.LookupType(expr.CastingType, true)
 
-	// if it worked -> create a complex conversion
-	if exists && len(expr.Arguments) == 1 {
-		// bind the expression and return a conversion
-		expression := bin.BindExpression(expr.Arguments[0])
-		return bin.BindConversion(expression, complexTypeSymbol, true, expr.Span())
+		// if it worked -> create a complex conversion
+		if exists && len(expr.Arguments) == 1 {
+			// bind the expression and return a conversion
+			expression := bin.BindExpression(expr.Arguments[0])
+			return bin.BindConversion(expression, complexTypeSymbol, true, expr.Span())
+		}
 	}
 
 	// normal function calling
@@ -1240,7 +1264,12 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		boundArguments = append(boundArguments, boundArg)
 	}
 
-	symbol := bin.ActiveScope.TryLookupSymbol(expr.Identifier.Value)
+	searchingScope := *bin.ActiveScope
+	if expr.InMain {
+		searchingScope = MainScope
+	}
+
+	symbol := searchingScope.TryLookupSymbol(expr.Identifier.Value)
 	if symbol == nil ||
 		symbol.SymbolType() != symbols.Function {
 		print.Error(
@@ -1254,6 +1283,24 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	functionSymbol := symbol.(symbols.FunctionSymbol)
+
+	if expr.InMain {
+		// we protecc
+		// ----------
+
+		// private functions
+		if !functionSymbol.Public {
+			print.Error(
+				"BINDER",
+				print.FunctionAccessViolationError,
+				expr.Span(),
+				"Function \"%s\" in class \"main\" is not accessible, is the function intended to be public?",
+				expr.Identifier.Value,
+			)
+			os.Exit(-1)
+		}
+	}
+
 	if len(boundArguments) != len(functionSymbol.Parameters) && !functionSymbol.Variadic {
 		//fmt.Printf("%sFunction '%s' expects %d arguments, got %d!%s\n", print.ERed, functionSymbol.Name, len(functionSymbol.Parameters), len(boundArguments), print.EReset)
 		print.Error(
@@ -1273,7 +1320,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	// if we are inside a class, dont allow calls to Constructor() and Die()
-	if bin.InClass && functionSymbol.Name == "Constructor" {
+	if bin.InClass && !expr.InMain && functionSymbol.Name == "Constructor" {
 		print.Error(
 			"BINDER",
 			print.IllegalConstructorCallError,
@@ -1283,7 +1330,7 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.Span())
+	return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.InMain, expr.Span())
 }
 
 func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNode) boundnodes.BoundExpressionNode {
@@ -1539,8 +1586,13 @@ func (bin *Binder) BindVariableCreation(id lexer.Token, isReadOnly bool, isGloba
 	return variable
 }
 
-func (bin *Binder) BindVariableReference(name string, errorLocation print.TextSpan) symbols.VariableSymbol {
-	variable := bin.ActiveScope.TryLookupSymbol(name)
+func (bin *Binder) BindVariableReference(name string, errorLocation print.TextSpan, inMain bool) symbols.VariableSymbol {
+	searchingScope := *bin.ActiveScope
+	if inMain {
+		searchingScope = MainScope
+	}
+
+	variable := searchingScope.TryLookupSymbol(name)
 
 	if variable == nil ||
 		!(variable.SymbolType() == symbols.GlobalVariable ||
@@ -1552,6 +1604,17 @@ func (bin *Binder) BindVariableReference(name string, errorLocation print.TextSp
 			print.UndefinedVariableReferenceError,
 			errorLocation,
 			"Could not find variable \"%s\"! Are you sure it exists?",
+			name,
+		)
+		os.Exit(-1)
+	}
+
+	if inMain && variable.SymbolType() != symbols.GlobalVariable {
+		print.Error(
+			"BINDER",
+			print.FunctionAccessViolationError,
+			errorLocation,
+			"Variable \"%s\" in \"main\" is not accessible, is the variable intended to be a global?",
 			name,
 		)
 		os.Exit(-1)
@@ -1695,7 +1758,7 @@ func (bin *Binder) LookupClassFunction(name string, baseType symbols.TypeSymbol,
 					"BINDER",
 					print.FunctionAccessViolationError,
 					errorLocation,
-					"Function \"%s\" in class \"%s\" is not accessable, is the function intended to be private?",
+					"Function \"%s\" in class \"%s\" is not accessible, is the function intended to be private?",
 					name,
 					baseType.Name,
 				)

@@ -9,6 +9,8 @@ import (
 type BoundAssignmentExpressionNode struct {
 	BoundExpressionNode
 
+	InMain bool
+
 	Variable   symbols.VariableSymbol
 	Expression BoundExpressionNode
 	BoundSpan  print.TextSpan
@@ -33,10 +35,11 @@ func (BoundAssignmentExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundAssignmentExpressionNode) Type() symbols.TypeSymbol { return node.Expression.Type() }
 
-func CreateBoundAssignmentExpressionNode(variable symbols.VariableSymbol, expression BoundExpressionNode, span print.TextSpan) BoundAssignmentExpressionNode {
+func CreateBoundAssignmentExpressionNode(variable symbols.VariableSymbol, expression BoundExpressionNode, inMain bool, span print.TextSpan) BoundAssignmentExpressionNode {
 	return BoundAssignmentExpressionNode{
 		Variable:   variable,
 		Expression: expression,
+		InMain:     inMain,
 		BoundSpan:  span,
 	}
 }

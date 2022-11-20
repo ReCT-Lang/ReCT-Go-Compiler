@@ -229,14 +229,14 @@ func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes
 	lowerBound := RewriteExpression(stmt.LowerBound)
 	upperBound := RewriteExpression(stmt.UpperBound)
 	variableDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, lowerBound, stmt.BoundSpan)
-	variableExpression := boundnodes.CreateBoundVariableExpressionNode(stmt.Variable, stmt.BoundSpan)
+	variableExpression := boundnodes.CreateBoundVariableExpressionNode(stmt.Variable, false, stmt.BoundSpan)
 	upperBoundSymbol := symbols.CreateLocalVariableSymbol("upperBound", true, builtins.Int)
 	upperBoundDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(upperBoundSymbol, upperBound, stmt.BoundSpan)
 
 	condition := boundnodes.CreateBoundBinaryExpressionNode(
 		variableExpression,
 		boundnodes.BindBinaryOperator(lexer.LessEqualsToken, builtins.Int, builtins.Int),
-		boundnodes.CreateBoundVariableExpressionNode(upperBoundSymbol, stmt.BoundSpan), stmt.BoundSpan,
+		boundnodes.CreateBoundVariableExpressionNode(upperBoundSymbol, false, stmt.BoundSpan), stmt.BoundSpan,
 	)
 	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
 	increment := boundnodes.CreateBoundExpressionStatementNode(
@@ -246,7 +246,7 @@ func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes
 				variableExpression,
 				boundnodes.BindBinaryOperator(lexer.PlusToken, builtins.Int, builtins.Int),
 				boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, stmt.BoundSpan), stmt.BoundSpan,
-			), stmt.BoundSpan,
+			), false, stmt.BoundSpan,
 		), stmt.BoundSpan,
 	)
 
@@ -364,7 +364,7 @@ func RewriteVariableExpression(expr boundnodes.BoundVariableExpressionNode) boun
 
 func RewriteAssignmentExpression(expr boundnodes.BoundAssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
 	expression := RewriteExpression(expr.Expression)
-	return boundnodes.CreateBoundAssignmentExpressionNode(expr.Variable, expression, expr.BoundSpan)
+	return boundnodes.CreateBoundAssignmentExpressionNode(expr.Variable, expression, expr.InMain, expr.BoundSpan)
 }
 
 func RewriteUnaryExpression(expr boundnodes.BoundUnaryExpressionNode) boundnodes.BoundUnaryExpressionNode {
@@ -385,7 +385,7 @@ func RewriteCallExpression(expr boundnodes.BoundCallExpressionNode) boundnodes.B
 		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
 	}
 
-	return boundnodes.CreateBoundCallExpressionNode(expr.Function, rewrittenArgs, expr.BoundSpan)
+	return boundnodes.CreateBoundCallExpressionNode(expr.Function, rewrittenArgs, expr.InMain, expr.BoundSpan)
 }
 
 func RewritePackageCallExpression(expr boundnodes.BoundPackageCallExpressionNode) boundnodes.BoundPackageCallExpressionNode {

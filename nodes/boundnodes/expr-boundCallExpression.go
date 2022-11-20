@@ -9,6 +9,8 @@ import (
 type BoundCallExpressionNode struct {
 	BoundExpressionNode
 
+	InMain bool
+
 	Function  symbols.FunctionSymbol
 	Arguments []BoundExpressionNode
 	BoundSpan print.TextSpan
@@ -34,10 +36,11 @@ func (BoundCallExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
 
-func CreateBoundCallExpressionNode(function symbols.FunctionSymbol, args []BoundExpressionNode, span print.TextSpan) BoundCallExpressionNode {
+func CreateBoundCallExpressionNode(function symbols.FunctionSymbol, args []BoundExpressionNode, inMain bool, span print.TextSpan) BoundCallExpressionNode {
 	return BoundCallExpressionNode{
 		Function:  function,
 		Arguments: args,
+		InMain:    inMain,
 		BoundSpan: span,
 	}
 }

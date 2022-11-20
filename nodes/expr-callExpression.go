@@ -9,6 +9,8 @@ import (
 type CallExpressionNode struct {
 	ExpressionNode
 
+	InMain bool
+
 	Identifier lexer.Token
 	Arguments  []ExpressionNode
 
@@ -46,5 +48,15 @@ func CreateCallExpressionNode(id lexer.Token, args []ExpressionNode, castClause 
 		Arguments:          args,
 		CastingType:        castClause,
 		ClosingParenthesis: parenthesis,
+	}
+}
+
+func CreateMainCallExpressionNode(id lexer.Token, args []ExpressionNode, castClause TypeClauseNode, parenthesis lexer.Token) CallExpressionNode {
+	return CallExpressionNode{
+		Identifier:         id,
+		Arguments:          args,
+		CastingType:        castClause,
+		ClosingParenthesis: parenthesis,
+		InMain:             true,
 	}
 }

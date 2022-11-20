@@ -37,6 +37,7 @@ const (
 	StructKeyword    TokenKind = "struct (keyword)"
 	LambdaKeyword    TokenKind = "lambda (keyword)"
 	ThisKeyword      TokenKind = "this (keyword)"
+	MainKeyword      TokenKind = "main (keyword)"
 
 	// Tokens
 	EOF               TokenKind = "EndOfFile"

@@ -9,6 +9,7 @@ import (
 type AssignmentExpressionNode struct {
 	ExpressionNode
 
+	InMain     bool
 	Identifier lexer.Token
 	Expression ExpressionNode
 }
@@ -36,5 +37,13 @@ func CreateAssignmentExpressionNode(id lexer.Token, expr ExpressionNode) Assignm
 	return AssignmentExpressionNode{
 		Identifier: id,
 		Expression: expr,
+	}
+}
+
+func CreateMainAssignmentExpressionNode(id lexer.Token, expr ExpressionNode) AssignmentExpressionNode {
+	return AssignmentExpressionNode{
+		Identifier: id,
+		Expression: expr,
+		InMain:     true,
 	}
 }

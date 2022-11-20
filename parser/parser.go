@@ -832,6 +832,9 @@ func (prs *Parser) parsePrimaryExpression() nodes.ExpressionNode {
 
 	} else if prs.current().Kind == lexer.DerefKeyword {
 		return prs.parseDereferenceExpression()
+
+	} else if prs.current().Kind == lexer.MainKeyword {
+		return prs.parseMainExpression()
 	}
 
 	// No proper keyword is found
@@ -1181,6 +1184,47 @@ func (prs *Parser) parseDereferenceExpression() nodes.DereferenceExpressionNode 
 	expression := prs.parsePrimaryExpression()
 
 	return nodes.CreateDereferenceExpressionNode(keyword, expression)
+}
+
+// parseMainExpression when we want to call a function from the global (main) pseudo class
+func (prs *Parser) parseMainExpression() nodes.ExpressionNode {
+
+	prs.consume(lexer.MainKeyword)               // main
+	prs.consume(lexer.AccessToken)               // ->
+	callIdentifier := prs.consume(lexer.IdToken) // now we need the name of the call (like "SomeFunction()")
+
+	// if there are no parenthesis -> redirect to parseClassFieldAccessExpression
+	if prs.current().Kind != lexer.OpenParenthesisToken {
+		return prs.parseMainAccessExpression(callIdentifier)
+	}
+
+	prs.consume(lexer.OpenParenthesisToken)             // (
+	args := prs.parseArguments()                        // any arguments in the function call itself
+	closing := prs.consume(lexer.CloseParenthesisToken) // )
+
+	return nodes.CreateMainCallExpressionNode(callIdentifier, args, nodes.TypeClauseNode{}, closing)
+}
+
+// parseClassFieldAccessExpression when we want to get a field from inside a class object
+// Example: someClass->someField
+func (prs *Parser) parseMainAccessExpression(id lexer.Token) nodes.ExpressionNode {
+
+	// if we find a '<-', then this isnt an access, its an assignment
+	if prs.current().Kind == lexer.AssignToken {
+		return prs.parseMainAssignmentExpression(id)
+	}
+
+	return nodes.CreateMainNameExpressionNode(id)
+}
+
+// parseClassFieldAssignmentExpression when we want to get a field from inside a class object
+// Example: someClass->someField <- "some value";
+func (prs *Parser) parseMainAssignmentExpression(id lexer.Token) nodes.ExpressionNode {
+
+	prs.consume(lexer.AssignToken) // <-
+	value := prs.parseExpression() // the value
+
+	return nodes.CreateMainAssignmentExpressionNode(id, value)
 }
 
 // parseTypeCallExpression when we want to call a function attached to a data type (or class in the future)

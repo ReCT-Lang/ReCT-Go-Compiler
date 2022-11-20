@@ -891,7 +891,7 @@ func (emt *Emitter) EmitUnloadedReference(blk **ir.Block, expr boundnodes.BoundE
 	switch expr.NodeType() {
 	case boundnodes.BoundVariableExpression:
 		exp := expr.(boundnodes.BoundVariableExpressionNode)
-		return emt.EmitVariablePtr(blk, exp.Variable), nil
+		return emt.EmitVariablePtr(blk, exp.Variable, exp.InMain), nil
 	case boundnodes.BoundClassFieldAccessExpression:
 		exp := expr.(boundnodes.BoundClassFieldAccessExpressionNode)
 		if exp.Base.Type().IsObject {
@@ -950,10 +950,10 @@ func (emt *Emitter) EmitLiteralExpression(blk **ir.Block, expr boundnodes.BoundL
 }
 
 func (emt *Emitter) EmitVariableExpression(blk **ir.Block, expr boundnodes.BoundVariableExpressionNode) value.Value {
-	return emt.EmitVariable(blk, expr.Variable)
+	return emt.EmitVariable(blk, expr.Variable, expr.InMain)
 }
 
-func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol) value.Value {
+func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol, inMain bool) value.Value {
 	varName := emt.Id(variable)
 
 	//// parameters
@@ -969,7 +969,7 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 
 	if variable.IsGlobal() {
 		// if we're in a class we need to load from the struct instead of a global
-		if emt.IsInClass {
+		if emt.IsInClass && !inMain {
 			mePtr := value.Value(emt.Function.Params[0])
 
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, mePtr, CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
@@ -1004,7 +1004,7 @@ func (emt *Emitter) EmitVariable(blk **ir.Block, variable symbols.VariableSymbol
 	}
 }
 
-func (emt *Emitter) EmitVariablePtr(blk **ir.Block, variable symbols.VariableSymbol) value.Value {
+func (emt *Emitter) EmitVariablePtr(blk **ir.Block, variable symbols.VariableSymbol, inMain bool) value.Value {
 	varName := emt.Id(variable)
 
 	//// parameters
@@ -1020,7 +1020,7 @@ func (emt *Emitter) EmitVariablePtr(blk **ir.Block, variable symbols.VariableSym
 
 	if variable.IsGlobal() {
 		// if we're in a class we need to load from the struct instead of a global
-		if emt.IsInClass {
+		if emt.IsInClass && !inMain {
 			mePtr := value.Value(emt.Function.Params[0])
 
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, mePtr, CI32(0), CI32(int32(emt.Class.Fields[emt.Id(variable)])))
@@ -1045,7 +1045,7 @@ func (emt *Emitter) EmitAssignmentExpression(blk **ir.Block, expr boundnodes.Bou
 	}
 
 	if expr.Variable.IsGlobal() {
-		if emt.IsInClass {
+		if emt.IsInClass && !expr.InMain {
 			// the location we need to store to
 			ptr := (*blk).NewGetElementPtr(emt.Class.Type, emt.Function.Params[0], CI32(0), CI32(int32(emt.Class.Fields[emt.Id(expr.Variable)])))
 
@@ -1759,7 +1759,7 @@ func (emt *Emitter) EmitTernaryExpression(blk **ir.Block, expr boundnodes.BoundT
 	(*blk) = EndBlock
 
 	// return the variable as the exressions value
-	return emt.EmitVariable(blk, expr.Tmp)
+	return emt.EmitVariable(blk, expr.Tmp, false)
 }
 
 func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCallExpressionNode) value.Value {
@@ -1775,7 +1775,7 @@ func (emt *Emitter) EmitCallExpression(blk **ir.Block, expr boundnodes.BoundCall
 
 	var call *ir.InstCall
 
-	if emt.IsInClass && !expr.Function.BuiltIn {
+	if emt.IsInClass && !expr.InMain && !expr.Function.BuiltIn {
 		// prepend the "$me" parameter to the given arguments
 		arguments = append([]value.Value{emt.Function.Params[0]}, arguments...)
 		call = (*blk).NewCall(emt.Classes[emt.Id(emt.ClassSym.Type)].Functions[functionName], arguments...)
@@ -2472,7 +2472,7 @@ func (emt *Emitter) EmitConversionExpression(blk **ir.Block, expr boundnodes.Bou
 }
 
 func (emt *Emitter) EmitReferenceExpression(blk **ir.Block, expr boundnodes.BoundReferenceExpressionNode) value.Value {
-	value := emt.EmitVariablePtr(blk, expr.Expression.(boundnodes.BoundVariableExpressionNode).Variable)
+	value := emt.EmitVariablePtr(blk, expr.Expression.(boundnodes.BoundVariableExpressionNode).Variable, false)
 	return value //(*blk).NewIntToPtr((*blk).NewPtrToInt(value, types.I32), emt.IRTypes(expr.Type()))
 }
 
@@ -2520,7 +2520,7 @@ func (emt *Emitter) EmitLambdaExpression(blk **ir.Block, expr boundnodes.BoundLa
 
 func (emt *Emitter) EmitFunctionExpression(blk **ir.Block, expr boundnodes.BoundFunctionExpressionNode) value.Value {
 
-	if emt.IsInClass && !expr.Function.BuiltIn {
+	if expr.InClass.Exists && !expr.Function.BuiltIn {
 		return emt.Classes[emt.Id(emt.ClassSym.Type)].Functions[emt.Id(expr.Function)] // return the lame IR function
 	} else {
 		return emt.Functions[emt.Id(expr.Function)].IRFunction // return the IR function

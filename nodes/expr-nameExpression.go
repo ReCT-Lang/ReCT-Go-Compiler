@@ -10,6 +10,7 @@ import (
 type NameExpressionNode struct {
 	ExpressionNode
 
+	InMain     bool
 	Identifier lexer.Token
 }
 
@@ -33,5 +34,12 @@ func (node NameExpressionNode) Print(indent string) {
 func CreateNameExpressionNode(id lexer.Token) NameExpressionNode {
 	return NameExpressionNode{
 		Identifier: id,
+	}
+}
+
+func CreateMainNameExpressionNode(id lexer.Token) NameExpressionNode {
+	return NameExpressionNode{
+		Identifier: id,
+		InMain:     true,
 	}
 }

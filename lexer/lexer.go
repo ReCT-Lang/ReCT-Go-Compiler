@@ -497,6 +497,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return LambdaKeyword
 	case "this":
 		return ThisKeyword
+	case "main":
+		return MainKeyword
 	default:
 		return IdToken
 	}
