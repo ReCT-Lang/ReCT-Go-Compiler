@@ -107,8 +107,15 @@ func ProcessFlags() {
 				emitter.PackageName = PackageName
 			}
 
-			cwd, _ := os.Getwd()
-			packager.PackagePaths = append(packager.PackagePaths, cwd+"/packages") // standard package dir
+			// get the rgoc executable path
+			ex, err := os.Executable()
+			if err != nil {
+				panic(err)
+			}
+			exPath := filepath.Dir(ex)
+
+			// append the executable path as a valid package location
+			packager.PackagePaths = append(packager.PackagePaths, exPath+"/packages") // standard package dir
 
 			if packageIncludePath != "" {
 				packager.PackagePaths = append(packager.PackagePaths, packageIncludePath)

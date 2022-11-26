@@ -44,7 +44,7 @@ func ResolvePackage(name string, errorLocation print.TextSpan) symbols.PackageSy
 				print.UnknownPackageModuleFileError,
 				errorLocation,
 				"Package module file could not be found at path '%s'!",
-				packagePath,
+				PackagePaths[0]+packagePath,
 			)
 		} else {
 			print.Error(
