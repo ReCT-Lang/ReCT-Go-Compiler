@@ -42,6 +42,7 @@ const (
 	ExternalFunctionDeclaration NodeType = "External Function Declaration"
 	ClassDeclaration            NodeType = "Class Declaration"
 	StructDeclaration           NodeType = "Struct Declaration"
+	EnumDeclaration             NodeType = "Enum Declaration"
 	PackageReference            NodeType = "Package Reference"
 	PackageAlias                NodeType = "Package Alias"
 	PackageUse                  NodeType = "Package Use"

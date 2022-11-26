@@ -40,6 +40,7 @@ const (
 	Function       SymbolType = "FunctionSymbol"
 	Class          SymbolType = "ClassSymbol"
 	Struct         SymbolType = "StructSymbol"
+	Enum           SymbolType = "EnumSymbol"
 	GlobalVariable SymbolType = "GlobalVariableSymbol"
 	LocalVariable  SymbolType = "LocalVariableSymbol"
 	Parameter      SymbolType = "ParameterSymbol"
