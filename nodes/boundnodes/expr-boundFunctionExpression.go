@@ -44,7 +44,7 @@ func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol {
 	}
 	subtypes = append(subtypes, node.Function.Type)
 
-	return symbols.CreateTypeSymbol("action", subtypes, false, false)
+	return symbols.CreateTypeSymbol("action", subtypes, false, false, false)
 }
 
 func CreateBoundFunctionExpressionNode(function symbols.FunctionSymbol, span print.TextSpan) BoundFunctionExpressionNode {

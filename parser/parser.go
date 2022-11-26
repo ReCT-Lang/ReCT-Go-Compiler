@@ -290,17 +290,18 @@ func (prs *Parser) parseEnumDeclaration() nodes.EnumDeclarationMember {
 	prs.consume(lexer.OpenBraceToken)
 
 	// list of the struct fields
-	fields := make(map[lexer.Token]nodes.ExpressionNode)
+	fields := make(map[lexer.Token]*nodes.LiteralExpressionNode)
 
 	// loop while the current tokent isnt } or eof
 	for prs.current().Kind != lexer.EOF && prs.current().Kind != lexer.CloseBraceToken {
 
-		field := prs.consume(lexer.IdToken);
-		var value nodes.ExpressionNode = nil
+		field := prs.consume(lexer.IdToken)
+		var value *nodes.LiteralExpressionNode = nil
 
 		if prs.current().Kind == lexer.AssignToken {
-			prs.consume(lexer.AssignToken);
-			value = prs.parseNumberLiteral()
+			prs.consume(lexer.AssignToken)
+			val := prs.parseNumberLiteral()
+			value = &val
 		}
 
 		fields[field] = value

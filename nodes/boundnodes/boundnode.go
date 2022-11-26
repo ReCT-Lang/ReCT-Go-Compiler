@@ -76,4 +76,5 @@ const (
 	BoundLambdaExpression               BoundType = "BoundLambdaExpression"
 	BoundThisExpression                 BoundType = "BoundThisExpression"
 	BoundInternalValueExpression        BoundType = "BoundInternalValueExpression"
+	BoundEnumExpression                 BoundType = "BoundEnumExpression"
 )

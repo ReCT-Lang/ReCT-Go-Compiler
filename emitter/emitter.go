@@ -365,6 +365,23 @@ func (emt *Emitter) EmitClassConstructor(cls *Class, bcls binder.BoundClass, cls
 		// create locals array
 		locals := make(map[string]Local)
 
+		// create a local copy of all parameters
+		// this is necessary because otherwise they would be read-only
+		for _, param := range constructorFunction.Symbol.Parameters {
+			varName := emt.Id(param)
+
+			// create local variable
+			local := croot.NewAlloca(emt.IRTypes(param.VarType()))
+			local.SetName("L" + varName)
+
+			// store the parameters value
+			croot.NewStore(constructor.Params[param.Ordinal+1], local)
+
+			// save it for referencing later
+			locals[varName] = Local{IRLocal: local, IRBlock: croot, Type: param.VarType()}
+
+		}
+
 		// create all needed locals in the root block to GC can trash them anywhere
 		for _, stmt := range constructorFunction.Body.Statements {
 			if stmt.NodeType() == boundnodes.BoundVariableDeclaration {
@@ -467,10 +484,6 @@ func (emt *Emitter) EmitFunction(sym symbols.FunctionSymbol, body boundnodes.Bou
 
 			// save it for referencing later
 			locals[varName] = Local{IRLocal: local, IRBlock: root, Type: declStatement.Variable.VarType()}
-
-			// debuuuuuuugging
-			//if EmitDebugInfo {
-			//}
 		}
 	}
 
@@ -875,6 +888,9 @@ func (emt *Emitter) EmitExpression(blk **ir.Block, expr boundnodes.BoundExpressi
 	case boundnodes.BoundThisExpression:
 		val = emt.EmitThisExpression(blk, expr.(boundnodes.BoundThisExpressionNode))
 
+	case boundnodes.BoundEnumExpression:
+		val = emt.EmitEnumExpression(blk, expr.(boundnodes.BoundEnumExpressionNode))
+
 	default:
 		fmt.Println("Unimplemented node: " + expr.NodeType())
 		return nil
@@ -1119,7 +1135,7 @@ func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.Boun
 	}
 
 	// bitcast to typed array type
-	arrObject = (*blk).NewBitCast(arrObject, emt.IRTypes(symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{expr.BaseType}, true, false)))
+	arrObject = (*blk).NewBitCast(arrObject, emt.IRTypes(symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{expr.BaseType}, true, false, false)))
 
 	return arrObject
 }
@@ -1569,7 +1585,7 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		}
 
 	case boundnodes.Equals:
-		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() || expr.Left.Type().IsEnum {
 			return (*blk).NewICmp(enum.IPredEQ, left, right)
 		} else if expr.Left.Type().Name == builtins.Pointer.Name {
 			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredEQ, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
@@ -1599,7 +1615,7 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 		}
 
 	case boundnodes.NotEquals:
-		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() {
+		if expr.Left.Type().Fingerprint() == builtins.Int.Fingerprint() || expr.Left.Type().IsEnum {
 			return (*blk).NewICmp(enum.IPredNE, left, right)
 		} else if expr.Left.Type().Name == builtins.Pointer.Name {
 			return (*blk).NewIntToPtr((*blk).NewICmp(enum.IPredNE, (*blk).NewPtrToInt(left, types.I64), (*blk).NewPtrToInt(right, types.I64)), left.Type())
@@ -1755,8 +1771,8 @@ func (emt *Emitter) EmitBinaryExpression(blk **ir.Block, expr boundnodes.BoundBi
 
 	fmt.Println("Unknown Binary!")
 	fmt.Println(expr.Op.OperatorKind)
-	fmt.Println(left)
-	fmt.Println(right)
+	fmt.Println(expr.Left.Type())
+	fmt.Println(expr.Right.Type())
 	return nil
 }
 
@@ -2562,6 +2578,10 @@ func (emt *Emitter) EmitFunctionExpression(blk **ir.Block, expr boundnodes.Bound
 
 func (emt *Emitter) EmitThisExpression(blk **ir.Block, expr boundnodes.BoundThisExpressionNode) value.Value {
 	return emt.Function.Params[0] // return the reserved parameter
+}
+
+func (emt *Emitter) EmitEnumExpression(blk **ir.Block, expr boundnodes.BoundEnumExpressionNode) value.Value {
+	return constant.NewInt(types.I32, int64(expr.Value))
 }
 
 // </EXPRESSIONS>--------------------------------------------------------------

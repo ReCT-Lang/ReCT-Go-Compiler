@@ -39,7 +39,7 @@ func (node BoundLambdaExpressionNode) Type() symbols.TypeSymbol {
 	}
 	subtypes = append(subtypes, node.Function.Type)
 
-	return symbols.CreateTypeSymbol("action", subtypes, false, false)
+	return symbols.CreateTypeSymbol("action", subtypes, false, false, false)
 }
 
 func CreateBoundLambdaExpressionNode(function symbols.FunctionSymbol, body BoundBlockStatementNode, span print.TextSpan) BoundLambdaExpressionNode {

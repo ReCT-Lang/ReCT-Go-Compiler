@@ -29,7 +29,7 @@ func (node BoundReferenceExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
 func (node BoundReferenceExpressionNode) Type() symbols.TypeSymbol {
-	return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{node.Expression.Type()}, false, false)
+	return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{node.Expression.Type()}, false, false, false)
 }
 
 func CreateBoundReferenceExpressionNode(expression BoundExpressionNode, span print.TextSpan) BoundReferenceExpressionNode {

@@ -240,11 +240,18 @@ func ClassifyConversion(from symbols.TypeSymbol, to symbols.TypeSymbol) Conversi
 		return ExplicitConversion
 	}
 
-	// allow EXPLICIT int -> pointer
-	//if from.Fingerprint() == builtins.Pointer.Fingerprint() &&
-	//	to.Fingerprint() == builtins.Int.Fingerprint() {
-	//	return ExplicitConversion
-	//}
+	// Enums and Ints are literally the exact same thing
+	if from.IsEnum && to.Fingerprint() == builtins.Int.Fingerprint() {
+		return IdentityConversion
+	}
+	if from.Fingerprint() == builtins.Int.Fingerprint() && to.IsEnum {
+		return IdentityConversion
+	}
+
+	// literally just two integers which are labelled 'enum'
+	if from.IsEnum && to.IsEnum {
+		return IdentityConversion
+	}
 
 	return NoConversion
 }

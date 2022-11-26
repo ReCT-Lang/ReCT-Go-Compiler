@@ -503,11 +503,11 @@ func ResolveArrayType(typeName string, isPrimitive bool, classes []*symbols.Clas
 		// parse the fingerprint
 		return symbols.CreateTypeSymbol(symName,
 			[]symbols.TypeSymbol{ParseFingerprint(baseType, baseType, classes, errorLocation)},
-			true, false)
+			true, false, false)
 	}
 
 	base := ResolveTypeFromName(baseType, classes, errorLocation)
-	return symbols.CreateTypeSymbol(symName, []symbols.TypeSymbol{base}, true, false)
+	return symbols.CreateTypeSymbol(symName, []symbols.TypeSymbol{base}, true, false, false)
 }
 
 func ParseFingerprint(o, fingerprint string, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) symbols.TypeSymbol {
@@ -532,7 +532,7 @@ func ParseFingerprint(o, fingerprint string, classes []*symbols.ClassSymbol, err
 		fingerprint = strConsume(o, fingerprint, ";", errorLocation)
 	}
 
-	return symbols.CreateTypeSymbol(name, subTypes, true, false)
+	return symbols.CreateTypeSymbol(name, subTypes, true, false, false)
 }
 
 func strCurrent(fingerprint string, match string) bool {

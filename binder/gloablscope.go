@@ -50,6 +50,7 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	externalFunctionDeclarations := make([]nodes.ExternalFunctionDeclarationMember, 0)
 	classDeclarations := make([]nodes.ClassDeclarationMember, 0)
 	structDeclarations := make([]nodes.StructDeclarationMember, 0)
+	enumDeclarations := make([]nodes.EnumDeclarationMember, 0)
 	globalStatements := make([]nodes.GlobalStatementMember, 0)
 
 	// sort all our members into functions and global statements
@@ -62,6 +63,8 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 			classDeclarations = append(classDeclarations, member.(nodes.ClassDeclarationMember))
 		} else if member.NodeType() == nodes.StructDeclaration {
 			structDeclarations = append(structDeclarations, member.(nodes.StructDeclarationMember))
+		} else if member.NodeType() == nodes.EnumDeclaration {
+			enumDeclarations = append(enumDeclarations, member.(nodes.EnumDeclarationMember))
 		} else if member.NodeType() == nodes.PackageReference {
 			packageReferences = append(packageReferences, member.(nodes.PackageReferenceMember))
 		} else if member.NodeType() == nodes.PackageAlias {
@@ -74,6 +77,17 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	}
 
 	binder := CreateBinder(mainScope, symbols.FunctionSymbol{})
+
+	// first load all enums, this is cool because it doenst require anything else to be set up first
+	for _, enm := range enumDeclarations {
+		binder.BindEnumDeclaration(enm)
+	}
+
+	// this is now the global parent scope node
+	MainScope = *binder.ActiveScope
+
+	// Actual cool binding
+	// -------------------
 
 	// load all our packages first
 	for _, pkg := range packageReferences {
@@ -91,10 +105,13 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	// create a loose list of types so our class and struct members have something to work with
 	preInitialTypeset := make([]symbols.TypeSymbol, 0)
 	for _, cls := range classDeclarations {
-		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(cls.Identifier.Value, make([]symbols.TypeSymbol, 0), true, true))
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(cls.Identifier.Value, make([]symbols.TypeSymbol, 0), true, true, false))
 	}
 	for _, stc := range structDeclarations {
-		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(stc.Identifier.Value, make([]symbols.TypeSymbol, 0), false, true))
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(stc.Identifier.Value, make([]symbols.TypeSymbol, 0), false, true, false))
+	}
+	for _, enm := range enumDeclarations {
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(enm.Identifier.Value, make([]symbols.TypeSymbol, 0), false, false, true))
 	}
 
 	// declare all our structs and their fields

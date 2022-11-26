@@ -343,6 +343,8 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteLambdaExpression(expr.(boundnodes.BoundLambdaExpressionNode))
 	case boundnodes.BoundThisExpression:
 		return RewriteThisExpression(expr.(boundnodes.BoundThisExpressionNode))
+	case boundnodes.BoundEnumExpression:
+		return RewriteEnumExpression(expr.(boundnodes.BoundEnumExpressionNode))
 	default:
 		print.PrintC(print.Red, "Expression unaccounted for in lowerer! (stuff being in here is important lol)")
 		os.Exit(-1)
@@ -566,6 +568,11 @@ func RewriteLambdaExpression(expr boundnodes.BoundLambdaExpressionNode) boundnod
 }
 
 func RewriteThisExpression(expr boundnodes.BoundThisExpressionNode) boundnodes.BoundThisExpressionNode {
+	// nothing to do here
+	return expr
+}
+
+func RewriteEnumExpression(expr boundnodes.BoundEnumExpressionNode) boundnodes.BoundEnumExpressionNode {
 	// nothing to do here
 	return expr
 }

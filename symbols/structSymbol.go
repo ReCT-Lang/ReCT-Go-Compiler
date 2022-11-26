@@ -40,6 +40,6 @@ func CreateStructSymbol(name string, declaration nodes.StructDeclarationMember, 
 		Name:        name,
 		Declaration: declaration,
 		Fields:      fields,
-		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), false, true),
+		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), false, true, false),
 	}
 }

@@ -11,7 +11,7 @@ type EnumDeclarationMember struct {
 
 	StructKeyword lexer.Token
 	Identifier    lexer.Token
-	Fields        map[lexer.Token]ExpressionNode
+	Fields        map[lexer.Token]*LiteralExpressionNode
 	ClosingToken  lexer.Token
 }
 
@@ -29,7 +29,7 @@ func (node EnumDeclarationMember) Print(indent string) {
 }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateEnumDeclarationMember(kw lexer.Token, id lexer.Token, fields map[lexer.Token]ExpressionNode, closing lexer.Token) EnumDeclarationMember {
+func CreateEnumDeclarationMember(kw lexer.Token, id lexer.Token, fields map[lexer.Token]*LiteralExpressionNode, closing lexer.Token) EnumDeclarationMember {
 	return EnumDeclarationMember{
 		StructKeyword: kw,
 		Identifier:    id,

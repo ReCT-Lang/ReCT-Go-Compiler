@@ -53,7 +53,7 @@ func CreateBoundLiteralExpressionNode(expr nodes.LiteralExpressionNode, span pri
 	switch expr.LiteralValue.(type) {
 	case string:
 		if expr.IsNative {
-			_type = symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{builtins.Byte}, false, false)
+			_type = symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{builtins.Byte}, false, false, false)
 		} else {
 			_type = builtins.String
 		}

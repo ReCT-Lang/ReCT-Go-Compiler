@@ -3,16 +3,14 @@ package symbols
 import (
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
-
-	"github.com/llir/llvm/ir/types"
 )
 
-type StructSymbol struct {
+type EnumSymbol struct {
 	Symbol
 
 	Exists bool
 
-	Type   TypeSymbol
+	Type TypeSymbol
 
 	Name        string
 	Declaration nodes.EnumDeclarationMember
@@ -20,14 +18,14 @@ type StructSymbol struct {
 }
 
 // implement the symbol interface
-func (StructSymbol) SymbolType() SymbolType { return Enum }
-func (s StructSymbol) SymbolName() string   { return s.Name }
+func (EnumSymbol) SymbolType() SymbolType { return Enum }
+func (s EnumSymbol) SymbolName() string   { return s.Name }
 
-func (sym StructSymbol) Print(indent string) {
+func (sym EnumSymbol) Print(indent string) {
 	print.PrintC(print.Magenta, indent+"└ EnumSymbol ["+sym.Name+"]")
 }
 
-func (s StructSymbol) Fingerprint() string {
+func (s EnumSymbol) Fingerprint() string {
 	id := "E_" + s.Name + "_"
 	return id
 }
@@ -39,6 +37,6 @@ func CreateEnumSymbol(name string, declaration nodes.EnumDeclarationMember, fiel
 		Name:        name,
 		Declaration: declaration,
 		Fields:      fields,
-		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), false, false),
+		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), false, false, true),
 	}
 }

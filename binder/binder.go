@@ -392,20 +392,51 @@ func (bin *Binder) BindEnumDeclaration(mem nodes.EnumDeclarationMember) {
 
 	// go through all struct fields
 	for key, literal := range mem.Fields {
-		fldIndex := index
 
+		// is a literal given?
 		if literal != nil {
-			if 
+			fldLiteral := bin.BindLiteralExpression(*literal)
 
-			literal := bin.BindLiteralExpression()
-			fldLiteral = 
+			// check if this is actually an int
+			if fldLiteral.LiteralType.Fingerprint() != builtins.Int.Fingerprint() {
+				print.Error(
+					"BINDER",
+					print.UnexpectedNonIntegerValueError,
+					literal.Span(),
+					"Enum fields are only allowed to be of type integer!",
+				)
+				os.Exit(-1)
+			}
+
+			// set the current index to the literal value
+			index = fldLiteral.Value.(int)
 		}
+
+		// make sure this index isnt already declared
+		for _, i := range fields {
+			if i == index {
+				print.Error(
+					"BINDER",
+					print.DuplicateFunctionError,
+					literal.Span(),
+					"Enum field with the same value already exists! (%d)",
+					index,
+				)
+				os.Exit(-1)
+			}
+		}
+
+		// declare this field
+		fields[key.Value] = index
+
+		// step the index forward
+		index++
 	}
 
 	// Build the EnumSymbol
 	// ----------------------
 
-	enumSym := symbols.CreateStructSymbol(mem.Identifier.Value, mem, fields)
+	enumSym := symbols.CreateEnumSymbol(mem.Identifier.Value, mem, fields)
 
 	if !bin.ActiveScope.TryDeclareSymbol(enumSym) {
 		print.Error(
@@ -413,8 +444,8 @@ func (bin *Binder) BindEnumDeclaration(mem nodes.EnumDeclarationMember) {
 			print.DuplicateFunctionError,
 			mem.Span(),
 			"A member with the name \"%s\" already exists! \"%s\" could not be defined!",
-			structSym.Name,
-			structSym.Name,
+			enumSym.Name,
+			enumSym.Name,
 		)
 		os.Exit(-1)
 	}
@@ -1274,16 +1305,45 @@ func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, ba
 	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments, expr.Span())
 }
 
-func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExpressionNode) boundnodes.BoundClassFieldAccessExpressionNode {
+func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExpressionNode) boundnodes.BoundExpressionNode {
+	// okay but like, is this an enum?
+	// -------------------------------
+	if expr.Base.NodeType() == nodes.NameExpression {
+		baseExpr := expr.Base.(nodes.NameExpressionNode)
+		enumName := baseExpr.Identifier.Value
+
+		// does an enum with that name exist?
+		enm, ok := bin.LookupEnum(enumName)
+		if ok {
+			// does the field exist?
+			val, ok := enm.Fields[expr.FieldIdentifier.Value]
+			if !ok {
+				print.Error(
+					"BINDER",
+					print.InvalidClassAccessError,
+					expr.Span(),
+					"Enum '%s' does not have a field called '%s'!",
+					enumName,
+					expr.FieldIdentifier.Value,
+				)
+				os.Exit(-1)
+			}
+
+			return boundnodes.CreateBoundEnumExpressionNode(val, enm, expr.Span())
+		}
+	}
+
+	// okay nah this isnt an enum
+	// --------------------------
 	baseExpression := bin.BindExpression(expr.Base)
 
-	// if the base type is a class, it cant have any fields
+	// if the base type is not a class (or struct), it cant have any fields
 	if !baseExpression.Type().IsUserDefined {
 		print.Error(
 			"BINDER",
 			print.InvalidClassAccessError,
 			expr.Span(),
-			"Can not use field access on non-class '%s'!",
+			"Can not use field access on non-class/struct '%s'!",
 			baseExpression.Type().Name,
 		)
 		os.Exit(-1)
@@ -2108,7 +2168,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		}
 
 		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
-		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true, false), true
+		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true, false, false), true
 
 	case "pointer":
 		if len(typeClause.SubClauses) != 1 {
@@ -2123,7 +2183,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		}
 
 		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
-		return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{baseType}, false, false), true
+		return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{baseType}, false, false, false), true
 
 	case "action":
 		if len(typeClause.SubClauses) == 0 {
@@ -2144,7 +2204,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 			subTypes = append(subTypes, typ)
 		}
 
-		return symbols.CreateTypeSymbol("action", subTypes, false, false), true
+		return symbols.CreateTypeSymbol("action", subTypes, false, false, false), true
 
 	default:
 		// check if this might be a class
@@ -2157,6 +2217,12 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		stc, ok := bin.LookupStruct(typeClause.TypeIdentifier.Value, true, typeClause.TypeIdentifier.Span)
 		if ok {
 			return stc.Type, true
+		}
+
+		// check if this might be an enum
+		enm, ok := bin.LookupEnum(typeClause.TypeIdentifier.Value)
+		if ok {
+			return enm.Type, true
 		}
 
 		// check if this binder has been given a pre-initial typeset
@@ -2242,6 +2308,20 @@ func (bin Binder) LookupClass(name string, canFail bool, errorLocaton print.Text
 	}
 
 	return cls.(symbols.ClassSymbol), true
+}
+
+func (bin Binder) LookupEnum(name string) (symbols.EnumSymbol, bool) {
+	// enums are *always* declared in the global scope
+	enm := MainScope.TryLookupSymbol(name)
+	if enm == nil {
+		return symbols.EnumSymbol{}, false
+	}
+
+	if enm.SymbolType() != symbols.Enum {
+		return symbols.EnumSymbol{}, false
+	}
+
+	return enm.(symbols.EnumSymbol), true
 }
 
 func (bin Binder) LookupStruct(name string, canFail bool, errorLocaton print.TextSpan) (symbols.StructSymbol, bool) {

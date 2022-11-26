@@ -93,6 +93,10 @@ var BinaryOperators []BoundBinaryOperator = []BoundBinaryOperator{
 	/* >> */ CreateBoundBinaryOperatorAllSame(lexer.ShiftRightToken, BitshiftRight, builtins.Int),
 	/* << */ CreateBoundBinaryOperatorAllSame(lexer.ShiftLeftToken, BitshiftLeft, builtins.Int),
 
+	// enum operations
+	/* =  */ CreateBoundBinaryOperatorSameInputs(lexer.EqualsToken, Equals, builtins.Enum, builtins.Bool),
+	/* != */ CreateBoundBinaryOperatorSameInputs(lexer.NotEqualsToken, NotEquals, builtins.Enum, builtins.Bool),
+
 	// byte operations
 	/* +  */ CreateBoundBinaryOperatorAllSame(lexer.PlusToken, Addition, builtins.Byte),
 	/* -  */ CreateBoundBinaryOperatorAllSame(lexer.MinusToken, Subtraction, builtins.Byte),
@@ -234,6 +238,12 @@ func BindBinaryOperator(tokenKind lexer.TokenKind, leftType symbols.TypeSymbol, 
 		if op.TokenKind == tokenKind &&
 			op.LeftType.Name == leftType.Name && leftType.Name == "pointer" &&
 			op.RightType.Name == rightType.Name && rightType.Name == "pointer" {
+			return op
+		}
+		if op.TokenKind == tokenKind &&
+			op.LeftType.IsEnum && leftType.IsEnum &&
+			op.RightType.IsEnum && rightType.IsEnum &&
+			op.LeftType.Name == op.RightType.Name {
 			return op
 		}
 	}

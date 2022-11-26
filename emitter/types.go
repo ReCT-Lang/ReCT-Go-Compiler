@@ -46,6 +46,10 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		return types.NewPointer(emt.Classes[emt.Id(builtins.Thread)].Type)
 	}
 
+	if typ.IsEnum {
+		return types.I32
+	}
+
 	if typ.Name == builtins.Array.Name {
 		if typ.SubTypes[0].IsObject {
 			return emt.ResolveArray(typ, &arrayTypes, builtins.Array)

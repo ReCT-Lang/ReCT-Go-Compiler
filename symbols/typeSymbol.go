@@ -11,6 +11,7 @@ type TypeSymbol struct {
 	SubTypes      []TypeSymbol
 	IsObject      bool
 	IsUserDefined bool
+	IsEnum        bool
 }
 
 // implement the interface
@@ -45,11 +46,12 @@ func (sym TypeSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreateTypeSymbol(name string, subTypes []TypeSymbol, isObject bool, isUserDefined bool) TypeSymbol {
+func CreateTypeSymbol(name string, subTypes []TypeSymbol, isObject bool, isUserDefined bool, isEnum bool) TypeSymbol {
 	return TypeSymbol{
 		Name:          name,
 		SubTypes:      subTypes,
 		IsObject:      isObject,
 		IsUserDefined: isUserDefined,
+		IsEnum:        isEnum,
 	}
 }
