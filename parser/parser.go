@@ -126,6 +126,10 @@ func (prs *Parser) parseMember(allowClasses bool, allowPackages bool) nodes.Memb
 		return prs.parseStructDeclaration()
 	}
 
+	if prs.current().Kind == lexer.EnumKeyword && allowClasses {
+		return prs.parseEnumDeclaration()
+	}
+
 	if prs.current().Kind == lexer.PackageKeyword && allowPackages {
 		return prs.parsePackageReference()
 	}
@@ -276,6 +280,40 @@ func (prs *Parser) parseStructDeclaration() nodes.StructDeclarationMember {
 	closing := prs.consume(lexer.CloseBraceToken)
 
 	return nodes.CreateStructDeclarationMember(kw, id, fields, closing)
+}
+
+func (prs *Parser) parseEnumDeclaration() nodes.EnumDeclarationMember {
+	kw := prs.consume(lexer.EnumKeyword)
+	id := prs.consume(lexer.IdToken)
+
+	// beginn enum value list
+	prs.consume(lexer.OpenBraceToken)
+
+	// list of the struct fields
+	fields := make(map[lexer.Token]nodes.ExpressionNode)
+
+	// loop while the current tokent isnt } or eof
+	for prs.current().Kind != lexer.EOF && prs.current().Kind != lexer.CloseBraceToken {
+
+		field := prs.consume(lexer.IdToken);
+		var value nodes.ExpressionNode = nil
+
+		if prs.current().Kind == lexer.AssignToken {
+			prs.consume(lexer.AssignToken);
+			value = prs.parseNumberLiteral()
+		}
+
+		fields[field] = value
+
+		// we do be comma-ing
+		if prs.current().Kind != lexer.EOF && prs.current().Kind != lexer.CloseBraceToken {
+			prs.consume(lexer.CommaToken)
+		}
+	}
+
+	closing := prs.consume(lexer.CloseBraceToken)
+
+	return nodes.CreateEnumDeclarationMember(kw, id, fields, closing)
 }
 
 func (prs *Parser) parsePackageReference() nodes.PackageReferenceMember {

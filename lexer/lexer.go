@@ -547,6 +547,8 @@ func CheckIfKeyword(buffer string) TokenKind {
 		return ThisKeyword
 	case "main":
 		return MainKeyword
+	case "enum":
+		return EnumKeyword
 	default:
 		return IdToken
 	}

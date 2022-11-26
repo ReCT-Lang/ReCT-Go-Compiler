@@ -40,6 +40,7 @@ const (
 	LambdaKeyword    TokenKind = "lambda (keyword)"
 	ThisKeyword      TokenKind = "this (keyword)"
 	MainKeyword      TokenKind = "main (keyword)"
+	EnumKeyword      TokenKind = "enum (keyword)"
 
 	// Tokens
 	EOF               TokenKind = "EndOfFile"

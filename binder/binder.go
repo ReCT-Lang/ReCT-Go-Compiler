@@ -386,6 +386,40 @@ func (bin *Binder) BindStructDeclaration(mem nodes.StructDeclarationMember, preI
 	}
 }
 
+func (bin *Binder) BindEnumDeclaration(mem nodes.EnumDeclarationMember) {
+	fields := make(map[string]int, 0)
+	index := 0
+
+	// go through all struct fields
+	for key, literal := range mem.Fields {
+		fldIndex := index
+
+		if literal != nil {
+			if 
+
+			literal := bin.BindLiteralExpression()
+			fldLiteral = 
+		}
+	}
+
+	// Build the EnumSymbol
+	// ----------------------
+
+	enumSym := symbols.CreateStructSymbol(mem.Identifier.Value, mem, fields)
+
+	if !bin.ActiveScope.TryDeclareSymbol(enumSym) {
+		print.Error(
+			"BINDER",
+			print.DuplicateFunctionError,
+			mem.Span(),
+			"A member with the name \"%s\" already exists! \"%s\" could not be defined!",
+			structSym.Name,
+			structSym.Name,
+		)
+		os.Exit(-1)
+	}
+}
+
 func (bin *Binder) BindPackageReference(mem nodes.PackageReferenceMember) {
 	pack := packager.ResolvePackage(mem.Package.Value, mem.Span())
 	if !bin.ActiveScope.TryDeclareSymbol(pack) {
