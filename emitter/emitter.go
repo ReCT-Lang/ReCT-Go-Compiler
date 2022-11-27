@@ -1,13 +1,13 @@
 package emitter
 
 import (
-	"ReCT-Go-Compiler/binder"
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/nodes/boundnodes"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/binder"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes/boundnodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 	"strings"
 
 	"github.com/llir/llvm/ir"

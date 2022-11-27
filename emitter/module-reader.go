@@ -1,10 +1,10 @@
 package emitter
 
 import (
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/irtools"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/irtools"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 	"os"
 	"strings"
 

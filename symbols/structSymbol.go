@@ -1,8 +1,8 @@
 package symbols
 
 import (
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 
 	"github.com/llir/llvm/ir/types"
 )

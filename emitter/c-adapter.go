@@ -1,11 +1,11 @@
 package emitter
 
 import (
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
 	"bytes"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 	"os"
 	"os/exec"
 )

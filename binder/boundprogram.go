@@ -1,13 +1,13 @@
 package binder
 
 import (
-	"ReCT-Go-Compiler/langserverinterface"
-	"ReCT-Go-Compiler/lowerer"
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/nodes/boundnodes"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/langserverinterface"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/lowerer"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes/boundnodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 )
 
 var MainScope Scope

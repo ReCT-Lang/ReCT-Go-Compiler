@@ -1,9 +1,9 @@
 package preprocessor
 
 import (
-	"ReCT-Go-Compiler/lexer"
-	"ReCT-Go-Compiler/print"
 	"errors"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/lexer"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 	"os"
 	"strings"
 )

@@ -1,6 +1,6 @@
 package nodes
 
-import print2 "ReCT-Go-Compiler/print"
+import print2 "github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 
 // very cool interface for creating syntax nodes
 type SyntaxNode interface {

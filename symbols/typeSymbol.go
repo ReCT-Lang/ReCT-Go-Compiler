@@ -1,7 +1,7 @@
 package symbols
 
 import (
-	"ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 type TypeSymbol struct {

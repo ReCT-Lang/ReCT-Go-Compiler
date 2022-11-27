@@ -1,9 +1,9 @@
 package nodes
 
 import (
-	"ReCT-Go-Compiler/lexer"
-	"ReCT-Go-Compiler/print"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/lexer"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 type AssignmentExpressionNode struct {

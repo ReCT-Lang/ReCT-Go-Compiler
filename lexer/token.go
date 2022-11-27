@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	print2 "ReCT-Go-Compiler/print"
 	"fmt"
+	print2 "github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 // TokenKind basically an enum containing all token types.

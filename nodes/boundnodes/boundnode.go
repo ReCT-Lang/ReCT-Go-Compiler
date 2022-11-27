@@ -1,8 +1,8 @@
 package boundnodes
 
 import (
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/symbols"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 )
 
 // incredibly cool interface for creating bound nodes

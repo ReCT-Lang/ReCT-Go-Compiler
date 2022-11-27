@@ -1,6 +1,6 @@
 package builtins
 
-import "ReCT-Go-Compiler/symbols"
+import "github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 
 var (
 	Void   = symbols.CreateTypeSymbol("void", make([]symbols.TypeSymbol, 0), false, false, false, symbols.PackageSymbol{}, nil)

@@ -1,8 +1,8 @@
 package symbols
 
 import (
-	"ReCT-Go-Compiler/print"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 type ParameterSymbol struct {

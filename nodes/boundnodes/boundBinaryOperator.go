@@ -1,9 +1,9 @@
 package boundnodes
 
 import (
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/lexer"
-	"ReCT-Go-Compiler/symbols"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/lexer"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 )
 
 type BoundBinaryOperatorType string

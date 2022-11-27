@@ -1,11 +1,11 @@
 package boundnodes
 
 import (
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 	"os"
 )
 

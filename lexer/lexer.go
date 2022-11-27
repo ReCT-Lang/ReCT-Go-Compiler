@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"ReCT-Go-Compiler/print"
 	"errors"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 	"os"
 	"strconv"
 	"strings"

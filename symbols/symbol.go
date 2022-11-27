@@ -1,8 +1,8 @@
 package symbols
 
 import (
-	print2 "ReCT-Go-Compiler/print"
 	"fmt"
+	print2 "github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 type Symbol interface {

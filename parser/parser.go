@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"ReCT-Go-Compiler/lexer"
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/rules"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/lexer"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/rules"
 	"os"
 )
 

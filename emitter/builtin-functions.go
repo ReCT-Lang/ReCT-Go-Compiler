@@ -1,7 +1,7 @@
 package emitter
 
 import (
-	"ReCT-Go-Compiler/irtools"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/irtools"
 	"strings"
 
 	"github.com/llir/llvm/ir"

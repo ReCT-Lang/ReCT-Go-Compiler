@@ -1,6 +1,6 @@
 package binder
 
-import "ReCT-Go-Compiler/symbols"
+import "github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 
 type Scope struct {
 	Parent  *Scope

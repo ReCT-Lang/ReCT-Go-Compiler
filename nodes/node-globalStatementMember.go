@@ -1,7 +1,7 @@
 package nodes
 
 import (
-	"ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 // basic global statement member

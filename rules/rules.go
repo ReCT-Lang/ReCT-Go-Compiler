@@ -1,6 +1,6 @@
 package rules
 
-import "ReCT-Go-Compiler/lexer"
+import "github.com/ReCT-Lang/ReCT-Go-Compiler/lexer"
 
 // rules: this package is for holding basic language rules like operator order
 // ---------------------------------------------------------------------------

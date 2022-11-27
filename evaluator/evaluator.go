@@ -1,13 +1,13 @@
 package evaluator
 
 import (
-	"ReCT-Go-Compiler/binder"
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/nodes/boundnodes"
-	"ReCT-Go-Compiler/print"
-	"ReCT-Go-Compiler/symbols"
 	"bufio"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/binder"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes/boundnodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 	"math"
 	"math/rand"
 	"os"

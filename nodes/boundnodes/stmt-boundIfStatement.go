@@ -1,9 +1,9 @@
 package boundnodes
 
 import (
-	"ReCT-Go-Compiler/nodes"
-	"ReCT-Go-Compiler/print"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/nodes"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 )
 
 type BoundIfStatementNode struct {

@@ -1,10 +1,10 @@
 package emitter
 
 import (
-	"ReCT-Go-Compiler/binder"
-	"ReCT-Go-Compiler/builtins"
-	"ReCT-Go-Compiler/symbols"
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/binder"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/builtins"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 	"os"
 	"strings"
 

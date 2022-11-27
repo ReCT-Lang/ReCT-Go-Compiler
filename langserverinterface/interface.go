@@ -1,8 +1,8 @@
 package langserverinterface
 
 import (
-	"ReCT-Go-Compiler/lexer"
-	"ReCT-Go-Compiler/symbols"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/lexer"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 )
 
 // Map of meanings
