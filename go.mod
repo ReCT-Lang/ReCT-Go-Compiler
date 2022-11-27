@@ -1,4 +1,4 @@
-module ReCT-Go-Compiler
+module github.com/ReCT-Lang/ReCT-Go-Compiler
 
 go 1.16
 
