@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -12,7 +13,7 @@ type BoundMakeExpressionNode struct {
 	BaseType  symbols.ClassSymbol
 	Arguments []BoundExpressionNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundMakeExpressionNode) NodeType() BoundType { return BoundMakeExpression }
@@ -27,8 +28,8 @@ func (node BoundMakeExpressionNode) Print(indent string) {
 	}
 }
 
-func (node BoundMakeExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundMakeExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundMakeExpressionNode) IsPersistent() bool { return false }
@@ -38,10 +39,10 @@ func (node BoundMakeExpressionNode) Type() symbols.TypeSymbol {
 	return node.BaseType.Type
 }
 
-func CreateBoundMakeExpressionNode(baseType symbols.ClassSymbol, args []BoundExpressionNode, span print.TextSpan) BoundMakeExpressionNode {
+func CreateBoundMakeExpressionNode(baseType symbols.ClassSymbol, args []BoundExpressionNode, src nodes.SyntaxNode) BoundMakeExpressionNode {
 	return BoundMakeExpressionNode{
-		BaseType:  baseType,
-		Arguments: args,
-		BoundSpan: span,
+		BaseType:      baseType,
+		Arguments:     args,
+		UnboundSource: src,
 	}
 }

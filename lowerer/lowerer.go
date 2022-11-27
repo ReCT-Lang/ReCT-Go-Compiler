@@ -3,6 +3,7 @@ package lowerer
 import (
 	"ReCT-Go-Compiler/builtins"
 	"ReCT-Go-Compiler/lexer"
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
@@ -67,11 +68,11 @@ func Flatten(functionSymbol symbols.FunctionSymbol, stmt boundnodes.BoundStateme
 
 	if functionSymbol.Type.Fingerprint() == builtins.Void.Fingerprint() {
 		if len(statements) == 0 || CanFallThrough(statements[len(statements)-1]) {
-			statements = append(statements, boundnodes.CreateBoundReturnStatementNode(nil, print.TextSpan{}))
+			statements = append(statements, boundnodes.CreateBoundReturnStatementNode(nil, nodes.ReturnStatementNode{}))
 		}
 	}
 
-	return boundnodes.CreateBoundBlockStatementNode(statements, stmt.Span())
+	return boundnodes.CreateBoundBlockStatementNode(statements, stmt.Source())
 }
 
 func CanFallThrough(stmt boundnodes.BoundStatementNode) bool {
@@ -115,13 +116,13 @@ func RewriteBlockStatement(stmt boundnodes.BoundBlockStatementNode) boundnodes.B
 		rewrittenStatements = append(rewrittenStatements, RewriteStatement(statement))
 	}
 
-	return boundnodes.CreateBoundBlockStatementNode(rewrittenStatements, stmt.BoundSpan)
+	return boundnodes.CreateBoundBlockStatementNode(rewrittenStatements, stmt.Source())
 }
 
 func RewriteVariableDeclaration(stmt boundnodes.BoundVariableDeclarationStatementNode) boundnodes.BoundVariableDeclarationStatementNode {
 	if stmt.Initializer != nil {
 		initializer := RewriteExpression(stmt.Initializer)
-		return boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, initializer, stmt.BoundSpan)
+		return boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, initializer, stmt.Source())
 	}
 
 	return stmt
@@ -140,13 +141,13 @@ func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundSt
 		// end:
 		thenLabel := GenerateLabel()
 		endLabel := GenerateLabel()
-		condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, endLabel, stmt.BoundSpan)
-		thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel, stmt.BoundSpan)
-		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel, stmt.BoundSpan)
-		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel, stmt.BoundSpan)
+		condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, endLabel, stmt.Source())
+		thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel, stmt.Source())
+		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel, stmt.Source())
+		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel, stmt.Source())
 		result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 			condGoto, thenLabelStatement, stmt.ThenStatement, gotoEnd, endLabelStatement,
-		}, stmt.BoundSpan)
+		}, stmt.Source())
 		return RewriteStatement(result)
 
 	} else {
@@ -168,14 +169,14 @@ func RewriteIfStatement(stmt boundnodes.BoundIfStatementNode) boundnodes.BoundSt
 		elseLabel := GenerateLabel()
 		endLabel := GenerateLabel()
 
-		condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, elseLabel, stmt.BoundSpan)
-		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel, stmt.BoundSpan)
-		thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel, stmt.BoundSpan)
-		elseLabelStatement := boundnodes.CreateBoundLabelStatementNode(elseLabel, stmt.BoundSpan)
-		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel, stmt.BoundSpan)
+		condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, thenLabel, elseLabel, stmt.Source())
+		gotoEnd := boundnodes.CreateBoundGotoStatementNode(endLabel, stmt.Source())
+		thenLabelStatement := boundnodes.CreateBoundLabelStatementNode(thenLabel, stmt.Source())
+		elseLabelStatement := boundnodes.CreateBoundLabelStatementNode(elseLabel, stmt.Source())
+		endLabelStatement := boundnodes.CreateBoundLabelStatementNode(endLabel, stmt.Source())
 		result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 			condGoto, thenLabelStatement, stmt.ThenStatement, gotoEnd, elseLabelStatement, stmt.ElseStatement, gotoEnd, endLabelStatement,
-		}, stmt.BoundSpan)
+		}, stmt.Source())
 		return RewriteStatement(result)
 	}
 }
@@ -194,33 +195,33 @@ func RewriteWhileStatement(stmt boundnodes.BoundWhileStatementNode) boundnodes.B
 	// break:
 	bodyLabel := GenerateLabel()
 
-	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
-	bodyLabelStatement := boundnodes.CreateBoundLabelStatementNode(bodyLabel, stmt.BoundSpan)
-	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
-	condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, bodyLabel, stmt.BreakLabel, stmt.BoundSpan)
-	breakLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.BreakLabel, stmt.BoundSpan)
+	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel, stmt.Source())
+	bodyLabelStatement := boundnodes.CreateBoundLabelStatementNode(bodyLabel, stmt.Source())
+	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.Source())
+	condGoto := boundnodes.CreateBoundConditionalGotoStatementNode(stmt.Condition, bodyLabel, stmt.BreakLabel, stmt.Source())
+	breakLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.BreakLabel, stmt.Source())
 
 	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 		gotoContinue, bodyLabelStatement, stmt.Body, gotoContinue, continueLabelStatement, condGoto, breakLabelStatement,
-	}, stmt.BoundSpan)
+	}, stmt.Source())
 	return RewriteStatement(result)
 }
 
 func RewriteForStatement(stmt boundnodes.BoundForStatementNode) boundnodes.BoundStatementNode {
 	condition := RewriteExpression(stmt.Condition)
-	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
+	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.Source())
 
-	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
+	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel, stmt.Source())
 	whileBody := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 		stmt.Body, gotoContinue, continueLabelStatement, stmt.Action,
-	}, stmt.BoundSpan)
-	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel(), stmt.BoundSpan)
+	}, stmt.Source())
+	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel(), stmt.Source())
 
 	variable := RewriteStatement(stmt.Variable).(boundnodes.BoundVariableDeclarationStatementNode)
 
 	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 		variable, whileStatement,
-	}, stmt.BoundSpan)
+	}, stmt.Source())
 	return RewriteStatement(result)
 }
 
@@ -228,41 +229,41 @@ func RewriteFromToStatement(stmt boundnodes.BoundFromToStatementNode) boundnodes
 	// good god what did i just write - RedCube
 	lowerBound := RewriteExpression(stmt.LowerBound)
 	upperBound := RewriteExpression(stmt.UpperBound)
-	variableDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, lowerBound, stmt.BoundSpan)
-	variableExpression := boundnodes.CreateBoundVariableExpressionNode(stmt.Variable, false, stmt.BoundSpan)
+	variableDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(stmt.Variable, lowerBound, stmt.Source())
+	variableExpression := boundnodes.CreateBoundVariableExpressionNode(stmt.Variable, false, stmt.Source())
 	upperBoundSymbol := symbols.CreateLocalVariableSymbol("upperBound", true, builtins.Int)
-	upperBoundDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(upperBoundSymbol, upperBound, stmt.BoundSpan)
+	upperBoundDeclaration := boundnodes.CreateBoundVariableDeclarationStatementNode(upperBoundSymbol, upperBound, stmt.Source())
 
 	condition := boundnodes.CreateBoundBinaryExpressionNode(
 		variableExpression,
 		boundnodes.BindBinaryOperator(lexer.LessEqualsToken, builtins.Int, builtins.Int),
-		boundnodes.CreateBoundVariableExpressionNode(upperBoundSymbol, false, stmt.BoundSpan), stmt.BoundSpan,
+		boundnodes.CreateBoundVariableExpressionNode(upperBoundSymbol, false, stmt.Source()), stmt.Source(),
 	)
-	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
+	continueLabelStatement := boundnodes.CreateBoundLabelStatementNode(stmt.ContinueLabel, stmt.Source())
 	increment := boundnodes.CreateBoundExpressionStatementNode(
 		boundnodes.CreateBoundAssignmentExpressionNode(
 			stmt.Variable,
 			boundnodes.CreateBoundBinaryExpressionNode(
 				variableExpression,
 				boundnodes.BindBinaryOperator(lexer.PlusToken, builtins.Int, builtins.Int),
-				boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, stmt.BoundSpan), stmt.BoundSpan,
-			), false, stmt.BoundSpan,
-		), stmt.BoundSpan,
+				boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, stmt.Source()), stmt.Source(),
+			), false, stmt.Source(),
+		), stmt.Source(),
 	)
 
-	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel, stmt.BoundSpan)
+	gotoContinue := boundnodes.CreateBoundGotoStatementNode(stmt.ContinueLabel, stmt.Source())
 	whileBody := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 		stmt.Body,
 		gotoContinue,
 		continueLabelStatement,
 		increment,
-	}, stmt.BoundSpan)
+	}, stmt.Source())
 
-	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel(), stmt.BoundSpan)
+	whileStatement := boundnodes.CreateBoundWhileStatementNode(condition, whileBody, stmt.BreakLabel, GenerateLabel(), stmt.Source())
 
 	result := boundnodes.CreateBoundBlockStatementNode([]boundnodes.BoundStatementNode{
 		variableDeclaration, upperBoundDeclaration, whileStatement,
-	}, stmt.BoundSpan)
+	}, stmt.Source())
 	return RewriteStatement(result)
 }
 
@@ -276,7 +277,7 @@ func RewriteGotoStatement(stmt boundnodes.BoundGotoStatementNode) boundnodes.Bou
 
 func RewriteConditionalGotoStatement(stmt boundnodes.BoundConditionalGotoStatementNode) boundnodes.BoundConditionalGotoStatementNode {
 	condition := RewriteExpression(stmt.Condition)
-	return boundnodes.CreateBoundConditionalGotoStatementNode(condition, stmt.IfLabel, stmt.ElseLabel, stmt.BoundSpan)
+	return boundnodes.CreateBoundConditionalGotoStatementNode(condition, stmt.IfLabel, stmt.ElseLabel, stmt.Source())
 }
 
 func RewriteReturnStatement(stmt boundnodes.BoundReturnStatementNode) boundnodes.BoundReturnStatementNode {
@@ -285,12 +286,12 @@ func RewriteReturnStatement(stmt boundnodes.BoundReturnStatementNode) boundnodes
 		expression = RewriteExpression(stmt.Expression)
 	}
 
-	return boundnodes.CreateBoundReturnStatementNode(expression, stmt.BoundSpan)
+	return boundnodes.CreateBoundReturnStatementNode(expression, stmt.Source())
 }
 
 func RewriteExpressionStatement(stmt boundnodes.BoundExpressionStatementNode) boundnodes.BoundExpressionStatementNode {
 	expression := RewriteExpression(stmt.Expression)
-	return boundnodes.CreateBoundExpressionStatementNode(expression, stmt.BoundSpan)
+	return boundnodes.CreateBoundExpressionStatementNode(expression, stmt.Source())
 }
 
 func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpressionNode {
@@ -366,18 +367,18 @@ func RewriteVariableExpression(expr boundnodes.BoundVariableExpressionNode) boun
 
 func RewriteAssignmentExpression(expr boundnodes.BoundAssignmentExpressionNode) boundnodes.BoundAssignmentExpressionNode {
 	expression := RewriteExpression(expr.Expression)
-	return boundnodes.CreateBoundAssignmentExpressionNode(expr.Variable, expression, expr.InMain, expr.BoundSpan)
+	return boundnodes.CreateBoundAssignmentExpressionNode(expr.Variable, expression, expr.InMain, expr.Source())
 }
 
 func RewriteUnaryExpression(expr boundnodes.BoundUnaryExpressionNode) boundnodes.BoundUnaryExpressionNode {
 	operand := RewriteExpression(expr.Expression)
-	return boundnodes.CreateBoundUnaryExpressionNode(expr.Op, operand, expr.BoundSpan)
+	return boundnodes.CreateBoundUnaryExpressionNode(expr.Op, operand, expr.Source())
 }
 
 func RewriteBinaryExpression(expr boundnodes.BoundBinaryExpressionNode) boundnodes.BoundBinaryExpressionNode {
 	left := RewriteExpression(expr.Left)
 	right := RewriteExpression(expr.Right)
-	return boundnodes.CreateBoundBinaryExpressionNode(left, expr.Op, right, expr.BoundSpan)
+	return boundnodes.CreateBoundBinaryExpressionNode(left, expr.Op, right, expr.Source())
 }
 
 func RewriteCallExpression(expr boundnodes.BoundCallExpressionNode) boundnodes.BoundCallExpressionNode {
@@ -387,7 +388,7 @@ func RewriteCallExpression(expr boundnodes.BoundCallExpressionNode) boundnodes.B
 		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
 	}
 
-	return boundnodes.CreateBoundCallExpressionNode(expr.Function, rewrittenArgs, expr.InMain, expr.BoundSpan)
+	return boundnodes.CreateBoundCallExpressionNode(expr.Function, rewrittenArgs, expr.InMain, expr.Source())
 }
 
 func RewritePackageCallExpression(expr boundnodes.BoundPackageCallExpressionNode) boundnodes.BoundPackageCallExpressionNode {
@@ -397,7 +398,7 @@ func RewritePackageCallExpression(expr boundnodes.BoundPackageCallExpressionNode
 		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
 	}
 
-	return boundnodes.CreateBoundPackageCallExpressionNode(expr.Package, expr.Function, rewrittenArgs, expr.BoundSpan)
+	return boundnodes.CreateBoundPackageCallExpressionNode(expr.Package, expr.Function, rewrittenArgs, expr.Source())
 }
 
 func RewriteConversionExpression(expr boundnodes.BoundConversionExpressionNode) boundnodes.BoundExpressionNode {
@@ -412,16 +413,16 @@ func RewriteConversionExpression(expr boundnodes.BoundConversionExpressionNode) 
 
 		// int literal to byte literal
 		if expr.ToType.Fingerprint() == builtins.Byte.Fingerprint() {
-			return boundnodes.CreateBoundLiteralExpressionNodeFromValue(byte(value), expression.Span())
+			return boundnodes.CreateBoundLiteralExpressionNodeFromValue(byte(value), expression.Source())
 		}
 
 		// int literal to long literal
 		if expr.ToType.Fingerprint() == builtins.Long.Fingerprint() {
-			return boundnodes.CreateBoundLiteralExpressionNodeFromValue(int64(value), expression.Span())
+			return boundnodes.CreateBoundLiteralExpressionNodeFromValue(int64(value), expression.Source())
 		}
 	}
 
-	return boundnodes.CreateBoundConversionExpressionNode(expr.ToType, expression, expr.BoundSpan)
+	return boundnodes.CreateBoundConversionExpressionNode(expr.ToType, expression, expr.Source())
 }
 
 func RewriteTypeCallExpression(expr boundnodes.BoundTypeCallExpressionNode) boundnodes.BoundTypeCallExpressionNode {
@@ -433,7 +434,7 @@ func RewriteTypeCallExpression(expr boundnodes.BoundTypeCallExpressionNode) boun
 		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
 	}
 
-	return boundnodes.CreateBoundTypeCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs, expr.BoundSpan)
+	return boundnodes.CreateBoundTypeCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs, expr.Source())
 }
 
 func RewriteClassCallExpression(expr boundnodes.BoundClassCallExpressionNode) boundnodes.BoundClassCallExpressionNode {
@@ -445,27 +446,27 @@ func RewriteClassCallExpression(expr boundnodes.BoundClassCallExpressionNode) bo
 		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
 	}
 
-	return boundnodes.CreateBoundClassCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs, expr.BoundSpan)
+	return boundnodes.CreateBoundClassCallExpressionNode(rewrittenBase, expr.Function, rewrittenArgs, expr.Source())
 }
 
 func RewriteClassFieldAccessExpression(expr boundnodes.BoundClassFieldAccessExpressionNode) boundnodes.BoundClassFieldAccessExpressionNode {
 	rewrittenBase := RewriteExpression(expr.Base)
 
-	return boundnodes.CreateBoundClassFieldAccessExpressionNode(rewrittenBase, expr.Field, expr.BoundSpan)
+	return boundnodes.CreateBoundClassFieldAccessExpressionNode(rewrittenBase, expr.Field, expr.Source())
 }
 
 func RewriteClassFieldAssignmentExpression(expr boundnodes.BoundClassFieldAssignmentExpressionNode) boundnodes.BoundClassFieldAssignmentExpressionNode {
 	rewrittenBase := RewriteExpression(expr.Base)
 	rewrittenValue := RewriteExpression(expr.Value)
 
-	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(rewrittenBase, expr.Field, rewrittenValue, expr.BoundSpan)
+	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(rewrittenBase, expr.Field, rewrittenValue, expr.Source())
 }
 
 func RewriteArrayAccessExpression(expr boundnodes.BoundArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
 	rewrittenBase := RewriteExpression(expr.Base)
 	rewrittenIndex := RewriteExpression(expr.Index)
 
-	return boundnodes.CreateBoundArrayAccessExpressionNode(rewrittenBase, rewrittenIndex, expr.IsPointer, expr.BoundSpan)
+	return boundnodes.CreateBoundArrayAccessExpressionNode(rewrittenBase, rewrittenIndex, expr.IsPointer, expr.Source())
 }
 
 func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
@@ -473,7 +474,7 @@ func RewriteArrayAssignmentExpression(expr boundnodes.BoundArrayAssignmentExpres
 	rewrittenIndex := RewriteExpression(expr.Index)
 	rewrittenValue := RewriteExpression(expr.Value)
 
-	return boundnodes.CreateBoundArrayAssignmentExpressionNode(rewrittenBase, rewrittenIndex, rewrittenValue, expr.IsPointer, expr.BoundSpan)
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(rewrittenBase, rewrittenIndex, rewrittenValue, expr.IsPointer, expr.Source())
 }
 
 func RewriteMakeExpression(expr boundnodes.BoundMakeExpressionNode) boundnodes.BoundMakeExpressionNode {
@@ -483,7 +484,7 @@ func RewriteMakeExpression(expr boundnodes.BoundMakeExpressionNode) boundnodes.B
 		rewrittenArgs = append(rewrittenArgs, RewriteExpression(arg))
 	}
 
-	return boundnodes.CreateBoundMakeExpressionNode(expr.BaseType, rewrittenArgs, expr.BoundSpan)
+	return boundnodes.CreateBoundMakeExpressionNode(expr.BaseType, rewrittenArgs, expr.Source())
 }
 
 func RewriteMakeArrayExpression(expr boundnodes.BoundMakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
@@ -492,11 +493,11 @@ func RewriteMakeArrayExpression(expr boundnodes.BoundMakeArrayExpressionNode) bo
 		for _, literal := range expr.Literals {
 			rewrittenLiterals = append(rewrittenLiterals, RewriteExpression(literal))
 		}
-		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(expr.BaseType, rewrittenLiterals, expr.BoundSpan)
+		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(expr.BaseType, rewrittenLiterals, expr.Source())
 	}
 
 	rewrittenLength := RewriteExpression(expr.Length)
-	return boundnodes.CreateBoundMakeArrayExpressionNode(expr.BaseType, rewrittenLength)
+	return boundnodes.CreateBoundMakeArrayExpressionNode(expr.BaseType, rewrittenLength, expr.Source())
 }
 
 func RewriteMakeStructExpression(expr boundnodes.BoundMakeStructExpressionNode) boundnodes.BoundMakeStructExpressionNode {
@@ -504,7 +505,7 @@ func RewriteMakeStructExpression(expr boundnodes.BoundMakeStructExpressionNode) 
 	for _, literal := range expr.Literals {
 		rewrittenLiterals = append(rewrittenLiterals, RewriteExpression(literal))
 	}
-	return boundnodes.CreateBoundMakeStructExpressionNode(expr.StructType, rewrittenLiterals, expr.BoundSpan)
+	return boundnodes.CreateBoundMakeStructExpressionNode(expr.StructType, rewrittenLiterals, expr.Source())
 }
 
 func RewriteFunctionExpression(expr boundnodes.BoundFunctionExpressionNode) boundnodes.BoundFunctionExpressionNode {
@@ -544,27 +545,32 @@ func RewriteTernaryExpression(expr boundnodes.BoundTernaryExpressionNode) boundn
 	//})
 
 	// => was moved to emitter
+	cond := RewriteExpression(expr.Condition)
+	a := RewriteExpression(expr.If)
+	b := RewriteExpression(expr.Else)
+	newExpr := boundnodes.CreateBoundTernaryExpressionNode(cond, a, b, expr.Tmp, expr.Source())
 
-	expr.IfLabel = GenerateLabel()
-	expr.ElseLabel = GenerateLabel()
-	expr.EndLabel = GenerateLabel()
+	newExpr.IfLabel = GenerateLabel()
+	newExpr.ElseLabel = GenerateLabel()
+	newExpr.EndLabel = GenerateLabel()
 
-	return expr
+	return newExpr
 }
 
 func RewriteReferenceExpression(expr boundnodes.BoundReferenceExpressionNode) boundnodes.BoundReferenceExpressionNode {
 	val := RewriteExpression(expr.Expression)
-	return boundnodes.CreateBoundReferenceExpressionNode(val, expr.Span())
+	return boundnodes.CreateBoundReferenceExpressionNode(val, expr.Source())
 }
 
 func RewriteDereferenceExpression(expr boundnodes.BoundDereferenceExpressionNode) boundnodes.BoundDereferenceExpressionNode {
 	val := RewriteExpression(expr.Expression)
-	return boundnodes.CreateBoundDereferenceExpressionNode(val, expr.Span())
+	return boundnodes.CreateBoundDereferenceExpressionNode(val, expr.Source())
 }
 
 func RewriteLambdaExpression(expr boundnodes.BoundLambdaExpressionNode) boundnodes.BoundLambdaExpressionNode {
-	// nothing to do here
-	return expr
+	body := RewriteStatement(expr.Body)
+	flattened := Flatten(expr.Function, body)
+	return boundnodes.CreateBoundLambdaExpressionNode(expr.Function, flattened, expr.Source())
 }
 
 func RewriteThisExpression(expr boundnodes.BoundThisExpressionNode) boundnodes.BoundThisExpressionNode {

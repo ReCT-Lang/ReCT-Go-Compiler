@@ -32,11 +32,13 @@ func (s EnumSymbol) Fingerprint() string {
 
 // constructor
 func CreateEnumSymbol(name string, declaration nodes.EnumDeclarationMember, fields map[string]int) EnumSymbol {
-	return EnumSymbol{
+	sym := EnumSymbol{
 		Exists:      true,
 		Name:        name,
 		Declaration: declaration,
 		Fields:      fields,
-		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), false, false, true),
 	}
+
+	sym.Type = CreateTypeSymbol(name, make([]TypeSymbol, 0), false, false, true, PackageSymbol{}, sym)
+	return sym
 }

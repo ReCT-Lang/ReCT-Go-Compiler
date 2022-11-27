@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"ReCT-Go-Compiler/langserverinterface"
 	"ReCT-Go-Compiler/lowerer"
 	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/nodes/boundnodes"
@@ -41,8 +42,9 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 
 	PackageUseList = make([]symbols.PackageSymbol, 0)
 
-	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements, print.TextSpan{})
+	mainBody := boundnodes.CreateBoundBlockStatementNode(globalScope.Statements, nodes.BlockStatementNode{})
 	loweredMainBody := lowerer.Lower(globalScope.MainFunction, mainBody)
+	langserverinterface.Map(globalScope.MainFunction, mainBody)
 	functionBodies = append(functionBodies, BoundFunction{
 		Symbol: globalScope.MainFunction,
 		Body:   loweredMainBody,
@@ -58,6 +60,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 		binder := CreateBinder(parentScope, fnc)
 		body := binder.BindBlockStatement(fnc.Declaration.Body)
 		loweredBody := lowerer.Lower(fnc, body)
+		langserverinterface.Map(fnc, body)
 
 		functionBodies = append(functionBodies, BoundFunction{
 			Symbol: fnc,
@@ -114,6 +117,7 @@ func BindProgram(members []nodes.MemberNode) BoundProgram {
 			binder.ClassSymbol = cls
 			body := binder.BindBlockStatement(fnc.Declaration.Body)
 			loweredBody := lowerer.Lower(fnc, body)
+			langserverinterface.Map(fnc, body)
 
 			classFunctionBodies = append(classFunctionBodies, BoundFunction{
 				Symbol: fnc,

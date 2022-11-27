@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -18,7 +19,7 @@ type BoundTernaryExpressionNode struct {
 	ElseLabel BoundLabel
 	EndLabel  BoundLabel
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundTernaryExpressionNode) NodeType() BoundType { return BoundTernaryExpression }
@@ -33,8 +34,8 @@ func (node BoundTernaryExpressionNode) Print(indent string) {
 	node.Else.Print(indent + "    ")
 }
 
-func (node BoundTernaryExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundTernaryExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (node BoundTernaryExpressionNode) IsPersistent() bool {
@@ -44,12 +45,12 @@ func (node BoundTernaryExpressionNode) IsPersistent() bool {
 // implement the expression node interface
 func (node BoundTernaryExpressionNode) Type() symbols.TypeSymbol { return node.If.Type() }
 
-func CreateBoundTernaryExpressionNode(cond BoundExpressionNode, left BoundExpressionNode, right BoundExpressionNode, tmp symbols.LocalVariableSymbol, span print.TextSpan) BoundTernaryExpressionNode {
+func CreateBoundTernaryExpressionNode(cond BoundExpressionNode, left BoundExpressionNode, right BoundExpressionNode, tmp symbols.LocalVariableSymbol, src nodes.SyntaxNode) BoundTernaryExpressionNode {
 	return BoundTernaryExpressionNode{
-		Condition: cond,
-		If:        left,
-		Else:      right,
-		Tmp:       tmp,
-		BoundSpan: span,
+		Condition:     cond,
+		If:            left,
+		Else:          right,
+		Tmp:           tmp,
+		UnboundSource: src,
 	}
 }

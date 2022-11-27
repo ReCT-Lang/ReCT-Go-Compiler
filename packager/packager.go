@@ -57,23 +57,29 @@ func ResolvePackage(name string, errorLocation print.TextSpan) symbols.PackageSy
 		os.Exit(-1)
 	}
 
+	pack := symbols.PackageSymbol{
+		Name:          name,
+		ErrorLocation: errorLocation,
+	}
+
 	// load the LLVM module
 	module := irtools.ReadModule(packagePath)
+	pack.Module = module
 
 	// load the module's classes
-	classes, cls := CreateClassSymbolsFromModule(module, errorLocation)
+	classes, cls := CreateClassSymbolsFromModule(module, pack)
+	pack.Classes = classes
 
 	// load the module's functions
-	funcs := CreateFunctionSymbolsFromModule(name+"_", module, cls, errorLocation)
+	funcs := CreateFunctionSymbolsFromModule(name+"_", module, cls, pack)
+	pack.Functions = funcs
 
-	// create a package symbol
-	pack := symbols.CreatePackageSymbol(name, funcs, classes, module, errorLocation)
 	PackagesSoFar = append(PackagesSoFar, pack)
 
 	return pack
 }
 
-func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) []symbols.FunctionSymbol {
+func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes []*symbols.ClassSymbol, pack symbols.PackageSymbol) []symbols.FunctionSymbol {
 	funcs := irtools.FindFunctionsWithPrefix(module, prefix)
 	syms := make([]symbols.FunctionSymbol, 0)
 
@@ -85,7 +91,7 @@ func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes [
 			continue
 		}
 
-		fncSym := CreateFunctionSymbolFromModule(fnc, prefix, true, classes, errorLocation)
+		fncSym := CreateFunctionSymbolFromModule(fnc, prefix, true, classes, pack)
 		//print.PrintCF(print.Cyan, "Importing Function '%s'...", fncSym.Name)
 		syms = append(syms, fncSym)
 	}
@@ -93,14 +99,14 @@ func CreateFunctionSymbolsFromModule(prefix string, module *ir.Module, classes [
 	return syms
 }
 
-func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) symbols.FunctionSymbol {
+func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, classes []*symbols.ClassSymbol, pack symbols.PackageSymbol) symbols.FunctionSymbol {
 	namePure := strings.TrimPrefix(fnc.Name(), prefix)
-	returnType, ok := ResolveType(fnc.Sig.RetType, classes, errorLocation)
+	returnType, ok := ResolveType(fnc.Sig.RetType, classes, pack)
 	if !ok {
 		print.Error(
 			"PACKAGER",
 			print.ImpossibleFunctionProcessingError,
-			errorLocation,
+			pack.ErrorLocation,
 			"Unable to process function '%s'!",
 			fnc.Name(),
 		)
@@ -110,12 +116,12 @@ func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, cl
 	params := make([]symbols.ParameterSymbol, 0)
 
 	for i, v := range fnc.Params {
-		typ, ok := ResolveType(v.Typ, classes, errorLocation)
+		typ, ok := ResolveType(v.Typ, classes, pack)
 		if !ok {
 			print.Error(
 				"PACKAGER",
 				print.ImpossibleFunctionProcessingError,
-				errorLocation,
+				pack.ErrorLocation,
 				"Unable to process function '%s'!",
 				fnc.Name(),
 			)
@@ -130,7 +136,7 @@ func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, cl
 	return symbol
 }
 
-func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpan) ([]symbols.ClassSymbol, []*symbols.ClassSymbol) {
+func CreateClassSymbolsFromModule(module *ir.Module, pack symbols.PackageSymbol) ([]symbols.ClassSymbol, []*symbols.ClassSymbol) {
 	classes := make([]*symbols.ClassSymbol, 0)
 	clsTypes := make([]types.Type, 0)
 
@@ -166,7 +172,9 @@ func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpa
 				className,
 				nodes.ClassDeclarationMember{},
 				make([]symbols.FunctionSymbol, 0),
-				make([]symbols.VariableSymbol, 0))
+				make([]symbols.VariableSymbol, 0),
+				pack,
+			)
 
 			class.IRType = typ
 			classes = append(classes, &class)
@@ -179,7 +187,7 @@ func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpa
 
 		// find the constructor
 		constructor := irtools.FindFunction(module, class.Name+"_public_Constructor")
-		cnst := CreateFunctionSymbolFromModule(constructor, class.Name+"_public_", false, classes, errorLocation)
+		cnst := CreateFunctionSymbolFromModule(constructor, class.Name+"_public_", false, classes, pack)
 		cnst.Parameters = cnst.Parameters[1:]
 
 		// alter class object
@@ -190,7 +198,7 @@ func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpa
 		for _, fnc := range classFuncs {
 			// if this isn't the constructor
 			if !strings.HasSuffix(fnc.Name(), "_Constructor") {
-				fncSym := CreateFunctionSymbolFromModule(fnc, class.Name+"_public_", true, classes, errorLocation)
+				fncSym := CreateFunctionSymbolFromModule(fnc, class.Name+"_public_", true, classes, pack)
 				fncSym.Parameters = fncSym.Parameters[1:]
 
 				//print.PrintCF(print.Yellow, " Importing Method '%s'...", fncSym.Name)
@@ -223,12 +231,12 @@ func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpa
 
 		for i := 2; i < len(clsType.Fields); i++ {
 			fieldName := strings.TrimSuffix(fieldNames[i-2], "\x00")
-			fieldType, ok := ResolveType(clsType.Fields[i], classes, errorLocation)
+			fieldType, ok := ResolveType(clsType.Fields[i], classes, pack)
 			if !ok {
 				print.Error(
 					"PACKAGER",
 					print.ImpossibleFieldProcessingError,
-					errorLocation,
+					pack.ErrorLocation,
 					"Unable to process field '%s' of class '%s'!",
 					fieldName, class.Name,
 				)
@@ -256,7 +264,7 @@ func CreateClassSymbolsFromModule(module *ir.Module, errorLocation print.TextSpa
 	return clsInstances, classes
 }
 
-func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) (symbols.TypeSymbol, bool) {
+func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, pack symbols.PackageSymbol) (symbols.TypeSymbol, bool) {
 
 	// =========================================================================
 	// PRIMITIVES
@@ -300,12 +308,12 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, errorLocation p
 	// =========================================================================
 	// OBJECTS
 	// =========================================================================
-	typeName, ok := ProcessTypeName(typ.LLString(), errorLocation)
+	typeName, ok := ProcessTypeName(typ.LLString(), pack)
 	if !ok {
 		return symbols.TypeSymbol{}, false
 	}
 
-	typeSymbol := ResolveObjectType(typeName, classes, false, errorLocation)
+	typeSymbol := ResolveObjectType(typeName, classes, false, pack)
 	if typeSymbol != nil {
 		return *typeSymbol, true
 	}
@@ -314,7 +322,7 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, errorLocation p
 	print.Error(
 		"PACKAGER",
 		print.UnknownDataTypeError,
-		errorLocation,
+		pack.ErrorLocation,
 		"Could not resolve referenced type '%s' while loading package!",
 		typ.LLString(),
 	)
@@ -323,13 +331,13 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, errorLocation p
 	return symbols.TypeSymbol{}, false
 }
 
-func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLower bool, errorLocation print.TextSpan) *symbols.TypeSymbol {
+func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLower bool, pack symbols.PackageSymbol) *symbols.TypeSymbol {
 	// disallow boxed types
 	if typeName == "Byte" || typeName == "Int" || typeName == "Long" || typeName == "Float" || typeName == "Double" || typeName == "Bool" {
 		print.Error(
 			"PACKAGER",
 			print.IllegalBoxedTypeError,
-			errorLocation,
+			pack.ErrorLocation,
 			"the use of boxed types (object versions of int, byte, float, bool) is not allowed. If you wish to give back an object of a primitive please cast it to 'any'. (Caused by: %s)",
 			typeName,
 		)
@@ -357,14 +365,14 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 		print.Error(
 			"PACKAGER",
 			print.IllegalUnspecificArrayTypeError,
-			errorLocation,
+			pack.ErrorLocation,
 			"Use of unspecific array type is not allowed!",
 		)
 		os.Exit(-1)
 		return &builtins.Array
 	}
 	if strings.HasPrefix(typeName, "Array_") {
-		typ := ResolveArrayType(typeName, false, classes, errorLocation)
+		typ := ResolveArrayType(typeName, false, classes, pack)
 		return &typ
 	}
 
@@ -372,7 +380,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 		print.Error(
 			"PACKAGER",
 			print.IllegalUnspecificArrayTypeError,
-			errorLocation,
+			pack.ErrorLocation,
 			"Use of unspecific p-array type is not allowed!",
 		)
 		os.Exit(-1)
@@ -397,7 +405,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 	return nil
 }
 
-func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) symbols.TypeSymbol {
+func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, pack symbols.PackageSymbol) symbols.TypeSymbol {
 	if typeName == "Bool" || typeName == "bool" {
 		return builtins.Bool
 	}
@@ -430,7 +438,7 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, errorL
 		return builtins.Double
 	}
 
-	typeSymbol := ResolveObjectType(typeName, classes, true, errorLocation)
+	typeSymbol := ResolveObjectType(typeName, classes, true, pack)
 	if typeSymbol != nil {
 		return *typeSymbol
 	}
@@ -439,7 +447,7 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, errorL
 	print.Error(
 		"PACKAGER",
 		print.UnknownDataTypeError,
-		errorLocation,
+		pack.ErrorLocation,
 		"Could not resolve type '%s' while loading package!",
 		typeName,
 	)
@@ -447,14 +455,14 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, errorL
 	return symbols.TypeSymbol{}
 }
 
-func ProcessTypeName(name string, errorLocation print.TextSpan) (string, bool) {
+func ProcessTypeName(name string, pack symbols.PackageSymbol) (string, bool) {
 	// if this type name doesnt match the rect class pattern and also isnt a primitive
 	// => no idea what the fuck this is
 	if !strings.HasPrefix(name, "%struct.class_") {
 		print.Error(
 			"PACKAGER",
 			print.MonkeError,
-			errorLocation,
+			pack.ErrorLocation,
 			"Referenced type '%s' does not match ReCT class pattern! Absolutely no clue what todo with it lol",
 			name,
 		)
@@ -467,7 +475,7 @@ func ProcessTypeName(name string, errorLocation print.TextSpan) (string, bool) {
 		print.Error(
 			"PACKAGER",
 			print.InvalidNonPointerReferenceError,
-			errorLocation,
+			pack.ErrorLocation,
 			"Referenced object type '%s' needs to be a pointer but isnt!",
 			name,
 		)
@@ -478,7 +486,7 @@ func ProcessTypeName(name string, errorLocation print.TextSpan) (string, bool) {
 	return strings.TrimSuffix(strings.TrimPrefix(name, "%struct.class_"), "*"), true
 }
 
-func ResolveArrayType(typeName string, isPrimitive bool, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) symbols.TypeSymbol {
+func ResolveArrayType(typeName string, isPrimitive bool, classes []*symbols.ClassSymbol, pack symbols.PackageSymbol) symbols.TypeSymbol {
 
 	// choose the correct prefix for this type
 	prefix := "Array_"
@@ -502,16 +510,16 @@ func ResolveArrayType(typeName string, isPrimitive bool, classes []*symbols.Clas
 
 		// parse the fingerprint
 		return symbols.CreateTypeSymbol(symName,
-			[]symbols.TypeSymbol{ParseFingerprint(baseType, baseType, classes, errorLocation)},
-			true, false, false)
+			[]symbols.TypeSymbol{ParseFingerprint(baseType, baseType, classes, pack)},
+			true, false, false, symbols.PackageSymbol{}, nil)
 	}
 
-	base := ResolveTypeFromName(baseType, classes, errorLocation)
-	return symbols.CreateTypeSymbol(symName, []symbols.TypeSymbol{base}, true, false, false)
+	base := ResolveTypeFromName(baseType, classes, pack)
+	return symbols.CreateTypeSymbol(symName, []symbols.TypeSymbol{base}, true, false, false, symbols.PackageSymbol{}, nil)
 }
 
-func ParseFingerprint(o, fingerprint string, classes []*symbols.ClassSymbol, errorLocation print.TextSpan) symbols.TypeSymbol {
-	fingerprint = strConsume(o, fingerprint, "T_", errorLocation)
+func ParseFingerprint(o, fingerprint string, classes []*symbols.ClassSymbol, pack symbols.PackageSymbol) symbols.TypeSymbol {
+	fingerprint = strConsume(o, fingerprint, "T_", pack.ErrorLocation)
 
 	// type name
 	fingerprint, name := strReadWord(fingerprint)
@@ -519,20 +527,20 @@ func ParseFingerprint(o, fingerprint string, classes []*symbols.ClassSymbol, err
 	// sub types
 	subTypes := make([]symbols.TypeSymbol, 0)
 
-	fingerprint = strConsume(o, fingerprint, "_[", errorLocation)
+	fingerprint = strConsume(o, fingerprint, "_[", pack.ErrorLocation)
 	for !strCurrent(fingerprint, "]") {
 		if strCurrent(fingerprint, "T_") {
-			subTypes = append(subTypes, ParseFingerprint(o, fingerprint, classes, errorLocation))
+			subTypes = append(subTypes, ParseFingerprint(o, fingerprint, classes, pack))
 		} else {
 			f, typ := strReadWord(fingerprint)
 			fingerprint = f
-			subTypes = append(subTypes, ResolveTypeFromName(typ, classes, errorLocation))
+			subTypes = append(subTypes, ResolveTypeFromName(typ, classes, pack))
 		}
 
-		fingerprint = strConsume(o, fingerprint, ";", errorLocation)
+		fingerprint = strConsume(o, fingerprint, ";", pack.ErrorLocation)
 	}
 
-	return symbols.CreateTypeSymbol(name, subTypes, true, false, false)
+	return symbols.CreateTypeSymbol(name, subTypes, true, false, false, symbols.PackageSymbol{}, nil)
 }
 
 func strCurrent(fingerprint string, match string) bool {

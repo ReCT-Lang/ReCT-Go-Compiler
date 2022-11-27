@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -9,14 +10,14 @@ import (
 type BoundReferenceExpressionNode struct {
 	BoundExpressionNode
 
-	Expression BoundExpressionNode
-	BoundSpan  print.TextSpan
+	Expression    BoundExpressionNode
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundReferenceExpressionNode) NodeType() BoundType { return BoundReferenceExpression }
 
-func (node BoundReferenceExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundReferenceExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (node BoundReferenceExpressionNode) Print(indent string) {
@@ -29,12 +30,12 @@ func (node BoundReferenceExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
 func (node BoundReferenceExpressionNode) Type() symbols.TypeSymbol {
-	return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{node.Expression.Type()}, false, false, false)
+	return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{node.Expression.Type()}, false, false, false, symbols.PackageSymbol{}, nil)
 }
 
-func CreateBoundReferenceExpressionNode(expression BoundExpressionNode, span print.TextSpan) BoundReferenceExpressionNode {
+func CreateBoundReferenceExpressionNode(expression BoundExpressionNode, src nodes.SyntaxNode) BoundReferenceExpressionNode {
 	return BoundReferenceExpressionNode{
-		Expression: expression,
-		BoundSpan:  span,
+		Expression:    expression,
+		UnboundSource: src,
 	}
 }

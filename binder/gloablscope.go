@@ -105,13 +105,13 @@ func BindGlobalScope(members []nodes.MemberNode) GlobalScope {
 	// create a loose list of types so our class and struct members have something to work with
 	preInitialTypeset := make([]symbols.TypeSymbol, 0)
 	for _, cls := range classDeclarations {
-		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(cls.Identifier.Value, make([]symbols.TypeSymbol, 0), true, true, false))
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(cls.Identifier.Value, make([]symbols.TypeSymbol, 0), true, true, false, symbols.PackageSymbol{}, nil))
 	}
 	for _, stc := range structDeclarations {
-		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(stc.Identifier.Value, make([]symbols.TypeSymbol, 0), false, true, false))
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(stc.Identifier.Value, make([]symbols.TypeSymbol, 0), false, true, false, symbols.PackageSymbol{}, nil))
 	}
 	for _, enm := range enumDeclarations {
-		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(enm.Identifier.Value, make([]symbols.TypeSymbol, 0), false, false, true))
+		preInitialTypeset = append(preInitialTypeset, symbols.CreateTypeSymbol(enm.Identifier.Value, make([]symbols.TypeSymbol, 0), false, false, true, symbols.PackageSymbol{}, nil))
 	}
 
 	// declare all our structs and their fields

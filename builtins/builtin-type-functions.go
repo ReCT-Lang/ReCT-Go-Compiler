@@ -17,7 +17,7 @@ var (
 	GetBuffer = symbols.CreateBuiltInTypeFunctionSymbol(
 		"GetBuffer",
 		[]symbols.ParameterSymbol{},
-		symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{Byte}, false, false, false),
+		symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{Byte}, false, false, false, symbols.PackageSymbol{}, nil),
 		nodes.FunctionDeclarationMember{},
 		String,
 	)

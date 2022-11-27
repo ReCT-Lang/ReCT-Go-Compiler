@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -14,13 +15,13 @@ type BoundArrayAssignmentExpressionNode struct {
 	Value     BoundExpressionNode
 	IsPointer bool
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundArrayAssignmentExpressionNode) NodeType() BoundType { return BoundArrayAssignmentExpression }
 
-func (node BoundArrayAssignmentExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundArrayAssignmentExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (node BoundArrayAssignmentExpressionNode) Print(indent string) {
@@ -40,12 +41,12 @@ func (node BoundArrayAssignmentExpressionNode) Type() symbols.TypeSymbol {
 	return node.Base.Type().SubTypes[0]
 }
 
-func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode, isPointer bool, span print.TextSpan) BoundArrayAssignmentExpressionNode {
+func CreateBoundArrayAssignmentExpressionNode(base BoundExpressionNode, index BoundExpressionNode, value BoundExpressionNode, isPointer bool, src nodes.SyntaxNode) BoundArrayAssignmentExpressionNode {
 	return BoundArrayAssignmentExpressionNode{
-		Base:      base,
-		Index:     index,
-		Value:     value,
-		IsPointer: isPointer,
-		BoundSpan: span,
+		Base:          base,
+		Index:         index,
+		Value:         value,
+		IsPointer:     isPointer,
+		UnboundSource: src,
 	}
 }

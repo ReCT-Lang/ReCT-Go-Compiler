@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -16,7 +17,7 @@ type BoundFromToStatementNode struct {
 	BreakLabel    BoundLabel
 	ContinueLabel BoundLabel
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement the interface
@@ -36,15 +37,15 @@ func (node BoundFromToStatementNode) Print(indent string) {
 	fmt.Printf("%s  └ ContinueLabel: %s\n", indent, node.ContinueLabel)
 }
 
-func (node BoundFromToStatementNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundFromToStatementNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (node BoundFromToStatementNode) LoopBreakLabel() BoundLabel    { return node.BreakLabel }
 func (node BoundFromToStatementNode) LoopContinueLabel() BoundLabel { return node.ContinueLabel }
 
 // constructor
-func CreateBoundFromToStatementNode(variable symbols.VariableSymbol, lower BoundExpressionNode, upper BoundExpressionNode, body BoundStatementNode, breakLabel BoundLabel, continueLabel BoundLabel, span print.TextSpan) BoundFromToStatementNode {
+func CreateBoundFromToStatementNode(variable symbols.VariableSymbol, lower BoundExpressionNode, upper BoundExpressionNode, body BoundStatementNode, breakLabel BoundLabel, continueLabel BoundLabel, src nodes.SyntaxNode) BoundFromToStatementNode {
 	return BoundFromToStatementNode{
 		Variable:      variable,
 		LowerBound:    lower,
@@ -52,6 +53,6 @@ func CreateBoundFromToStatementNode(variable symbols.VariableSymbol, lower Bound
 		Body:          body,
 		BreakLabel:    breakLabel,
 		ContinueLabel: continueLabel,
-		BoundSpan:     span,
+		UnboundSource: src,
 	}
 }

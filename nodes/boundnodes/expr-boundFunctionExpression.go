@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -9,9 +10,9 @@ import (
 type BoundFunctionExpressionNode struct {
 	BoundExpressionNode
 
-	InClass   symbols.ClassSymbol
-	Function  symbols.FunctionSymbol
-	BoundSpan print.TextSpan
+	InClass       symbols.ClassSymbol
+	Function      symbols.FunctionSymbol
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundFunctionExpressionNode) NodeType() BoundType { return BoundFunctionExpression }
@@ -22,8 +23,8 @@ func (node BoundFunctionExpressionNode) Print(indent string) {
 	node.Function.Print(indent + "    ")
 }
 
-func (node BoundFunctionExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundFunctionExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundFunctionExpressionNode) IsPersistent() bool { return false }
@@ -44,20 +45,20 @@ func (node BoundFunctionExpressionNode) Type() symbols.TypeSymbol {
 	}
 	subtypes = append(subtypes, node.Function.Type)
 
-	return symbols.CreateTypeSymbol("action", subtypes, false, false, false)
+	return symbols.CreateTypeSymbol("action", subtypes, false, false, false, symbols.PackageSymbol{}, nil)
 }
 
-func CreateBoundFunctionExpressionNode(function symbols.FunctionSymbol, span print.TextSpan) BoundFunctionExpressionNode {
+func CreateBoundFunctionExpressionNode(function symbols.FunctionSymbol, src nodes.SyntaxNode) BoundFunctionExpressionNode {
 	return BoundFunctionExpressionNode{
-		Function:  function,
-		BoundSpan: span,
+		Function:      function,
+		UnboundSource: src,
 	}
 }
 
-func CreateBoundFunctionInClassExpressionNode(function symbols.FunctionSymbol, class symbols.ClassSymbol, span print.TextSpan) BoundFunctionExpressionNode {
+func CreateBoundFunctionInClassExpressionNode(function symbols.FunctionSymbol, class symbols.ClassSymbol, src nodes.SyntaxNode) BoundFunctionExpressionNode {
 	return BoundFunctionExpressionNode{
-		Function:  function,
-		InClass:   class,
-		BoundSpan: span,
+		Function:      function,
+		InClass:       class,
+		UnboundSource: src,
 	}
 }

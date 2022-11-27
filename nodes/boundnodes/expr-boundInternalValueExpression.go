@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"github.com/llir/llvm/ir/value"
@@ -22,8 +23,8 @@ func (node BoundInternalValueExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundInternalValueExpressionNode")
 }
 
-func (node BoundInternalValueExpressionNode) Span() print.TextSpan {
-	return print.TextSpan{}
+func (node BoundInternalValueExpressionNode) Source() nodes.SyntaxNode {
+	return nil
 }
 
 func (BoundInternalValueExpressionNode) IsPersistent() bool { return false }

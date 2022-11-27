@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"fmt"
 )
@@ -12,7 +13,7 @@ type BoundConditionalGotoStatementNode struct {
 	IfLabel   BoundLabel
 	ElseLabel BoundLabel
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement the interface
@@ -25,16 +26,16 @@ func (node BoundConditionalGotoStatementNode) Print(indent string) {
 	fmt.Printf("%s  └ ElseLabel: %s\n", indent, node.ElseLabel)
 }
 
-func (node BoundConditionalGotoStatementNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundConditionalGotoStatementNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 // constructor
-func CreateBoundConditionalGotoStatementNode(condition BoundExpressionNode, ifLabel BoundLabel, elseLabel BoundLabel, span print.TextSpan) BoundConditionalGotoStatementNode {
+func CreateBoundConditionalGotoStatementNode(condition BoundExpressionNode, ifLabel BoundLabel, elseLabel BoundLabel, src nodes.SyntaxNode) BoundConditionalGotoStatementNode {
 	return BoundConditionalGotoStatementNode{
-		Condition: condition,
-		IfLabel:   ifLabel,
-		ElseLabel: elseLabel,
-		BoundSpan: span,
+		Condition:     condition,
+		IfLabel:       ifLabel,
+		ElseLabel:     elseLabel,
+		UnboundSource: src,
 	}
 }

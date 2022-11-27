@@ -1,7 +1,7 @@
 package boundnodes
 
 import (
-	print2 "ReCT-Go-Compiler/print"
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/symbols"
 )
 
@@ -9,7 +9,7 @@ import (
 type BoundNode interface {
 	NodeType() BoundType
 	Print(indent string)
-	Span() print2.TextSpan
+	Source() nodes.SyntaxNode
 }
 
 type BoundStatementNode interface {
@@ -34,8 +34,6 @@ type BoundExpressionNode interface {
 type BoundType string
 
 const (
-	// based off of rect 1.0 source
-	// -> https://github.com/RedCubeDev-ByteSpace/ReCT/tree/834776cbf0ad97da0e6441835f1bc19d903f115b/ReCT/CodeAnalysis/Binding
 
 	// Statements
 	BoundBlockStatement           BoundType = "BoundBlockStatement"

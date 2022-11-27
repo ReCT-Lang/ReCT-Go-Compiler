@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -12,7 +13,7 @@ type BoundMakeStructExpressionNode struct {
 	StructType symbols.TypeSymbol
 	Literals   []BoundExpressionNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundMakeStructExpressionNode) NodeType() BoundType { return BoundMakeStructExpression }
@@ -25,8 +26,8 @@ func (node BoundMakeStructExpressionNode) Print(indent string) {
 	//node.Length.Print(indent + "    ")
 }
 
-func (node BoundMakeStructExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundMakeStructExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundMakeStructExpressionNode) IsPersistent() bool { return false }
@@ -36,10 +37,10 @@ func (node BoundMakeStructExpressionNode) Type() symbols.TypeSymbol {
 	return node.StructType
 }
 
-func CreateBoundMakeStructExpressionNode(structType symbols.TypeSymbol, literals []BoundExpressionNode, span print.TextSpan) BoundMakeStructExpressionNode {
+func CreateBoundMakeStructExpressionNode(structType symbols.TypeSymbol, literals []BoundExpressionNode, src nodes.SyntaxNode) BoundMakeStructExpressionNode {
 	return BoundMakeStructExpressionNode{
-		StructType: structType,
-		Literals:   literals,
-		BoundSpan:  span,
+		StructType:    structType,
+		Literals:      literals,
+		UnboundSource: src,
 	}
 }

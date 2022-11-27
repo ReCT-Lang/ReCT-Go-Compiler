@@ -319,7 +319,7 @@ func (bin *Binder) BindClassDeclaration(mem nodes.ClassDeclarationMember, preIni
 	vars := binder.MemberScope.GetAllVariables()
 	funcs := binder.MemberScope.GetAllFunctions()
 
-	classSym := symbols.CreateClassSymbol(mem.Identifier.Value, mem, funcs, vars)
+	classSym := symbols.CreateClassSymbol(mem.Identifier.Value, mem, funcs, vars, symbols.PackageSymbol{})
 
 	if !bin.ActiveScope.TryDeclareSymbol(classSym) {
 		print.Error(
@@ -605,7 +605,7 @@ func (bin *Binder) BindBlockStatement(stmt nodes.BlockStatementNode) boundnodes.
 		statements = append(statements, bin.BindStatement(statement))
 	}
 
-	return boundnodes.CreateBoundBlockStatementNode(statements, stmt.Span())
+	return boundnodes.CreateBoundBlockStatementNode(statements, stmt)
 }
 
 func (bin *Binder) BindVariableDeclaration(stmt nodes.VariableDeclarationStatementNode) boundnodes.BoundVariableDeclarationStatementNode {
@@ -644,7 +644,7 @@ func (bin *Binder) BindVariableDeclaration(stmt nodes.VariableDeclarationStateme
 		convertedInitializer = bin.BindConversion(initializer, variableType, false, stmt.Initializer.Span())
 	}
 
-	return boundnodes.CreateBoundVariableDeclarationStatementNode(variable, convertedInitializer, stmt.Span())
+	return boundnodes.CreateBoundVariableDeclarationStatementNode(variable, convertedInitializer, stmt)
 }
 
 func (bin *Binder) BindIfStatement(stmt nodes.IfStatementNode) boundnodes.BoundIfStatementNode {
@@ -654,7 +654,7 @@ func (bin *Binder) BindIfStatement(stmt nodes.IfStatementNode) boundnodes.BoundI
 	thenStatement := bin.BindStatement(stmt.ThenStatement)
 	elseStatement := bin.BindElseClause(stmt.ElseClause)
 
-	return boundnodes.CreateBoundIfStatementNode(convertedCondition, thenStatement, elseStatement, stmt.Span())
+	return boundnodes.CreateBoundIfStatementNode(convertedCondition, thenStatement, elseStatement, stmt)
 }
 
 func (bin *Binder) BindElseClause(clause nodes.ElseClauseNode) boundnodes.BoundStatementNode {
@@ -700,7 +700,7 @@ func (bin *Binder) BindReturnStatement(stmt nodes.ReturnStatementNode) boundnode
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundReturnStatementNode(expression, stmt.Span())
+	return boundnodes.CreateBoundReturnStatementNode(expression, stmt)
 }
 
 func (bin *Binder) BindForStatement(stmt nodes.ForStatementNode) boundnodes.BoundForStatementNode {
@@ -717,7 +717,7 @@ func (bin *Binder) BindForStatement(stmt nodes.ForStatementNode) boundnodes.Boun
 
 	bin.PopScope()
 
-	return boundnodes.CreateBoundForStatementNode(variable, convertedCondition, updation, body, breakLabel, continueLabel, stmt.Span())
+	return boundnodes.CreateBoundForStatementNode(variable, convertedCondition, updation, body, breakLabel, continueLabel, stmt)
 }
 
 func (bin *Binder) BindLoopBody(stmt nodes.StatementNode) (boundnodes.BoundStatementNode, boundnodes.BoundLabel, boundnodes.BoundLabel) {
@@ -742,7 +742,7 @@ func (bin *Binder) BindWhileStatement(stmt nodes.WhileStatementNode) boundnodes.
 	body, breakLabel, continueLabel := bin.BindLoopBody(stmt.Statement)
 
 	bin.PopScope()
-	return boundnodes.CreateBoundWhileStatementNode(convertedCondition, body, breakLabel, continueLabel, stmt.Span())
+	return boundnodes.CreateBoundWhileStatementNode(convertedCondition, body, breakLabel, continueLabel, stmt)
 }
 
 func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnodes.BoundFromToStatementNode {
@@ -775,7 +775,7 @@ func (bin *Binder) BindFromToStatement(stmt nodes.FromToStatementNode) boundnode
 	body, breakLabel, continueLabel := bin.BindLoopBody(stmt.Statement)
 
 	bin.PopScope()
-	return boundnodes.CreateBoundFromToStatementNode(variable, lowerBound, upperBound, body, breakLabel, continueLabel, stmt.Span())
+	return boundnodes.CreateBoundFromToStatementNode(variable, lowerBound, upperBound, body, breakLabel, continueLabel, stmt)
 }
 
 func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.BoundGotoStatementNode {
@@ -793,7 +793,7 @@ func (bin *Binder) BindBreakStatement(stmt nodes.BreakStatementNode) boundnodes.
 	}
 
 	breakLabel, _ := bin.GetLabels()
-	return boundnodes.CreateBoundGotoStatementNode(breakLabel, stmt.Span())
+	return boundnodes.CreateBoundGotoStatementNode(breakLabel, stmt)
 }
 
 func (bin *Binder) BindContinueStatement(stmt nodes.ContinueStatementNode) boundnodes.BoundGotoStatementNode {
@@ -811,12 +811,12 @@ func (bin *Binder) BindContinueStatement(stmt nodes.ContinueStatementNode) bound
 	}
 
 	_, continueLabel := bin.GetLabels()
-	return boundnodes.CreateBoundGotoStatementNode(continueLabel, stmt.Span())
+	return boundnodes.CreateBoundGotoStatementNode(continueLabel, stmt)
 }
 
 func (bin *Binder) BindExpressionStatement(stmt nodes.ExpressionStatementNode) boundnodes.BoundExpressionStatementNode {
 	expression := bin.BindExpression(stmt.Expression)
-	return boundnodes.CreateBoundExpressionStatementNode(expression, stmt.Span())
+	return boundnodes.CreateBoundExpressionStatementNode(expression, stmt)
 }
 
 // </STATEMENTS> --------------------------------------------------------------
@@ -884,7 +884,7 @@ func (bin *Binder) BindExpression(expr nodes.ExpressionNode) boundnodes.BoundExp
 }
 
 func (bin *Binder) BindLiteralExpression(expr nodes.LiteralExpressionNode) boundnodes.BoundLiteralExpressionNode {
-	return boundnodes.CreateBoundLiteralExpressionNode(expr, expr.Span())
+	return boundnodes.CreateBoundLiteralExpressionNode(expr, expr)
 }
 
 func (bin *Binder) BindParenthesisedExpression(expr nodes.ParenthesisedExpressionNode) boundnodes.BoundExpressionNode {
@@ -901,7 +901,7 @@ func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.
 	// normal variable lookup
 	if symbol == nil || symbol.SymbolType() != symbols.Function {
 		variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span, expr.InMain)
-		return boundnodes.CreateBoundVariableExpressionNode(variable, expr.InMain, expr.Span())
+		return boundnodes.CreateBoundVariableExpressionNode(variable, expr.InMain, expr)
 
 		// funky function lookup
 	} else if symbol.SymbolType() == symbols.Function {
@@ -923,7 +923,7 @@ func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.
 				os.Exit(-1)
 			}
 
-			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
+			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr)
 		} else if bin.InClass {
 			// we protecc
 			// ----------
@@ -939,9 +939,9 @@ func (bin *Binder) BindNameExpression(expr nodes.NameExpressionNode) boundnodes.
 				os.Exit(-1)
 			}
 
-			return boundnodes.CreateBoundFunctionInClassExpressionNode(functionSymbol, bin.ClassSymbol, expr.Span())
+			return boundnodes.CreateBoundFunctionInClassExpressionNode(functionSymbol, bin.ClassSymbol, expr)
 		} else {
-			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr.Span())
+			return boundnodes.CreateBoundFunctionExpressionNode(functionSymbol, expr)
 		}
 
 		// ah yes, safety
@@ -955,7 +955,7 @@ func (bin *Binder) BindAssignmentExpression(expr nodes.AssignmentExpressionNode)
 	expression := bin.BindExpression(expr.Expression)
 	convertedExpression := bin.BindConversion(expression, variable.VarType(), false, expr.Expression.Span())
 
-	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression, expr.InMain, expr.Span())
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, convertedExpression, expr.InMain, expr)
 }
 
 func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpressionNode) boundnodes.BoundAssignmentExpressionNode {
@@ -963,7 +963,7 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 	variable := bin.BindVariableReference(expr.Identifier.Value, expr.Identifier.Span, false)
 
 	// create a placeholder expression of value 1
-	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, expr.Span())
+	var expression boundnodes.BoundExpressionNode = boundnodes.CreateBoundLiteralExpressionNodeFromValue(1, expr)
 
 	// if we have an expression given, use it instead
 	if expr.Expression != nil {
@@ -971,13 +971,14 @@ func (bin *Binder) BindVariableEditorExpression(expr nodes.VariableEditorExpress
 	}
 
 	binaryExpression := bin.BindBinaryExpressionInternal(
-		boundnodes.CreateBoundVariableExpressionNode(variable, false, expr.Span()),
+		expr,
+		boundnodes.CreateBoundVariableExpressionNode(variable, false, expr),
 		expression,
 		expr.Operator.Kind,
 	)
 
 	// return it as an assignment
-	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression, false, expr.Span())
+	return boundnodes.CreateBoundAssignmentExpressionNode(variable, binaryExpression, false, expr)
 }
 
 func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNode) boundnodes.BoundArrayAccessExpressionNode {
@@ -1002,7 +1003,7 @@ func (bin *Binder) BindArrayAccessExpression(expr nodes.ArrayAccessExpressionNod
 	isPointer := baseExpression.Type().Name == "pointer"
 
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index, isPointer, expr.Span())
+	return boundnodes.CreateBoundArrayAccessExpressionNode(baseExpression, index, isPointer, expr)
 }
 
 func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpressionNode) boundnodes.BoundArrayAssignmentExpressionNode {
@@ -1042,7 +1043,7 @@ func (bin *Binder) BindArrayAssignmentExpression(expr nodes.ArrayAssignmentExpre
 	isPointer := baseExpression.Type().Name == "pointer"
 
 	// return it as an assignment
-	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value, isPointer, expr.Span())
+	return boundnodes.CreateBoundArrayAssignmentExpressionNode(baseExpression, index, value, isPointer, expr)
 }
 
 func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.BoundMakeExpressionNode {
@@ -1149,7 +1150,7 @@ func (bin *Binder) BindMakeExpression(expr nodes.MakeExpressionNode) boundnodes.
 		}
 	}
 
-	return boundnodes.CreateBoundMakeExpressionNode(baseType, boundArguments, expr.Span())
+	return boundnodes.CreateBoundMakeExpressionNode(baseType, boundArguments, expr)
 }
 
 func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) boundnodes.BoundMakeArrayExpressionNode {
@@ -1161,7 +1162,7 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 		length := bin.BindExpression(expr.Length)
 
 		// return the bound node
-		return boundnodes.CreateBoundMakeArrayExpressionNode(baseType, length)
+		return boundnodes.CreateBoundMakeArrayExpressionNode(baseType, length, expr)
 
 	} else {
 		literals := make([]boundnodes.BoundExpressionNode, 0)
@@ -1179,7 +1180,7 @@ func (bin *Binder) BindMakeArrayExpression(expr nodes.MakeArrayExpressionNode) b
 		}
 
 		// return the bound node
-		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(baseType, literals, expr.Span())
+		return boundnodes.CreateBoundMakeArrayExpressionNodeLiteral(baseType, literals, expr)
 	}
 }
 
@@ -1216,7 +1217,7 @@ func (bin *Binder) BindMakeStructExpression(expr nodes.MakeStructExpressionNode)
 	}
 
 	// return the bound node
-	return boundnodes.CreateBoundMakeStructExpressionNode(structType.Type, literals, expr.Span())
+	return boundnodes.CreateBoundMakeStructExpressionNode(structType.Type, literals, expr)
 }
 
 func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) boundnodes.BoundExpressionNode {
@@ -1267,7 +1268,7 @@ func (bin *Binder) BindTypeCallExpression(expr nodes.TypeCallExpressionNode) bou
 		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
-	return boundnodes.CreateBoundTypeCallExpressionNode(baseExpression, function, boundArguments, expr.Span())
+	return boundnodes.CreateBoundTypeCallExpressionNode(baseExpression, function, boundArguments, expr)
 }
 
 func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, baseExpression boundnodes.BoundExpressionNode) boundnodes.BoundExpressionNode {
@@ -1302,7 +1303,7 @@ func (bin *Binder) BindClassCallExpression(expr nodes.TypeCallExpressionNode, ba
 		boundArguments[i] = bin.BindConversion(arg, function.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
-	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments, expr.Span())
+	return boundnodes.CreateBoundClassCallExpressionNode(baseExpression, function, boundArguments, expr)
 }
 
 func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExpressionNode) boundnodes.BoundExpressionNode {
@@ -1329,7 +1330,7 @@ func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExp
 				os.Exit(-1)
 			}
 
-			return boundnodes.CreateBoundEnumExpressionNode(val, enm, expr.Span())
+			return boundnodes.CreateBoundEnumExpressionNode(val, enm, expr)
 		}
 	}
 
@@ -1360,7 +1361,7 @@ func (bin *Binder) BindClassFieldAccessExpression(expr nodes.ClassFieldAccessExp
 		field = bin.LookupStructField(expr.FieldIdentifier.Value, baseExpression.Type(), expr.Base.Span().SpanBetween(expr.FieldIdentifier.Span))
 	}
 
-	return boundnodes.CreateBoundClassFieldAccessExpressionNode(baseExpression, field, expr.Span())
+	return boundnodes.CreateBoundClassFieldAccessExpressionNode(baseExpression, field, expr)
 }
 
 func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssignmentExpressionNode) boundnodes.BoundClassFieldAssignmentExpressionNode {
@@ -1392,7 +1393,7 @@ func (bin *Binder) BindClassFieldAssignmentExpression(expr nodes.ClassFieldAssig
 	expression := bin.BindExpression(expr.Value)
 	convertedExpression := bin.BindConversion(expression, field.VarType(), false, expr.Span())
 
-	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(baseExpression, field, convertedExpression, expr.Span())
+	return boundnodes.CreateBoundClassFieldAssignmentExpressionNode(baseExpression, field, convertedExpression, expr)
 }
 
 func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.BoundExpressionNode {
@@ -1534,9 +1535,9 @@ func (bin *Binder) BindCallExpression(expr nodes.CallExpressionNode) boundnodes.
 	}
 
 	if InPackage.Exists {
-		return boundnodes.CreateBoundPackageCallExpressionNode(InPackage, functionSymbol, boundArguments, expr.Span())
+		return boundnodes.CreateBoundPackageCallExpressionNode(InPackage, functionSymbol, boundArguments, expr)
 	} else {
-		return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.InMain, expr.Span())
+		return boundnodes.CreateBoundCallExpressionNode(functionSymbol, boundArguments, expr.InMain, expr)
 	}
 
 }
@@ -1587,7 +1588,7 @@ func (bin *Binder) BindPackageCallExpression(expr nodes.PackageCallExpressionNod
 		boundArguments[i] = bin.BindConversion(boundArguments[i], functionSymbol.Parameters[i].VarType(), false, expr.Arguments[i].Span())
 	}
 
-	return boundnodes.CreateBoundPackageCallExpressionNode(pack, functionSymbol, boundArguments, expr.Span())
+	return boundnodes.CreateBoundPackageCallExpressionNode(pack, functionSymbol, boundArguments, expr)
 }
 
 func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnodes.BoundUnaryExpressionNode {
@@ -1607,17 +1608,17 @@ func (bin *Binder) BindUnaryExpression(expr nodes.UnaryExpressionNode) boundnode
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundUnaryExpressionNode(op, operand, expr.Span())
+	return boundnodes.CreateBoundUnaryExpressionNode(op, operand, expr)
 }
 
 func (bin *Binder) BindBinaryExpression(expr nodes.BinaryExpressionNode) boundnodes.BoundBinaryExpressionNode {
 	left := bin.BindExpression(expr.Left)
 	right := bin.BindExpression(expr.Right)
 
-	return bin.BindBinaryExpressionInternal(left, right, expr.Operator.Kind)
+	return bin.BindBinaryExpressionInternal(expr, left, right, expr.Operator.Kind)
 }
 
-func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionNode, right boundnodes.BoundExpressionNode, opkind lexer.TokenKind) boundnodes.BoundBinaryExpressionNode {
+func (bin *Binder) BindBinaryExpressionInternal(expr nodes.SyntaxNode, left boundnodes.BoundExpressionNode, right boundnodes.BoundExpressionNode, opkind lexer.TokenKind) boundnodes.BoundBinaryExpressionNode {
 	op := boundnodes.BindBinaryOperator(opkind, left.Type(), right.Type())
 
 	if !op.Exists {
@@ -1626,7 +1627,7 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 
 		// if the conversion exists and its allowed to be done, do that (this also allows for explicit conversions)
 		if conv.Exists && !conv.IsIdentity {
-			right = bin.BindConversion(right, left.Type(), true, right.Span())
+			right = bin.BindConversion(right, left.Type(), true, right.Source().Span())
 			op = boundnodes.BindBinaryOperator(opkind, left.Type(), right.Type())
 		}
 
@@ -1636,7 +1637,7 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 			print.Error(
 				"BINDER",
 				print.BinaryOperatorTypeError,
-				left.Span().SpanBetween(right.Span()),
+				left.Source().Span().SpanBetween(right.Source().Span()),
 				"the use of binary operator \"%s\" with types \"%s\" and \"%s\" is undefined!",
 				opkind,
 				left.Type().Name,
@@ -1647,7 +1648,7 @@ func (bin *Binder) BindBinaryExpressionInternal(left boundnodes.BoundExpressionN
 
 	}
 
-	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right, left.Span().SpanBetween(right.Span()))
+	return boundnodes.CreateBoundBinaryExpressionNode(left, op, right, expr)
 }
 
 func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) boundnodes.BoundTernaryExpressionNode {
@@ -1683,13 +1684,13 @@ func (bin *Binder) BindTernaryExpression(expr nodes.TernaryExpressionNode) bound
 	// create a temporary variable symbol to keep track of the result
 	tmp := symbols.CreateLocalVariableSymbol(symbols.GetTempName(), false, left.Type())
 
-	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right, tmp, expr.Span())
+	return boundnodes.CreateBoundTernaryExpressionNode(condition, left, right, tmp, expr)
 }
 
 func (bin *Binder) BindReferenceExpression(expr nodes.ReferenceExpressionNode) boundnodes.BoundReferenceExpressionNode {
 	// bind the source variable
 	variable := bin.BindNameExpression(expr.Expression)
-	return boundnodes.CreateBoundReferenceExpressionNode(variable, expr.Span())
+	return boundnodes.CreateBoundReferenceExpressionNode(variable, expr)
 }
 
 func (bin *Binder) BindDereferenceExpression(expr nodes.DereferenceExpressionNode) boundnodes.BoundDereferenceExpressionNode {
@@ -1707,7 +1708,7 @@ func (bin *Binder) BindDereferenceExpression(expr nodes.DereferenceExpressionNod
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundDereferenceExpressionNode(src, expr.Span())
+	return boundnodes.CreateBoundDereferenceExpressionNode(src, expr)
 }
 
 func (bin *Binder) BindLambdaExpression(expr nodes.LambdaExpressionNode) boundnodes.BoundLambdaExpressionNode {
@@ -1749,7 +1750,7 @@ func (bin *Binder) BindLambdaExpression(expr nodes.LambdaExpressionNode) boundno
 	body := binder.BindBlockStatement(expr.Body)
 	loweredBody := lowerer.Lower(functionSymbol, body)
 
-	return boundnodes.CreateBoundLambdaExpressionNode(functionSymbol, loweredBody, expr.Span())
+	return boundnodes.CreateBoundLambdaExpressionNode(functionSymbol, loweredBody, expr)
 }
 
 func (bin *Binder) BindThisExpression(expr nodes.ThisExpressionNode) boundnodes.BoundThisExpressionNode {
@@ -1764,7 +1765,7 @@ func (bin *Binder) BindThisExpression(expr nodes.ThisExpressionNode) boundnodes.
 		os.Exit(-1)
 	}
 
-	return boundnodes.CreateBoundThisExpressionNode(bin.ClassSymbol, expr.Span())
+	return boundnodes.CreateBoundThisExpressionNode(bin.ClassSymbol, expr)
 }
 
 // </EXPRESSIONS> -------------------------------------------------------------
@@ -2126,10 +2127,27 @@ func (bin *Binder) BindConversion(expr boundnodes.BoundExpressionNode, to symbol
 		return expr
 	}
 
-	return boundnodes.CreateBoundConversionExpressionNode(to, expr, expr.Span())
+	return boundnodes.CreateBoundConversionExpressionNode(to, expr, expr.Source())
 }
 
 func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (symbols.TypeSymbol, bool) {
+	// this do be a package type ig
+	if typeClause.Package != nil {
+		// find the package
+		pck, ok := bin.LookupPackage(typeClause.Package.Value, canFail, typeClause.Span())
+		if ok {
+			// find the class
+			cls, ok := LookupClassInPackage(typeClause.TypeIdentifier.Value, pck, canFail, typeClause.Span())
+			if ok {
+				// cool beans
+				return cls.Type, true
+			}
+		}
+
+		// uncool beans
+		return symbols.TypeSymbol{}, false
+	}
+
 	switch typeClause.TypeIdentifier.Value {
 	case "void":
 		return builtins.Void, true
@@ -2168,7 +2186,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		}
 
 		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
-		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true, false, false), true
+		return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{baseType}, true, false, false, symbols.PackageSymbol{}, nil), true
 
 	case "pointer":
 		if len(typeClause.SubClauses) != 1 {
@@ -2183,7 +2201,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 		}
 
 		baseType, _ := bin.LookupType(typeClause.SubClauses[0], false)
-		return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{baseType}, false, false, false), true
+		return symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{baseType}, false, false, false, symbols.PackageSymbol{}, nil), true
 
 	case "action":
 		if len(typeClause.SubClauses) == 0 {
@@ -2204,7 +2222,7 @@ func (bin Binder) LookupType(typeClause nodes.TypeClauseNode, canFail bool) (sym
 			subTypes = append(subTypes, typ)
 		}
 
-		return symbols.CreateTypeSymbol("action", subTypes, false, false, false), true
+		return symbols.CreateTypeSymbol("action", subTypes, false, false, false, symbols.PackageSymbol{}, nil), true
 
 	default:
 		// check if this might be a class

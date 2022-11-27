@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -9,9 +10,9 @@ import (
 type BoundClassFieldAccessExpressionNode struct {
 	BoundExpressionNode
 
-	Base      BoundExpressionNode
-	Field     symbols.VariableSymbol
-	BoundSpan print.TextSpan
+	Base          BoundExpressionNode
+	Field         symbols.VariableSymbol
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement node type from interface
@@ -24,8 +25,8 @@ func (node BoundClassFieldAccessExpressionNode) Type() symbols.TypeSymbol {
 	return node.Field.VarType()
 }
 
-func (node BoundClassFieldAccessExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundClassFieldAccessExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 // node print function
@@ -40,10 +41,10 @@ func (node BoundClassFieldAccessExpressionNode) Print(indent string) {
 func (BoundClassFieldAccessExpressionNode) IsPersistent() bool { return true }
 
 // "constructor" / ooga booga OOP cave man brain
-func CreateBoundClassFieldAccessExpressionNode(base BoundExpressionNode, field symbols.VariableSymbol, span print.TextSpan) BoundClassFieldAccessExpressionNode {
+func CreateBoundClassFieldAccessExpressionNode(base BoundExpressionNode, field symbols.VariableSymbol, src nodes.SyntaxNode) BoundClassFieldAccessExpressionNode {
 	return BoundClassFieldAccessExpressionNode{
-		Base:      base,
-		Field:     field,
-		BoundSpan: span,
+		Base:          base,
+		Field:         field,
+		UnboundSource: src,
 	}
 }

@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -9,9 +10,9 @@ import (
 type BoundLambdaExpressionNode struct {
 	BoundExpressionNode
 
-	Function  symbols.FunctionSymbol
-	Body      BoundBlockStatementNode
-	BoundSpan print.TextSpan
+	Function      symbols.FunctionSymbol
+	Body          BoundBlockStatementNode
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundLambdaExpressionNode) NodeType() BoundType { return BoundLambdaExpression }
@@ -22,8 +23,8 @@ func (node BoundLambdaExpressionNode) Print(indent string) {
 	node.Function.Print(indent + "    ")
 }
 
-func (node BoundLambdaExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundLambdaExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundLambdaExpressionNode) IsPersistent() bool { return false }
@@ -39,13 +40,13 @@ func (node BoundLambdaExpressionNode) Type() symbols.TypeSymbol {
 	}
 	subtypes = append(subtypes, node.Function.Type)
 
-	return symbols.CreateTypeSymbol("action", subtypes, false, false, false)
+	return symbols.CreateTypeSymbol("action", subtypes, false, false, false, symbols.PackageSymbol{}, nil)
 }
 
-func CreateBoundLambdaExpressionNode(function symbols.FunctionSymbol, body BoundBlockStatementNode, span print.TextSpan) BoundLambdaExpressionNode {
+func CreateBoundLambdaExpressionNode(function symbols.FunctionSymbol, body BoundBlockStatementNode, src nodes.SyntaxNode) BoundLambdaExpressionNode {
 	return BoundLambdaExpressionNode{
-		Function:  function,
-		Body:      body,
-		BoundSpan: span,
+		Function:      function,
+		Body:          body,
+		UnboundSource: src,
 	}
 }

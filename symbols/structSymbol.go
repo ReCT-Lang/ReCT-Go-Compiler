@@ -35,11 +35,14 @@ func (s StructSymbol) Fingerprint() string {
 
 // constructor
 func CreateStructSymbol(name string, declaration nodes.StructDeclarationMember, fields []VariableSymbol) StructSymbol {
-	return StructSymbol{
+	sym := StructSymbol{
 		Exists:      true,
 		Name:        name,
 		Declaration: declaration,
 		Fields:      fields,
-		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), false, true, false),
 	}
+
+	sym.Type = CreateTypeSymbol(name, make([]TypeSymbol, 0), false, true, false, PackageSymbol{}, sym)
+
+	return sym
 }

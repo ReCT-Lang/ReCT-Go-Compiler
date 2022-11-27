@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"fmt"
 )
@@ -8,8 +9,8 @@ import (
 type BoundReturnStatementNode struct {
 	BoundStatementNode
 
-	Expression BoundExpressionNode
-	BoundSpan  print.TextSpan
+	Expression    BoundExpressionNode
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement the interface
@@ -24,14 +25,14 @@ func (node BoundReturnStatementNode) Print(indent string) {
 	}
 }
 
-func (node BoundReturnStatementNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundReturnStatementNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 // constructor
-func CreateBoundReturnStatementNode(expr BoundExpressionNode, span print.TextSpan) BoundReturnStatementNode {
+func CreateBoundReturnStatementNode(expr BoundExpressionNode, src nodes.SyntaxNode) BoundReturnStatementNode {
 	return BoundReturnStatementNode{
-		Expression: expr,
-		BoundSpan:  span,
+		Expression:    expr,
+		UnboundSource: src,
 	}
 }

@@ -1,6 +1,9 @@
 package symbols
 
-import "fmt"
+import (
+	print2 "ReCT-Go-Compiler/print"
+	"fmt"
+)
 
 type Symbol interface {
 	SymbolType() SymbolType
@@ -17,6 +20,7 @@ type VariableSymbol interface {
 	IsReadOnly() bool
 	IsGlobal() bool
 	VarType() TypeSymbol
+	Declaration() print2.TextSpan
 }
 
 var tempCounter = 0

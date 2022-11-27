@@ -3,6 +3,7 @@ package emitter
 import (
 	"ReCT-Go-Compiler/binder"
 	"ReCT-Go-Compiler/builtins"
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/nodes/boundnodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
@@ -1135,7 +1136,7 @@ func (emt *Emitter) EmitMakeArrayExpression(blk **ir.Block, expr boundnodes.Boun
 	}
 
 	// bitcast to typed array type
-	arrObject = (*blk).NewBitCast(arrObject, emt.IRTypes(symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{expr.BaseType}, true, false, false)))
+	arrObject = (*blk).NewBitCast(arrObject, emt.IRTypes(symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{expr.BaseType}, true, false, false, symbols.PackageSymbol{}, nil)))
 
 	return arrObject
 }
@@ -1955,7 +1956,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 			for i := range expr.Function.Parameters {
 				// convert the expression to 'Any' as that is the type we need for the array
 				arg := emt.EmitConversionExpression(blk, boundnodes.CreateBoundConversionExpressionNode(
-					builtins.Any, expr.Arguments[i], expr.Arguments[i].Span(),
+					builtins.Any, expr.Arguments[i], expr.Arguments[i].Source(),
 				))
 
 				// store the arg in the array
@@ -1967,7 +1968,7 @@ func (emt *Emitter) EmitTypeCallExpression(blk **ir.Block, expr boundnodes.Bound
 
 			// convert the action to 'Any'
 			lbd := emt.EmitConversionExpression(blk, boundnodes.CreateBoundConversionExpressionNode(
-				builtins.Any, expr.Base, expr.Base.Span(),
+				builtins.Any, expr.Base, expr.Base.Source(),
 			))
 
 			// store the arg in the array
@@ -2717,7 +2718,7 @@ func (emt *Emitter) GetThreadWrapper(source symbols.TypeSymbol) *ir.Func {
 			boundnodes.CreateBoundConversionExpressionNode(
 				symbol,
 				boundnodes.CreateBoundInternalValueExpressionNode(element, builtins.Any),
-				print.TextSpan{},
+				nodes.CallExpressionNode{},
 			))
 
 		arguments = append(arguments, arg)
@@ -2735,7 +2736,7 @@ func (emt *Emitter) GetThreadWrapper(source symbols.TypeSymbol) *ir.Func {
 		boundnodes.CreateBoundConversionExpressionNode(
 			source,
 			boundnodes.CreateBoundInternalValueExpressionNode(element, builtins.Any),
-			print.TextSpan{},
+			nodes.CallExpressionNode{},
 		))
 
 	// call!

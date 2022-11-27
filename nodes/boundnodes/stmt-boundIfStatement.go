@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"fmt"
 )
@@ -12,7 +13,7 @@ type BoundIfStatementNode struct {
 	ThenStatement BoundStatementNode
 	ElseStatement BoundStatementNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement the interface
@@ -32,16 +33,16 @@ func (node BoundIfStatementNode) Print(indent string) {
 	}
 }
 
-func (node BoundIfStatementNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundIfStatementNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 // constructor
-func CreateBoundIfStatementNode(cond BoundExpressionNode, thenStmt BoundStatementNode, elseStmt BoundStatementNode, span print.TextSpan) BoundIfStatementNode {
+func CreateBoundIfStatementNode(cond BoundExpressionNode, thenStmt BoundStatementNode, elseStmt BoundStatementNode, src nodes.SyntaxNode) BoundIfStatementNode {
 	return BoundIfStatementNode{
 		Condition:     cond,
 		ThenStatement: thenStmt,
 		ElseStatement: elseStmt,
-		BoundSpan:     span,
+		UnboundSource: src,
 	}
 }

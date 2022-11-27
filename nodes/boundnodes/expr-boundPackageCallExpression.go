@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -13,7 +14,7 @@ type BoundPackageCallExpressionNode struct {
 	Function  symbols.FunctionSymbol
 	Arguments []BoundExpressionNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundPackageCallExpressionNode) NodeType() BoundType { return BoundPackageCallExpression }
@@ -27,8 +28,8 @@ func (node BoundPackageCallExpressionNode) Print(indent string) {
 	}
 }
 
-func (node BoundPackageCallExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundPackageCallExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundPackageCallExpressionNode) IsPersistent() bool { return false }
@@ -36,11 +37,11 @@ func (BoundPackageCallExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundPackageCallExpressionNode) Type() symbols.TypeSymbol { return node.Function.Type }
 
-func CreateBoundPackageCallExpressionNode(pack symbols.PackageSymbol, function symbols.FunctionSymbol, args []BoundExpressionNode, span print.TextSpan) BoundPackageCallExpressionNode {
+func CreateBoundPackageCallExpressionNode(pack symbols.PackageSymbol, function symbols.FunctionSymbol, args []BoundExpressionNode, src nodes.SyntaxNode) BoundPackageCallExpressionNode {
 	return BoundPackageCallExpressionNode{
-		Package:   pack,
-		Function:  function,
-		Arguments: args,
-		BoundSpan: span,
+		Package:       pack,
+		Function:      function,
+		Arguments:     args,
+		UnboundSource: src,
 	}
 }

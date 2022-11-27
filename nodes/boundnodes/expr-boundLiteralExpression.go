@@ -13,9 +13,9 @@ import (
 type BoundLiteralExpressionNode struct {
 	BoundExpressionNode
 
-	Value       interface{}
-	LiteralType symbols.TypeSymbol
-	BoundSpan   print.TextSpan
+	Value         interface{}
+	LiteralType   symbols.TypeSymbol
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement node type from interface
@@ -38,8 +38,8 @@ func (node BoundLiteralExpressionNode) Print(indent string) {
 	node.LiteralType.Print(indent + "    ")
 }
 
-func (node BoundLiteralExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundLiteralExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundLiteralExpressionNode) IsPersistent() bool { return false }
@@ -48,12 +48,12 @@ func (BoundLiteralExpressionNode) IsPersistent() bool { return false }
 func (node BoundLiteralExpressionNode) Type() symbols.TypeSymbol { return node.LiteralType }
 
 // Doubt this is right
-func CreateBoundLiteralExpressionNode(expr nodes.LiteralExpressionNode, span print.TextSpan) BoundLiteralExpressionNode {
+func CreateBoundLiteralExpressionNode(expr nodes.LiteralExpressionNode, src nodes.SyntaxNode) BoundLiteralExpressionNode {
 	var _type symbols.TypeSymbol
 	switch expr.LiteralValue.(type) {
 	case string:
 		if expr.IsNative {
-			_type = symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{builtins.Byte}, false, false, false)
+			_type = symbols.CreateTypeSymbol("pointer", []symbols.TypeSymbol{builtins.Byte}, false, false, false, symbols.PackageSymbol{}, nil)
 		} else {
 			_type = builtins.String
 		}
@@ -71,13 +71,13 @@ func CreateBoundLiteralExpressionNode(expr nodes.LiteralExpressionNode, span pri
 		os.Exit(1) // shrug
 	}
 	return BoundLiteralExpressionNode{
-		Value:       expr.LiteralValue,
-		LiteralType: _type,
-		BoundSpan:   span,
+		Value:         expr.LiteralValue,
+		LiteralType:   _type,
+		UnboundSource: src,
 	}
 }
 
-func CreateBoundLiteralExpressionNodeFromValue(value interface{}, span print.TextSpan) BoundLiteralExpressionNode {
+func CreateBoundLiteralExpressionNodeFromValue(value interface{}, src nodes.SyntaxNode) BoundLiteralExpressionNode {
 	var _type symbols.TypeSymbol
 	switch value.(type) {
 	case string:
@@ -100,8 +100,8 @@ func CreateBoundLiteralExpressionNodeFromValue(value interface{}, span print.Tex
 		os.Exit(1) // shrug
 	}
 	return BoundLiteralExpressionNode{
-		Value:       value,
-		LiteralType: _type,
-		BoundSpan:   span,
+		Value:         value,
+		LiteralType:   _type,
+		UnboundSource: src,
 	}
 }

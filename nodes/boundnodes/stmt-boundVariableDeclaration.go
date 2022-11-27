@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -12,7 +13,7 @@ type BoundVariableDeclarationStatementNode struct {
 	Variable    symbols.VariableSymbol
 	Initializer BoundExpressionNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement the interface
@@ -29,15 +30,15 @@ func (node BoundVariableDeclarationStatementNode) Print(indent string) {
 	}
 }
 
-func (node BoundVariableDeclarationStatementNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundVariableDeclarationStatementNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 // constructor
-func CreateBoundVariableDeclarationStatementNode(variable symbols.VariableSymbol, init BoundExpressionNode, span print.TextSpan) BoundVariableDeclarationStatementNode {
+func CreateBoundVariableDeclarationStatementNode(variable symbols.VariableSymbol, init BoundExpressionNode, src nodes.SyntaxNode) BoundVariableDeclarationStatementNode {
 	return BoundVariableDeclarationStatementNode{
-		Variable:    variable,
-		Initializer: init,
-		BoundSpan:   span,
+		Variable:      variable,
+		Initializer:   init,
+		UnboundSource: src,
 	}
 }

@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 )
@@ -9,9 +10,9 @@ import (
 type BoundEnumExpressionNode struct {
 	BoundExpressionNode
 
-	Value     int
-	Enum      symbols.EnumSymbol
-	BoundSpan print.TextSpan
+	Value         int
+	Enum          symbols.EnumSymbol
+	UnboundSource nodes.SyntaxNode
 }
 
 // implement node type from interface
@@ -22,8 +23,8 @@ func (node BoundEnumExpressionNode) Print(indent string) {
 	print.PrintC(print.Yellow, indent+"└ BoundEnumExpressionNode")
 }
 
-func (node BoundEnumExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundEnumExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundEnumExpressionNode) IsPersistent() bool { return false }
@@ -32,10 +33,10 @@ func (BoundEnumExpressionNode) IsPersistent() bool { return false }
 func (node BoundEnumExpressionNode) Type() symbols.TypeSymbol { return node.Enum.Type }
 
 // Doubt this is right
-func CreateBoundEnumExpressionNode(val int, enm symbols.EnumSymbol, span print.TextSpan) BoundEnumExpressionNode {
+func CreateBoundEnumExpressionNode(val int, enm symbols.EnumSymbol, src nodes.SyntaxNode) BoundEnumExpressionNode {
 	return BoundEnumExpressionNode{
-		Value:     val,
-		Enum:      enm,
-		BoundSpan: span,
+		Value:         val,
+		Enum:          enm,
+		UnboundSource: src,
 	}
 }

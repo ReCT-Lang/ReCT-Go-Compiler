@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -14,7 +15,7 @@ type BoundMakeArrayExpressionNode struct {
 	Length    BoundExpressionNode
 	Literals  []BoundExpressionNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundMakeArrayExpressionNode) NodeType() BoundType { return BoundMakeArrayExpression }
@@ -27,30 +28,31 @@ func (node BoundMakeArrayExpressionNode) Print(indent string) {
 	//node.Length.Print(indent + "    ")
 }
 
-func (node BoundMakeArrayExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundMakeArrayExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundMakeArrayExpressionNode) IsPersistent() bool { return false }
 
 // implement the expression node interface
 func (node BoundMakeArrayExpressionNode) Type() symbols.TypeSymbol {
-	return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{node.BaseType}, true, false, false)
+	return symbols.CreateTypeSymbol("array", []symbols.TypeSymbol{node.BaseType}, true, false, false, symbols.PackageSymbol{}, nil)
 }
 
-func CreateBoundMakeArrayExpressionNode(baseType symbols.TypeSymbol, length BoundExpressionNode) BoundMakeArrayExpressionNode {
+func CreateBoundMakeArrayExpressionNode(baseType symbols.TypeSymbol, length BoundExpressionNode, src nodes.SyntaxNode) BoundMakeArrayExpressionNode {
 	return BoundMakeArrayExpressionNode{
-		BaseType:  baseType,
-		Length:    length,
-		IsLiteral: false,
+		BaseType:      baseType,
+		Length:        length,
+		IsLiteral:     false,
+		UnboundSource: src,
 	}
 }
 
-func CreateBoundMakeArrayExpressionNodeLiteral(baseType symbols.TypeSymbol, literals []BoundExpressionNode, span print.TextSpan) BoundMakeArrayExpressionNode {
+func CreateBoundMakeArrayExpressionNodeLiteral(baseType symbols.TypeSymbol, literals []BoundExpressionNode, src nodes.SyntaxNode) BoundMakeArrayExpressionNode {
 	return BoundMakeArrayExpressionNode{
-		BaseType:  baseType,
-		Literals:  literals,
-		IsLiteral: true,
-		BoundSpan: span,
+		BaseType:      baseType,
+		Literals:      literals,
+		IsLiteral:     true,
+		UnboundSource: src,
 	}
 }

@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -9,16 +10,16 @@ import (
 type BoundBinaryExpressionNode struct {
 	BoundExpressionNode
 
-	Left      BoundExpressionNode
-	Op        BoundBinaryOperator
-	Right     BoundExpressionNode
-	BoundSpan print.TextSpan
+	Left          BoundExpressionNode
+	Op            BoundBinaryOperator
+	Right         BoundExpressionNode
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundBinaryExpressionNode) NodeType() BoundType { return BoundBinaryExpression }
 
-func (node BoundBinaryExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundBinaryExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (node BoundBinaryExpressionNode) Print(indent string) {
@@ -35,11 +36,11 @@ func (BoundBinaryExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundBinaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 
-func CreateBoundBinaryExpressionNode(left BoundExpressionNode, op BoundBinaryOperator, right BoundExpressionNode, span print.TextSpan) BoundBinaryExpressionNode {
+func CreateBoundBinaryExpressionNode(left BoundExpressionNode, op BoundBinaryOperator, right BoundExpressionNode, src nodes.SyntaxNode) BoundBinaryExpressionNode {
 	return BoundBinaryExpressionNode{
-		Left:      left,
-		Op:        op,
-		Right:     right,
-		BoundSpan: span,
+		Left:          left,
+		Op:            op,
+		Right:         right,
+		UnboundSource: src,
 	}
 }

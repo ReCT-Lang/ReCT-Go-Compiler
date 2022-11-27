@@ -1,6 +1,7 @@
 package boundnodes
 
 import (
+	"ReCT-Go-Compiler/nodes"
 	"ReCT-Go-Compiler/print"
 	"ReCT-Go-Compiler/symbols"
 	"fmt"
@@ -12,7 +13,7 @@ type BoundUnaryExpressionNode struct {
 	Op         BoundUnaryOperator
 	Expression BoundExpressionNode
 
-	BoundSpan print.TextSpan
+	UnboundSource nodes.SyntaxNode
 }
 
 func (BoundUnaryExpressionNode) NodeType() BoundType { return BoundUnaryExpression }
@@ -24,8 +25,8 @@ func (node BoundUnaryExpressionNode) Print(indent string) {
 	node.Expression.Print(indent + "    ")
 }
 
-func (node BoundUnaryExpressionNode) Span() print.TextSpan {
-	return node.BoundSpan
+func (node BoundUnaryExpressionNode) Source() nodes.SyntaxNode {
+	return node.UnboundSource
 }
 
 func (BoundUnaryExpressionNode) IsPersistent() bool { return false }
@@ -33,10 +34,10 @@ func (BoundUnaryExpressionNode) IsPersistent() bool { return false }
 // implement the expression node interface
 func (node BoundUnaryExpressionNode) Type() symbols.TypeSymbol { return node.Op.ResultType }
 
-func CreateBoundUnaryExpressionNode(op BoundUnaryOperator, expression BoundExpressionNode, span print.TextSpan) BoundUnaryExpressionNode {
+func CreateBoundUnaryExpressionNode(op BoundUnaryOperator, expression BoundExpressionNode, src nodes.SyntaxNode) BoundUnaryExpressionNode {
 	return BoundUnaryExpressionNode{
-		Op:         op,
-		Expression: expression,
-		BoundSpan:  span,
+		Op:            op,
+		Expression:    expression,
+		UnboundSource: src,
 	}
 }

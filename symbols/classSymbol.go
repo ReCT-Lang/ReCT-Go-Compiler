@@ -15,6 +15,8 @@ type ClassSymbol struct {
 	Type   TypeSymbol
 	IRType types.Type
 
+	Package PackageSymbol
+
 	Name        string
 	Declaration nodes.ClassDeclarationMember
 	Functions   []FunctionSymbol
@@ -35,13 +37,16 @@ func (s ClassSymbol) Fingerprint() string {
 }
 
 // constructor
-func CreateClassSymbol(name string, declration nodes.ClassDeclarationMember, functions []FunctionSymbol, fields []VariableSymbol) ClassSymbol {
-	return ClassSymbol{
+func CreateClassSymbol(name string, declration nodes.ClassDeclarationMember, functions []FunctionSymbol, fields []VariableSymbol, pck PackageSymbol) ClassSymbol {
+	sym := ClassSymbol{
 		Exists:      true,
 		Name:        name,
 		Declaration: declration,
 		Functions:   functions,
 		Fields:      fields,
-		Type:        CreateTypeSymbol(name, make([]TypeSymbol, 0), true, true, false),
+		Package:     pck,
 	}
+
+	sym.Type = CreateTypeSymbol(name, make([]TypeSymbol, 0), true, true, false, pck, sym)
+	return sym
 }
