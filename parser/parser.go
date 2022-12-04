@@ -56,10 +56,9 @@ func (prs *Parser) consume(expected lexer.TokenKind) lexer.Token {
 			prs.current().Kind,
 			expected,
 		)
-		os.Exit(-1) // die(-1);
 	}
 
-	// if everything is alright -> step our index and return the token
+	// if everything is (sorta) alright -> step our index and return the token
 	prs.Index++
 	return prs.peek(-1)
 }

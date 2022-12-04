@@ -63,7 +63,7 @@ func (emt *Emitter) Adapt() {
 				print.CAdapterCompilationError,
 				print.TextSpan{},
 				"Error while compiling C-Adapter module! Struct sorting seems to be in an infinite loop.")
-			os.Exit(-1)
+			return
 		}
 
 		madeChange := false
@@ -182,7 +182,7 @@ func (emt *Emitter) Adapt() {
 			print.CAdapterCompilationError,
 			print.TextSpan{},
 			"Error while compiling C-Adapter module! (THIS SHOULDNT HAPPEN! Please file a bug report!)")
-		os.Exit(-1)
+		return
 	}
 
 	//fmt.Println(cCode)
@@ -270,7 +270,7 @@ func (emt *Emitter) ConvertType(fld symbols.TypeSymbol, structsAsPointers bool) 
 		fmt.Println("> " + v.Name)
 	}
 
-	os.Exit(-1)
+	os.Exit(-1) // we crashin
 	return ""
 }
 

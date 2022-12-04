@@ -45,7 +45,7 @@ func MapStatement(stmt boundnodes.BoundStatementNode) {
 		MapExpressionStatement(stmt.(boundnodes.BoundExpressionStatementNode))
 	default:
 		print.PrintC(print.Red, "Statement unaccounted for in mapper! (stuff being in here is important for the language server lol)")
-		os.Exit(-1)
+		os.Exit(-1) // we crashin
 	}
 }
 
@@ -167,7 +167,7 @@ func MapExpression(expr boundnodes.BoundExpressionNode) {
 		MapEnumExpression(expr.(boundnodes.BoundEnumExpressionNode))
 	default:
 		print.PrintC(print.Red, "Expression unaccounted for in mappr! (stuff being in here is important for the language server lol)")
-		os.Exit(-1)
+		os.Exit(-1) // we crashin
 	}
 }
 

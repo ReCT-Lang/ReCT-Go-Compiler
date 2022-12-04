@@ -5,7 +5,6 @@ import (
 	"github.com/ReCT-Lang/ReCT-Go-Compiler/irtools"
 	"github.com/ReCT-Lang/ReCT-Go-Compiler/print"
 	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
-	"os"
 	"strings"
 
 	"github.com/llir/llvm/ir"
@@ -137,7 +136,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 				cls.Name,
 				pack.Name,
 			)
-			os.Exit(-1)
+
+			continue
 		}
 
 		emt.ImportType(vTable)
@@ -154,7 +154,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 				cls.Name,
 				pack.Name,
 			)
-			os.Exit(-1)
+
+			continue
 		}
 
 		if !GlobalExists(emt.Module, vTableConstant.GlobalName) {
@@ -187,7 +188,8 @@ func (emt *Emitter) LoadAndReferenceClassesFromPackage(module *ir.Module, pack s
 				class.Name,
 				pack.Name,
 			)
-			os.Exit(-1)
+
+			continue
 		}
 		emt.ImportFunction(constructor)
 

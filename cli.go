@@ -156,6 +156,9 @@ func CompileFiles(files []string) {
 	emitter.SourceFile = files[0]
 
 	module := emitter.Emit(boundProgram, true)
+	// any errors after emitting? -> die();
+	print.CrashIfErrorsFound()
+
 	//fmt.Println(module)
 	output := module.String()
 
@@ -322,6 +325,8 @@ func Prepare(file string) binder.BoundProgram {
 
 	code := lexer.ReadFile(file)
 	tokens := lexer.Lex(code, file)
+	// any errors after lexing? -> die();
+	print.CrashIfErrorsFound()
 
 	if debug {
 		print.PrintC(print.Green, "Done!")
@@ -332,6 +337,9 @@ func Prepare(file string) binder.BoundProgram {
 	}
 
 	members := parser.Parse(tokens)
+
+	// any errors after parsing? -> die();
+	print.CrashIfErrorsFound()
 
 	if debug {
 		print.PrintC(print.Green, "Done!")
@@ -353,6 +361,9 @@ func Prepare(file string) binder.BoundProgram {
 	}
 
 	boundProgram := binder.BindProgram(members)
+
+	// any errors after binding? -> die();
+	print.CrashIfErrorsFound()
 
 	if debug {
 		print.PrintC(print.Green, "Done!")
@@ -379,9 +390,14 @@ func PrepareMultifile(files []string) (binder.BoundProgram, []string) {
 	for i := 0; i < len(files); i++ {
 		file := files[i]
 		code := []rune(preprocessor.Preprocess(file, &files, &arguments))
+		// any errors after preprocessing? -> die();
+		print.CrashIfErrorsFound()
 
 		//code := lexer.ReadFile(file)
 		tokens := lexer.Lex(code, file)
+		// any errors after lexing? -> die();
+		print.CrashIfErrorsFound()
+
 		lexes = append(lexes, tokens)
 
 		if debug {
@@ -405,6 +421,9 @@ func PrepareMultifile(files []string) (binder.BoundProgram, []string) {
 		memberList = append(members, memberList...)
 	}
 
+	// any errors after parsing? -> die();
+	print.CrashIfErrorsFound()
+
 	if debug {
 		print.PrintC(print.Green, "Done!")
 		for _, mem := range memberList {
@@ -425,6 +444,9 @@ func PrepareMultifile(files []string) (binder.BoundProgram, []string) {
 	}
 
 	boundProgram := binder.BindProgram(memberList)
+
+	// any errors after binding? -> die();
+	print.CrashIfErrorsFound()
 
 	if debug {
 		print.PrintC(print.Green, "Done!")

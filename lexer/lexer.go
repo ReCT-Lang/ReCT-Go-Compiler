@@ -455,7 +455,7 @@ func ReadFile(filename string) []rune {
 			"file \"%s\" does not exist! Maybe you spelt it wrong?!",
 			filename,
 		)
-		os.Exit(1)
+		return []rune{}
 	} else if errors.Is(err, os.ErrPermission) {
 		print.Error(
 			"LEXER",
@@ -464,7 +464,7 @@ func ReadFile(filename string) []rune {
 			"do not have permissions to open file \"%s\"!",
 			filename,
 		)
-		os.Exit(1)
+		return []rune{}
 	} else if err != nil {
 		print.Error(
 			"LEXER",
@@ -473,7 +473,7 @@ func ReadFile(filename string) []rune {
 			"an unexpected error occurred when reading file \"%s\"!",
 			filename,
 		)
-		os.Exit(1)
+		return []rune{}
 	}
 	// destroy all CR in the file
 	contents = []byte(strings.Replace(string(contents), "\r", "", -1))

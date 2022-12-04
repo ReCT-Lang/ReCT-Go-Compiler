@@ -3,6 +3,7 @@ package print
 import (
 	_ "encoding/json" // I know JSON is a data interchange but imma use it for storing the error lookup data anyway - tokorv :)))
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -104,6 +105,17 @@ import (
  * bad character is removed or replaced.
  */
 
+// ErrorReport is a structure to hold all info about an error
+type ErrorReport struct {
+	Area        string
+	ErrType     ErrorType
+	Span        TextSpan
+	Message     string
+	MessageArgs []interface{}
+}
+
+var ErrorList = make([]ErrorReport, 0)
+
 // CodeReference stores code for both error lookups and compiler-time error messages.
 // It stores code for error lookups, when compiling it is overwritten with the code to compile.
 var CodeReference []string = []string{
@@ -129,6 +141,15 @@ func Error(area string, _type ErrorType, span TextSpan, message string, fargs ..
 	WriteC(Yellow, "rgoc -lookup ")
 	WriteCF(Cyan, "%d", code)
 	PrintC(DarkYellow, ", for more information)]\n")
+
+	// remember this error
+	ErrorList = append(ErrorList, ErrorReport{area, _type, span, message, fargs})
+}
+
+func CrashIfErrorsFound() {
+	if len(ErrorList) > 0 {
+		os.Exit(-1)
+	}
 }
 
 // ErrorS basically Error but returns a string instead of printing

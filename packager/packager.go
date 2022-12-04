@@ -54,10 +54,11 @@ func ResolvePackage(name string, errorLocation print.TextSpan) symbols.PackageSy
 				"Package module file could not be found in any of the given package directories!",
 			)
 		}
-		os.Exit(-1)
+		return symbols.PackageSymbol{}
 	}
 
 	pack := symbols.PackageSymbol{
+		Exists:        true,
 		Name:          name,
 		ErrorLocation: errorLocation,
 	}
@@ -110,7 +111,7 @@ func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, cl
 			"Unable to process function '%s'!",
 			fnc.Name(),
 		)
-		os.Exit(-1)
+		return symbols.FunctionSymbol{}
 	}
 
 	params := make([]symbols.ParameterSymbol, 0)
@@ -125,7 +126,7 @@ func CreateFunctionSymbolFromModule(fnc *ir.Func, prefix string, public bool, cl
 				"Unable to process function '%s'!",
 				fnc.Name(),
 			)
-			os.Exit(-1)
+			return symbols.FunctionSymbol{}
 		}
 
 		params = append(params, symbols.CreateParameterSymbol(v.LocalName, i, typ))
@@ -240,7 +241,7 @@ func CreateClassSymbolsFromModule(module *ir.Module, pack symbols.PackageSymbol)
 					"Unable to process field '%s' of class '%s'!",
 					fieldName, class.Name,
 				)
-				os.Exit(-1)
+				continue
 			}
 
 			//print.PrintCF(print.Blue, " Importing Field '%s' (%s)...", fieldName, fieldType.Name)
@@ -326,7 +327,6 @@ func ResolveType(typ types.Type, classes []*symbols.ClassSymbol, pack symbols.Pa
 		"Could not resolve referenced type '%s' while loading package!",
 		typ.LLString(),
 	)
-	os.Exit(-1)
 
 	return symbols.TypeSymbol{}, false
 }
@@ -341,7 +341,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 			"the use of boxed types (object versions of int, byte, float, bool) is not allowed. If you wish to give back an object of a primitive please cast it to 'any'. (Caused by: %s)",
 			typeName,
 		)
-		os.Exit(-1)
+		return &builtins.Error
 	}
 
 	// string type
@@ -368,8 +368,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 			pack.ErrorLocation,
 			"Use of unspecific array type is not allowed!",
 		)
-		os.Exit(-1)
-		return &builtins.Array
+		return &builtins.Error
 	}
 	if strings.HasPrefix(typeName, "Array_") {
 		typ := ResolveArrayType(typeName, false, classes, pack)
@@ -383,8 +382,7 @@ func ResolveObjectType(typeName string, classes []*symbols.ClassSymbol, allowLow
 			pack.ErrorLocation,
 			"Use of unspecific p-array type is not allowed!",
 		)
-		os.Exit(-1)
-		return &builtins.PArray
+		return &builtins.Error
 	}
 
 	// if its something else, we need to look through our other classes and packages
@@ -451,8 +449,7 @@ func ResolveTypeFromName(typeName string, classes []*symbols.ClassSymbol, pack s
 		"Could not resolve type '%s' while loading package!",
 		typeName,
 	)
-	os.Exit(-1)
-	return symbols.TypeSymbol{}
+	return builtins.Error
 }
 
 func ProcessTypeName(name string, pack symbols.PackageSymbol) (string, bool) {
@@ -479,7 +476,7 @@ func ProcessTypeName(name string, pack symbols.PackageSymbol) (string, bool) {
 			"Referenced object type '%s' needs to be a pointer but isnt!",
 			name,
 		)
-		os.Exit(-1)
+		return "", false
 	}
 
 	// if all those things are alright we can cut away all the un-needed stuff
@@ -558,7 +555,7 @@ func strConsume(o, fingerprint string, match string, errorLocation print.TextSpa
 			"error parsing fingerprint for type '%s'!",
 			o,
 		)
-		os.Exit(-1)
+		return ""
 	}
 
 	return fingerprint[len(match):]

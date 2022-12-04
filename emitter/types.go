@@ -85,7 +85,7 @@ func (emt *Emitter) IRTypes(typ symbols.TypeSymbol) types.Type {
 		fmt.Println("> " + v.Name)
 	}
 
-	os.Exit(-1)
+	os.Exit(-1) // we crashin
 	return nil
 }
 

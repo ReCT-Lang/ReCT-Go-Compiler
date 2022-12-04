@@ -105,8 +105,11 @@ func RewriteStatement(stmt boundnodes.BoundStatementNode) boundnodes.BoundStatem
 	case boundnodes.BoundExpressionStatement:
 		return RewriteExpressionStatement(stmt.(boundnodes.BoundExpressionStatementNode))
 	default:
-		return stmt
+		print.PrintC(print.Red, "Statement unaccounted for in lowerer! (stuff being in here is important lol)")
+		os.Exit(-1) // we crashin
 	}
+
+	return nil
 }
 
 func RewriteBlockStatement(stmt boundnodes.BoundBlockStatementNode) boundnodes.BoundBlockStatementNode {
@@ -348,7 +351,7 @@ func RewriteExpression(expr boundnodes.BoundExpressionNode) boundnodes.BoundExpr
 		return RewriteEnumExpression(expr.(boundnodes.BoundEnumExpressionNode))
 	default:
 		print.PrintC(print.Red, "Expression unaccounted for in lowerer! (stuff being in here is important lol)")
-		os.Exit(-1)
+		os.Exit(-1) // we crashin
 		return nil
 	}
 }
