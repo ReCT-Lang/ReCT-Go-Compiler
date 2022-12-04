@@ -5,9 +5,6 @@ import (
 	"github.com/ReCT-Lang/ReCT-Go-Compiler/symbols"
 )
 
-// CalledByLangserver marks the Compiler being called by the lang server
-var CalledByLangserver = false
-
 // TokenMapping is a Map of meanings
 var TokenMapping map[lexer.Token]TokenMeaning
 

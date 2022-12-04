@@ -3,7 +3,6 @@ package print
 import (
 	_ "encoding/json" // I know JSON is a data interchange but imma use it for storing the error lookup data anyway - tokorv :)))
 	"fmt"
-	"github.com/ReCT-Lang/ReCT-Go-Compiler/langserverinterface"
 	"os"
 	"strings"
 )
@@ -123,6 +122,8 @@ var CodeReference []string = []string{
 	"&dyvar &wjerr&r@&wy &w<- &g\"Hello, World\"&g;",
 }
 
+var OutputErrorMessages = true
+
 var SourceFiles = make(map[string]string)
 
 // When no data can be found for line, length or column
@@ -130,7 +131,7 @@ var SourceFiles = make(map[string]string)
 // Error prints custom error message and code snippet to terminal/console
 // Uses old colour formatting method, will switch to Format() later
 func Error(area string, _type ErrorType, span TextSpan, message string, fargs ...interface{}) {
-	if !langserverinterface.CalledByLangserver {
+	if OutputErrorMessages {
 		PrintCodeSnippet(span)
 		WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
 		WriteC(DarkCyan, string(_type))
