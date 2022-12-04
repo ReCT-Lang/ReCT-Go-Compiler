@@ -3,6 +3,7 @@ package print
 import (
 	_ "encoding/json" // I know JSON is a data interchange but imma use it for storing the error lookup data anyway - tokorv :)))
 	"fmt"
+	"github.com/ReCT-Lang/ReCT-Go-Compiler/langserverinterface"
 	"os"
 	"strings"
 )
@@ -129,18 +130,20 @@ var SourceFiles = make(map[string]string)
 // Error prints custom error message and code snippet to terminal/console
 // Uses old colour formatting method, will switch to Format() later
 func Error(area string, _type ErrorType, span TextSpan, message string, fargs ...interface{}) {
-	PrintCodeSnippet(span)
-	WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
-	WriteC(DarkCyan, string(_type))
-	WriteCF(Red, " Error(%d, %d, %s): ", span.StartLine, span.StartColumn, span.File)
-	WriteCF(DarkYellow, message, fargs...)
-	code := ErrorTypeToCode(_type)
-	WriteC(DarkYellow, "\n[> Error look up code: ")
-	WriteCF(Cyan, "%d", code)
-	WriteC(DarkYellow, " (use: ")
-	WriteC(Yellow, "rgoc -lookup ")
-	WriteCF(Cyan, "%d", code)
-	PrintC(DarkYellow, ", for more information)]\n")
+	if !langserverinterface.CalledByLangserver {
+		PrintCodeSnippet(span)
+		WriteCF(Cyan, "[%s] ", strings.ToUpper(area))
+		WriteC(DarkCyan, string(_type))
+		WriteCF(Red, " Error(%d, %d, %s): ", span.StartLine, span.StartColumn, span.File)
+		WriteCF(DarkYellow, message, fargs...)
+		code := ErrorTypeToCode(_type)
+		WriteC(DarkYellow, "\n[> Error look up code: ")
+		WriteCF(Cyan, "%d", code)
+		WriteC(DarkYellow, " (use: ")
+		WriteC(Yellow, "rgoc -lookup ")
+		WriteCF(Cyan, "%d", code)
+		PrintC(DarkYellow, ", for more information)]\n")
+	}
 
 	// remember this error
 	ErrorList = append(ErrorList, ErrorReport{area, _type, span, message, fargs})
