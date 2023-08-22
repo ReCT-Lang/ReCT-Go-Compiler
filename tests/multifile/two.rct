@@ -1,4 +1,0 @@
-// two.rct
-function nutz() {
-    sys::Print("nutz.");
-}
