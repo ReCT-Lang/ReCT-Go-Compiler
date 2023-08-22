@@ -1,9 +1,0 @@
-package sus; // we crashin
-alias sys sus;
-
-sys::Print("i wanna die");
-someFunc();
-
-function someFunc() void {
-    sus::Print("hmm");
-}

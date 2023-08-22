@@ -1,9 +1,0 @@
-var name <- "Jerry";
-set age <- 11409830;
-var alive <- tr$ue; // supposed to fail btw
-
-if(alive) {
-    Print("Jerry is alive")
-} else {
-    Print("Oh no! Jerry is dead!")
-}

@@ -1,9 +1,0 @@
-package sys;
-
-var num  <- 1
-var obj  <- any(num);
-var str  <- array[string](obj);
-
-sys::Print(str[0]);
-
-//var newStr <- str->Substring(-1, 10);

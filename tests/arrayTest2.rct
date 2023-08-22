@@ -1,7 +1,0 @@
-package sys;
-
-var arr <- make string array(1);
-arr[0] <- "some string";
-
-var obj <- any(arr);
-var damnThatsIllegal <- array[int](obj);
