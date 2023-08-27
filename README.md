@@ -1,7 +1,18 @@
 
 <img align="right" alt="Logo" width="180" height="180" src="https://avatars.githubusercontent.com/u/98979517?s=200&v=4" />
 
-# Rect
+# ReCT
+
+## Important notice
+***As of February 2nd 2023 ReCT is no longer maintained and is considered dead.*** The reasons for this are mostly personal as I do not think that I can develop this language into what it deserves to be.  
+My vision of "the perfect programming language" has changed drastically over these last few years, continuing development would mean either reworking and removing a lot of language features which make up a core part of the language (resulting in ReCT not being ReCT anymore) or keeping all the older stuff and adding new, totally different feeling things which would make using the language a confusing mess.  
+
+Therefore I have decided to move on to new projects and leave ReCT behind. I want to thank everyone who supported me and this project and helped along the way, no matter how large the contribution, thank you all.
+
+I'll be seeing you around,  
+David / Redcube
+
+---
 
 <p>
 	  ReCT is a statically typed, easy to use language with a package manager.
